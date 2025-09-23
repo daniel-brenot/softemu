@@ -1,0 +1,63 @@
+[package]
+name = "softemu"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "A software-based x86_64 emulator without hardware virtualization"
+license = "MIT"
+repository = "https://github.com/yourusername/softemu"
+
+[dependencies]
+# Core VM dependencies
+vm-memory = { version = "0.16", features = ["backend-mmap"] }
+vm-device = "0.1"
+linux-loader = "0.13"
+memfd = "0.1"
+iced-x86 = "1.21"
+vm-allocator = "0.1"
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.10"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Networking
+pnet = "0.34"
+
+# File I/O
+memmap2 = "0.9"
+
+# Cross-platform compatibility
+libc = "0.2"
+
+# CLI argument parsing
+clap = { version = "4.0", features = ["derive"] }
+
+# Bit manipulation
+bitflags = "2.0"
+
+# Threading
+rayon = "1.7"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "cpu_bench"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
