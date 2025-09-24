@@ -17,7 +17,7 @@ fn main() -> Result<()> {
     // Load a kernel (you would need to provide a real kernel image)
     // For this example, we'll create a simple test kernel
     let test_kernel = create_test_kernel();
-    vm.get_memory_mut().write_slice(0x100000, &test_kernel)?;
+    vm.load_kernel(&test_kernel)?;
     println!("Loaded test kernel at 0x100000");
 
     // Set up initial CPU state
@@ -26,6 +26,8 @@ fn main() -> Result<()> {
 
     // Start the virtual machine
     println!("Starting virtual machine...");
+
+    vm.run()?;
     
     // Note: In a real scenario, you would call vm.run().await
     // For this example, we'll just demonstrate the setup

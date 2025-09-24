@@ -24,7 +24,7 @@ pub struct VirtualMachine {
 }
 
 impl VirtualMachine {
-    /// Create a new synchronous virtual machine
+    /// Create a new virtual machine
     pub fn new(memory_size: u64, cpu_cores: u32) -> Result<Self> {
         // Create guest memory
         let memory = GuestMemory::new(memory_size)?;
@@ -72,7 +72,7 @@ impl VirtualMachine {
     }
 
     /// Load a kernel into the virtual machine
-    pub fn load_kernel(&mut self, kernel_path: &Path) -> Result<()> {
+    pub fn load_kernel_from_path(&mut self, kernel_path: &Path) -> Result<()> {
         log::info!("Loading kernel from {:?}", kernel_path);
         
         // Use linux-loader to load the kernel
@@ -85,13 +85,22 @@ impl VirtualMachine {
         
         // Set up initial CPU state
         if let Some(cpu_core) = self.cpu_cores.first() {
-            let mut cpu_core = cpu_core.lock().map_err(|_| { bail!("Failed to lock CPU core") });
+            let mut cpu_core = cpu_core.lock().map_err(|_| { crate::EmulatorError::Cpu("Failed to lock CPU core".to_string()) })?;
             cpu_core.start()?;
         }
         
         // Set up interrupt handlers
         self.setup_interrupt_handlers()?;
         
+        self.kernel_loaded = true;
+        log::info!("Kernel loaded successfully");
+        Ok(())
+    }
+
+    /// Load a kernel into memory
+    pub fn load_kernel(&mut self, kernel_data: &[u8]) -> Result<()> {
+        let kernel_start = 0x100000; // 1MB
+        self.memory.write_slice(kernel_start, kernel_data)?;
         self.kernel_loaded = true;
         log::info!("Kernel loaded successfully");
         Ok(())

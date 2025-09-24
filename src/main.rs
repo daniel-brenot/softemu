@@ -55,21 +55,23 @@ async fn main() -> Result<()> {
     let mut vm = VirtualMachine::new(cli.memory * 1024 * 1024, cli.cores)?;
 
     // Load the kernel
-    vm.load_kernel(&cli.kernel).await?;
+    vm.load_kernel(&cli.kernel)?;
 
     // Load initrd if provided
     if let Some(initrd_path) = cli.initrd {
-        vm.load_initrd(&initrd_path).await?;
+        let initrd_data = std::fs::read(&initrd_path)?;
+        vm.load_initrd(&initrd_data)?;
     }
 
     // Configure network if requested
     if let Some(network_interface) = cli.network {
-        vm.enable_network(&network_interface).await?;
+        // Network functionality is commented out in the VM
+        info!("Network interface {} would be configured", network_interface);
     }
 
     // Start the virtual machine
     info!("Starting virtual machine execution...");
-    vm.run().await?;
+    vm.run()?;
 
     Ok(())
 }

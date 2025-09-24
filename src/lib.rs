@@ -35,6 +35,9 @@ pub enum EmulatorError {
     
     #[error("VM memory error: {0}")]
     VmMemoryError(#[from] vm_memory::Error),
+    
+    #[error("Anyhow error: {0}")]
+    Anyhow(#[from] anyhow::Error),
 }
 
 pub type Result<T> = std::result::Result<T, EmulatorError>;
