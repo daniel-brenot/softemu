@@ -1,17 +1,17 @@
-use crate::cpu::{CpuCore, CpuState};
-use crate::memory::{GuestMemory, MmioManager};
-use crate::memory::mmio::{UartDevice, TimerDevice as MmioTimerDevice};
-use crate::network::{NetworkDevice, NetworkManager};
-use crate::devices::{ConsoleDevice, TimerDevice, InterruptController};
-use crate::devices::interrupt::vectors;
-use crate::Result;
-use linux_loader::loader;
-use std::path::Path;
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::time::{Duration, interval};
+use anyhow::{bail, Context};
 
-/// Virtual machine implementation
+use crate::memory::mmio::UartDevice;
+use crate::memory::GuestMemory;
+use crate::cpu::{CpuCore, CpuState};
+use crate::devices::{ConsoleDevice, TimerDevice, InterruptController};
+use crate::memory::MmioManager;
+use crate::network::{NetworkDevice, NetworkManager};
+use crate::Result;
+use std::path::Path;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+/// Synchronous virtual machine implementation
 pub struct VirtualMachine {
     memory: GuestMemory,
     cpu_cores: Vec<Arc<Mutex<CpuCore>>>,
@@ -24,7 +24,7 @@ pub struct VirtualMachine {
 }
 
 impl VirtualMachine {
-    /// Create a new virtual machine
+    /// Create a new synchronous virtual machine
     pub fn new(memory_size: u64, cpu_cores: u32) -> Result<Self> {
         // Create guest memory
         let memory = GuestMemory::new(memory_size)?;
@@ -35,8 +35,8 @@ impl VirtualMachine {
         // Register MMIO devices
         let uart = Box::new(UartDevice::new());
         mmio_manager.register_device(0x3F8, uart)?; // COM1
-        
-        let timer = Box::new(MmioTimerDevice::new());
+
+        let timer = Box::new(TimerDevice::new());
         mmio_manager.register_device(0x40, timer)?; // PIT
         
         let console = Box::new(ConsoleDevice::new(80, 25));
@@ -72,7 +72,7 @@ impl VirtualMachine {
     }
 
     /// Load a kernel into the virtual machine
-    pub async fn load_kernel(&mut self, kernel_path: &Path) -> Result<()> {
+    pub fn load_kernel(&mut self, kernel_path: &Path) -> Result<()> {
         log::info!("Loading kernel from {:?}", kernel_path);
         
         // Use linux-loader to load the kernel
@@ -85,183 +85,152 @@ impl VirtualMachine {
         
         // Set up initial CPU state
         if let Some(cpu_core) = self.cpu_cores.first() {
-            let mut cpu_core = cpu_core.lock().await;
-            cpu_core.start().await?;
+            let mut cpu_core = cpu_core.lock().map_err(|_| { bail!("Failed to lock CPU core") });
+            cpu_core.start()?;
         }
         
         // Set up interrupt handlers
-        self.setup_interrupt_handlers().await?;
+        self.setup_interrupt_handlers()?;
         
         self.kernel_loaded = true;
         log::info!("Kernel loaded successfully");
         Ok(())
     }
 
-    /// Load an initrd into the virtual machine
-    pub async fn load_initrd(&mut self, initrd_path: &Path) -> Result<()> {
-        log::info!("Loading initrd from {:?}", initrd_path);
-        
-        let initrd_data = std::fs::read(initrd_path)?;
-        let initrd_start = 0x2000000; // 32MB
-        self.memory.write_slice(initrd_start, &initrd_data)?;
-        
-        log::info!("Initrd loaded successfully");
+    /// Get a reference to the guest memory
+    pub fn get_memory(&self) -> &GuestMemory {
+        &self.memory
+    }
+
+    /// Get a mutable reference to the guest memory
+    pub fn get_memory_mut(&mut self) -> &mut GuestMemory {
+        &mut self.memory
+    }
+
+
+    /// Load an initrd into memory
+    pub fn load_initrd(&mut self, initrd_data: &[u8]) -> Result<()> {
+        let initrd_start = 0x200000; // 2MB
+        self.memory.write_slice(initrd_start, initrd_data)?;
+        log::info!("Initrd loaded at 0x{:x}", initrd_start);
         Ok(())
     }
 
-    /// Enable network support
-    pub async fn enable_network(&mut self, interface_name: &str) -> Result<()> {
-        log::info!("Enabling network on interface {}", interface_name);
+    // /// Enable network support
+    // pub fn enable_network(&mut self, interface_name: &str) -> Result<()> {
+    //     log::info!("Enabling network on interface {}", interface_name);
         
-        let network_device = NetworkDevice::new(interface_name)?;
-        let mut network_manager = self.network_manager.lock().await;
-        network_manager.add_device(network_device)?;
-        network_manager.start().await?;
+    //     let network_device = NetworkDevice::new(interface_name)?;
+    //     let mut network_manager = self.network_manager.lock().map_err(|e| e.into())?;
+    //     network_manager.add_device(network_device)?;
+    //     network_manager.start()?;
         
-        log::info!("Network enabled successfully");
-        Ok(())
-    }
+    //     log::info!("Network enabled successfully");
+    //     Ok(())
+    // }
 
     /// Set up interrupt handlers
-    async fn setup_interrupt_handlers(&mut self) -> Result<()> {
-        let interrupt_controller = self.interrupt_controller.clone();
-        let timer_manager = self.timer_manager.clone();
+    fn setup_interrupt_handlers(&mut self) -> Result<()> {
+        let mut ic = self.interrupt_controller.lock().unwrap();
         
         // Timer interrupt handler
-        let timer_handler = {
-            let interrupt_controller = interrupt_controller.clone();
-            move || -> Result<()> {
-                // Handle timer interrupt
-                log::debug!("Timer interrupt");
-                Ok(())
-            }
+        let timer_handler = || -> Result<()> {
+            log::debug!("Timer interrupt");
+            Ok(())
         };
-        
-        let mut ic = self.interrupt_controller.lock().await;
-        ic.register_handler(vectors::TIMER, timer_handler);
+        ic.register_handler(0x20, timer_handler); // Timer interrupt vector
         
         // System call handler
-        let syscall_handler = {
-            let interrupt_controller = interrupt_controller.clone();
-            move || -> Result<()> {
-                // Handle system call
-                log::debug!("System call interrupt");
-                Ok(())
-            }
+        let syscall_handler = || -> Result<()> {
+            log::debug!("System call interrupt");
+            Ok(())
         };
-        
-        ic.register_handler(vectors::SYSTEM_CALL, syscall_handler);
+        ic.register_handler(0x80, syscall_handler); // System call vector
         
         Ok(())
     }
 
-    /// Run the virtual machine
-    pub async fn run(&mut self) -> Result<()> {
+    /// Run the virtual machine synchronously
+    pub fn run(&mut self) -> Result<()> {
         if !self.kernel_loaded {
             return Err(crate::EmulatorError::Cpu("Kernel not loaded".to_string()));
         }
         
         self.running = true;
-        log::info!("Starting virtual machine execution");
+        log::info!("Starting synchronous virtual machine execution");
         
-        // Start timer
-        let timer_manager = self.timer_manager.clone();
-        let interrupt_controller = self.interrupt_controller.clone();
-        tokio::spawn(async move {
-            let mut interval = interval(Duration::from_millis(10));
-            loop {
-                interval.tick().await;
-                
-                let mut timer = timer_manager.lock().await;
+        // Set up interrupt handlers
+        self.setup_interrupt_handlers()?;
+        
+        // Initialize CPU cores
+        for (i, cpu_core) in self.cpu_cores.iter().enumerate() {
+            let mut cpu_core = cpu_core.lock().unwrap();
+            cpu_core.start()?;
+            log::info!("CPU core {} initialized", i);
+        }
+        
+        // Main execution loop
+        let mut last_timer_tick = Instant::now();
+        let timer_interval = Duration::from_millis(10);
+        
+        while self.running {
+            // Process timer interrupts
+            if last_timer_tick.elapsed() >= timer_interval {
+                let mut timer = self.timer_manager.lock().unwrap();
                 timer.tick();
                 
-                let mut ic = interrupt_controller.lock().await;
+                let mut ic = self.interrupt_controller.lock().unwrap();
                 if let Err(e) = ic.process_interrupts() {
                     log::error!("Error processing interrupts: {}", e);
                 }
-            }
-        });
-        
-        // Start CPU cores
-        let mut cpu_tasks = Vec::new();
-        for (i, cpu_core) in self.cpu_cores.iter().enumerate() {
-            let cpu_core = cpu_core.clone();
-            let task = tokio::spawn(async move {
-                let mut cpu_core = cpu_core.lock().await;
-                cpu_core.start().await?;
                 
-                loop {
-                    match cpu_core.execute_cycle().await {
-                        Ok(continue_execution) => {
-                            if !continue_execution {
-                                break;
-                            }
-                        }
-                        Err(e) => {
-                            log::error!("CPU core {} error: {}", i, e);
+                last_timer_tick = Instant::now();
+            }
+            
+            // Execute CPU cycles
+            for (i, cpu_core) in self.cpu_cores.iter().enumerate() {
+                let mut cpu_core = cpu_core.lock().unwrap();
+                match cpu_core.execute_cycle() {
+                    Ok(continue_execution) => {
+                        if !continue_execution {
+                            log::info!("CPU core {} halted", i);
+                            self.running = false;
                             break;
                         }
                     }
-                    
-                    // Yield to other tasks
-                    tokio::task::yield_now().await;
-                }
-                
-                Ok::<(), crate::EmulatorError>(())
-            });
-            cpu_tasks.push(task);
-        }
-        
-        // Wait for all CPU cores to complete
-        for (i, task) in cpu_tasks.into_iter().enumerate() {
-            match task.await {
-                Ok(Ok(())) => {
-                    log::info!("CPU core {} completed successfully", i);
-                }
-                Ok(Err(e)) => {
-                    log::error!("CPU core {} failed: {}", i, e);
-                }
-                Err(e) => {
-                    log::error!("CPU core {} task failed: {}", i, e);
+                    Err(e) => {
+                        log::error!("CPU core {} error: {}", i, e);
+                        self.running = false;
+                        break;
+                    }
                 }
             }
+            
+            // Small delay to prevent 100% CPU usage
+            // std::thread::sleep(Duration::from_micros(1));
         }
         
-        self.running = false;
         log::info!("Virtual machine execution completed");
         Ok(())
     }
 
     /// Stop the virtual machine
-    pub async fn stop(&mut self) -> Result<()> {
+    pub fn stop(&mut self) -> Result<()> {
         self.running = false;
+        log::info!("Stopping virtual machine");
         
         // Stop all CPU cores
-        for cpu_core in &self.cpu_cores {
-            let mut cpu_core = cpu_core.lock().await;
-            cpu_core.stop().await?;
+        for (i, cpu_core) in self.cpu_cores.iter().enumerate() {
+            let mut cpu_core = cpu_core.lock().unwrap();
+            cpu_core.stop()?;
+            log::info!("CPU core {} stopped", i);
         }
         
         // Stop network manager
-        let mut network_manager = self.network_manager.lock().await;
+        let mut network_manager = self.network_manager.lock().unwrap();
         network_manager.stop();
         
-        log::info!("Virtual machine stopped");
         Ok(())
-    }
-
-    /// Get memory reference
-    pub fn get_memory(&self) -> &GuestMemory {
-        &self.memory
-    }
-
-    pub fn get_memory_mut(&mut self) -> &mut GuestMemory {
-        &mut self.memory
-    }
-
-    /// Get MMIO manager reference
-    pub fn get_mmio_manager(&self) -> Arc<Mutex<MmioManager>> {
-        self.mmio_manager.clone()
     }
 
     /// Check if the VM is running
@@ -269,8 +238,13 @@ impl VirtualMachine {
         self.running
     }
 
-    /// Get CPU core count
-    pub fn cpu_core_count(&self) -> usize {
+    /// Get the number of CPU cores
+    pub fn cpu_count(&self) -> usize {
         self.cpu_cores.len()
+    }
+
+    /// Get memory size
+    pub fn memory_size(&self) -> u64 {
+        self.memory.size()
     }
 }

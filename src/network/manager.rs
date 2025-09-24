@@ -26,7 +26,7 @@ impl NetworkManager {
     }
 
     /// Start the network manager
-    pub async fn start(&mut self) -> Result<()> {
+    pub fn start(&mut self) -> Result<()> {
         self.running = true;
         
         // Start network processing tasks

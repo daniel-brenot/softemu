@@ -1,21 +1,18 @@
-use vm_memory::{GuestAddress, GuestMemoryMmap, GuestMemoryRegion, GuestRegionMmap, Bytes, GuestMemory as VmGuestMemory};
 use crate::Result;
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
-/// Guest memory management using vm-memory crate
+/// Guest memory management - simplified implementation
 #[derive(Debug, Clone)]
 pub struct GuestMemory {
-    memory: Arc<RwLock<GuestMemoryMmap>>,
+    memory: Arc<RwLock<Vec<u8>>>,
     size: u64,
 }
 
 impl GuestMemory {
     /// Create a new guest memory instance
     pub fn new(size: u64) -> Result<Self> {
-        // Create a simple memory mapping for now
-        // In a real implementation, this would use proper memory regions
-        let memory = GuestMemoryMmap::new();
+        // Create a simple memory mapping using a Vec as backing storage
+        let memory = vec![0u8; size as usize];
 
         Ok(Self {
             memory: Arc::new(RwLock::new(memory)),
@@ -30,85 +27,115 @@ impl GuestMemory {
 
     /// Read a byte from guest memory
     pub fn read_u8(&self, addr: u64) -> Result<u8> {
-        let memory = self.memory.blocking_read();
-        let guest_addr = GuestAddress(addr);
-        memory.read_obj(guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let memory = self.memory.read().unwrap();
+        if addr >= self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        Ok(memory[addr as usize])
     }
 
     /// Read a 16-bit value from guest memory
     pub fn read_u16(&self, addr: u64) -> Result<u16> {
-        let memory = self.memory.blocking_read();
-        let guest_addr = GuestAddress(addr);
-        memory.read_obj(guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let memory = self.memory.read().unwrap();
+        if addr + 1 >= self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        let bytes = &memory[addr as usize..addr as usize + 2];
+        Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
     }
 
     /// Read a 32-bit value from guest memory
     pub fn read_u32(&self, addr: u64) -> Result<u32> {
-        let memory = self.memory.blocking_read();
-        let guest_addr = GuestAddress(addr);
-        memory.read_obj(guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let memory = self.memory.read().unwrap();
+        if addr + 3 >= self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        let bytes = &memory[addr as usize..addr as usize + 4];
+        Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
     }
 
     /// Read a 64-bit value from guest memory
     pub fn read_u64(&self, addr: u64) -> Result<u64> {
-        let memory = self.memory.blocking_read();
-        let guest_addr = GuestAddress(addr);
-        memory.read_obj(guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let memory = self.memory.read().unwrap();
+        if addr + 7 >= self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        let bytes = &memory[addr as usize..addr as usize + 8];
+        Ok(u64::from_le_bytes([
+            bytes[0], bytes[1], bytes[2], bytes[3],
+            bytes[4], bytes[5], bytes[6], bytes[7]
+        ]))
     }
 
     /// Write a byte to guest memory
     pub fn write_u8(&mut self, addr: u64, value: u8) -> Result<()> {
-        let mut memory = self.memory.blocking_write();
-        let guest_addr = GuestAddress(addr);
-        memory.write_obj(value, guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let mut memory = self.memory.write().unwrap();
+        if addr >= self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        memory[addr as usize] = value;
+        Ok(())
     }
 
     /// Write a 16-bit value to guest memory
     pub fn write_u16(&mut self, addr: u64, value: u16) -> Result<()> {
-        let mut memory = self.memory.blocking_write();
-        let guest_addr = GuestAddress(addr);
-        memory.write_obj(value, guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let mut memory = self.memory.write().unwrap();
+        if addr + 1 >= self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        let bytes = value.to_le_bytes();
+        memory[addr as usize..addr as usize + 2].copy_from_slice(&bytes);
+        Ok(())
     }
 
     /// Write a 32-bit value to guest memory
     pub fn write_u32(&mut self, addr: u64, value: u32) -> Result<()> {
-        let mut memory = self.memory.blocking_write();
-        let guest_addr = GuestAddress(addr);
-        memory.write_obj(value, guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let mut memory = self.memory.write().unwrap();
+        if addr + 3 >= self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        let bytes = value.to_le_bytes();
+        memory[addr as usize..addr as usize + 4].copy_from_slice(&bytes);
+        Ok(())
     }
 
     /// Write a 64-bit value to guest memory
     pub fn write_u64(&mut self, addr: u64, value: u64) -> Result<()> {
-        let mut memory = self.memory.blocking_write();
-        let guest_addr = GuestAddress(addr);
-        memory.write_obj(value, guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let mut memory = self.memory.write().unwrap();
+        if addr + 7 >= self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        let bytes = value.to_le_bytes();
+        memory[addr as usize..addr as usize + 8].copy_from_slice(&bytes);
+        Ok(())
     }
 
     /// Read a slice of bytes from guest memory
     pub fn read_slice(&self, addr: u64, len: usize) -> Result<Vec<u8>> {
-        let memory = self.memory.blocking_read();
-        let guest_addr = GuestAddress(addr);
-        let mut buffer = vec![0u8; len];
-        memory.read_slice(&mut buffer, guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))?;
-        Ok(buffer)
+        let memory = self.memory.read().unwrap();
+        if addr + len as u64 > self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        Ok(memory[addr as usize..addr as usize + len].to_vec())
     }
 
     /// Write a slice of bytes to guest memory
     pub fn write_slice(&mut self, addr: u64, data: &[u8]) -> Result<()> {
-        let mut memory = self.memory.blocking_write();
-        let guest_addr = GuestAddress(addr);
-        memory.write_slice(data, guest_addr).map_err(|e| crate::EmulatorError::Memory(e.to_string()))
+        let mut memory = self.memory.write().unwrap();
+        if addr + data.len() as u64 > self.size {
+            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        }
+        memory[addr as usize..addr as usize + data.len()].copy_from_slice(data);
+        Ok(())
     }
 
     /// Check if an address is valid
     pub fn is_valid_address(&self, addr: u64) -> bool {
-        let memory = self.memory.blocking_read();
-        let guest_addr = GuestAddress(addr);
-        memory.address_in_range(guest_addr)
+        addr < self.size
     }
 
     /// Get a reference to the underlying memory for device access
-    pub fn get_memory_ref(&self) -> Arc<RwLock<GuestMemoryMmap>> {
+    pub fn get_memory_ref(&self) -> Arc<RwLock<Vec<u8>>> {
         self.memory.clone()
     }
 

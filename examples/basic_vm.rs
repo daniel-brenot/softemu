@@ -3,8 +3,7 @@ use softemu::VirtualMachine;
 use std::path::Path;
 
 /// Basic example of creating and running a virtual machine
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // Initialize logging
     env_logger::init();
 
@@ -31,7 +30,6 @@ async fn main() -> Result<()> {
     // Note: In a real scenario, you would call vm.run().await
     // For this example, we'll just demonstrate the setup
     println!("VM setup complete. In a real scenario, vm.run().await would start execution.");
-
     Ok(())
 }
 

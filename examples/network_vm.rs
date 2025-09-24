@@ -3,8 +3,7 @@ use softemu::VirtualMachine;
 use std::path::Path;
 
 /// Example of creating a virtual machine with network support
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // Initialize logging
     env_logger::init();
 

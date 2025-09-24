@@ -52,6 +52,30 @@ rayon = "1.7"
 [dev-dependencies]
 criterion = "0.5"
 
+[[example]]
+name = "basic_vm"
+path = "examples/basic_vm.rs"
+
+[[example]]
+name = "network_vm"
+path = "examples/network_vm.rs"
+
+[[example]]
+name = "simple_vm"
+path = "examples/simple_vm.rs"
+
+[[example]]
+name = "memory_only"
+path = "examples/memory_only.rs"
+
+[[example]]
+name = "standalone_memory"
+path = "examples/standalone_memory.rs"
+
+[[example]]
+name = "sync_vm"
+path = "examples/sync_vm.rs"
+
 [[bench]]
 name = "cpu_bench"
 harness = false
