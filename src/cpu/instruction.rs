@@ -127,6 +127,25 @@ impl<'a> InstructionDecoder<'a> {
             iced_x86::Mnemonic::Jno => {
                 self.execute_jno(instruction, state)
             }
+            // Loop instructions
+            iced_x86::Mnemonic::Loop => {
+                self.execute_loop(instruction, state)
+            }
+            iced_x86::Mnemonic::Loope => {
+                self.execute_loope(instruction, state)
+            }
+            iced_x86::Mnemonic::Loopne => {
+                self.execute_loopne(instruction, state)
+            }
+            iced_x86::Mnemonic::Jcxz => {
+                self.execute_jcxz(instruction, state)
+            }
+            iced_x86::Mnemonic::Jecxz => {
+                self.execute_jecxz(instruction, state)
+            }
+            iced_x86::Mnemonic::Jrcxz => {
+                self.execute_jrcxz(instruction, state)
+            }
             _ => {
                 // Unimplemented instruction
                 log::warn!("Unimplemented instruction: {:?}", instruction.mnemonic());
@@ -610,6 +629,94 @@ impl<'a> InstructionDecoder<'a> {
 
     fn execute_jno(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if !state.registers.get_flag(RFlags::OVERFLOW) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    // Loop instruction implementations
+    fn execute_loop(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid LOOP instruction".to_string()));
+        }
+
+        // Decrement RCX (counter register)
+        state.registers.rcx = state.registers.rcx.wrapping_sub(1);
+        
+        // If RCX != 0, jump to target
+        if state.registers.rcx != 0 {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_loope(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid LOOPE instruction".to_string()));
+        }
+
+        // Decrement RCX (counter register)
+        state.registers.rcx = state.registers.rcx.wrapping_sub(1);
+        
+        // If RCX != 0 AND zero flag is set, jump to target
+        if state.registers.rcx != 0 && state.registers.get_flag(RFlags::ZERO) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_loopne(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid LOOPNE instruction".to_string()));
+        }
+
+        // Decrement RCX (counter register)
+        state.registers.rcx = state.registers.rcx.wrapping_sub(1);
+        
+        // If RCX != 0 AND zero flag is clear, jump to target
+        if state.registers.rcx != 0 && !state.registers.get_flag(RFlags::ZERO) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jcxz(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid JCXZ instruction".to_string()));
+        }
+
+        // Jump if CX (16-bit part of RCX) is zero
+        if (state.registers.rcx & 0xFFFF) == 0 {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jecxz(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid JECXZ instruction".to_string()));
+        }
+
+        // Jump if ECX (32-bit part of RCX) is zero
+        if (state.registers.rcx & 0xFFFFFFFF) == 0 {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jrcxz(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid JRCXZ instruction".to_string()));
+        }
+
+        // Jump if RCX (64-bit) is zero
+        if state.registers.rcx == 0 {
             let target = self.get_operand_value(instruction, 0, state)?;
             state.registers.rip = target;
         }
