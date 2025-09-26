@@ -30,6 +30,12 @@ impl<'a> InstructionDecoder<'a> {
             iced_x86::Mnemonic::Mov => {
                 self.execute_mov(instruction, state)
             }
+            iced_x86::Mnemonic::Xchg => {
+                self.execute_xchg(instruction, state)
+            }
+            iced_x86::Mnemonic::Lea => {
+                self.execute_lea(instruction, state)
+            }
             iced_x86::Mnemonic::Add => {
                 self.execute_add(instruction, state)
             }
@@ -71,6 +77,21 @@ impl<'a> InstructionDecoder<'a> {
             iced_x86::Mnemonic::Dec => {
                 self.execute_dec(instruction, state)
             }
+            iced_x86::Mnemonic::Mul => {
+                self.execute_mul(instruction, state)
+            }
+            iced_x86::Mnemonic::Imul => {
+                self.execute_imul(instruction, state)
+            }
+            iced_x86::Mnemonic::Div => {
+                self.execute_div(instruction, state)
+            }
+            iced_x86::Mnemonic::Idiv => {
+                self.execute_idiv(instruction, state)
+            }
+            iced_x86::Mnemonic::Neg => {
+                self.execute_neg(instruction, state)
+            }
             // Logical instructions
             iced_x86::Mnemonic::And => {
                 self.execute_and(instruction, state)
@@ -83,6 +104,30 @@ impl<'a> InstructionDecoder<'a> {
             }
             iced_x86::Mnemonic::Test => {
                 self.execute_test(instruction, state)
+            }
+            iced_x86::Mnemonic::Not => {
+                self.execute_not(instruction, state)
+            }
+            iced_x86::Mnemonic::Shl => {
+                self.execute_shl(instruction, state)
+            }
+            iced_x86::Mnemonic::Shr => {
+                self.execute_shr(instruction, state)
+            }
+            iced_x86::Mnemonic::Sar => {
+                self.execute_sar(instruction, state)
+            }
+            iced_x86::Mnemonic::Rol => {
+                self.execute_rol(instruction, state)
+            }
+            iced_x86::Mnemonic::Ror => {
+                self.execute_ror(instruction, state)
+            }
+            iced_x86::Mnemonic::Rcl => {
+                self.execute_rcl(instruction, state)
+            }
+            iced_x86::Mnemonic::Rcr => {
+                self.execute_rcr(instruction, state)
             }
             // Conditional jumps
             iced_x86::Mnemonic::Je => {
@@ -246,6 +291,21 @@ impl<'a> InstructionDecoder<'a> {
             iced_x86::Mnemonic::Sti => {
                 self.execute_sti(instruction, state)
             }
+            iced_x86::Mnemonic::Stc => {
+                self.execute_stc(instruction, state)
+            }
+            iced_x86::Mnemonic::Clc => {
+                self.execute_clc(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmc => {
+                self.execute_cmc(instruction, state)
+            }
+            iced_x86::Mnemonic::Std => {
+                self.execute_std(instruction, state)
+            }
+            iced_x86::Mnemonic::Cld => {
+                self.execute_cld(instruction, state)
+            }
             iced_x86::Mnemonic::Lgdt => {
                 self.execute_lgdt(instruction, state)
             }
@@ -332,6 +392,16 @@ impl<'a> InstructionDecoder<'a> {
             }
             iced_x86::Mnemonic::Popcnt => {
                 self.execute_popcnt(instruction, state)
+            }
+            // Additional missing instructions
+            iced_x86::Mnemonic::Xlatb => {
+                self.execute_xlat(instruction, state)
+            }
+            iced_x86::Mnemonic::Cpuid => {
+                self.execute_cpuid(instruction, state)
+            }
+            iced_x86::Mnemonic::Wait => {
+                self.execute_wait(instruction, state)
             }
             _ => {
                 // Unimplemented instruction
@@ -1828,6 +1898,348 @@ impl<'a> InstructionDecoder<'a> {
         state.registers.set_flag(RFlags::SIGN, false);
         
         self.set_operand_value(instruction, 1, count, state)?;
+        Ok(())
+    }
+
+    // Helper methods for flag updates
+    fn update_shift_flags(&self, result: u64, _src: u64, count: u64, state: &mut CpuState) {
+        // Update flags for shift operations
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
+        state.registers.set_flag(RFlags::PARITY, (result.count_ones() & 1) == 0);
+        
+        // Carry flag is set to the last bit shifted out
+        if count > 0 {
+            let last_bit = (_src >> (count - 1)) & 1;
+            state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        }
+        
+        // Overflow flag is undefined for shift operations
+        state.registers.set_flag(RFlags::OVERFLOW, false);
+    }
+
+    fn update_rotate_flags(&self, result: u64, _src: u64, count: u64, state: &mut CpuState) {
+        // Update flags for rotate operations
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
+        state.registers.set_flag(RFlags::PARITY, (result.count_ones() & 1) == 0);
+        
+        // Carry flag is set to the last bit rotated out
+        if count > 0 {
+            let last_bit = (_src >> (count - 1)) & 1;
+            state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        }
+        
+        // Overflow flag is undefined for rotate operations
+        state.registers.set_flag(RFlags::OVERFLOW, false);
+    }
+
+    // Additional missing instruction implementations
+    fn execute_xchg(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid XCHG instruction".to_string()));
+        }
+
+        let val1 = self.get_operand_value(instruction, 0, state)?;
+        let val2 = self.get_operand_value(instruction, 1, state)?;
+        
+        self.set_operand_value(instruction, 0, val2, state)?;
+        self.set_operand_value(instruction, 1, val1, state)?;
+        Ok(())
+    }
+
+    fn execute_lea(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid LEA instruction".to_string()));
+        }
+
+        // LEA loads the effective address of the source operand into the destination
+        // For now, we'll use the source operand value as the address
+        let src = self.get_operand_value(instruction, 0, state)?;
+        self.set_operand_value(instruction, 1, src, state)?;
+        Ok(())
+    }
+
+    fn execute_mul(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid MUL instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let rax = state.registers.rax;
+        let result = rax.wrapping_mul(src);
+        
+        // Store result in RAX:RDX (64-bit result in RAX, overflow in RDX)
+        state.registers.rax = result;
+        state.registers.rdx = if result < rax { 1 } else { 0 };
+        
+        // Update flags
+        state.registers.set_flag(RFlags::CARRY, state.registers.rdx != 0);
+        state.registers.set_flag(RFlags::OVERFLOW, state.registers.rdx != 0);
+        Ok(())
+    }
+
+    fn execute_imul(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid IMUL instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)? as i64;
+        let rax = state.registers.rax as i64;
+        let result = rax.wrapping_mul(src);
+        
+        // Store result in RAX:RDX (64-bit result in RAX, overflow in RDX)
+        state.registers.rax = result as u64;
+        state.registers.rdx = (result >> 63) as u64; // Sign extend
+        
+        // Update flags
+        state.registers.set_flag(RFlags::CARRY, state.registers.rdx != 0);
+        state.registers.set_flag(RFlags::OVERFLOW, state.registers.rdx != 0);
+        Ok(())
+    }
+
+    fn execute_div(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid DIV instruction".to_string()));
+        }
+
+        let divisor = self.get_operand_value(instruction, 0, state)?;
+        if divisor == 0 {
+            return Err(crate::EmulatorError::Cpu("Division by zero".to_string()));
+        }
+
+        let dividend = (state.registers.rdx << 64) | state.registers.rax;
+        let quotient = dividend / divisor;
+        let remainder = dividend % divisor;
+        
+        state.registers.rax = quotient;
+        state.registers.rdx = remainder;
+        Ok(())
+    }
+
+    fn execute_idiv(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid IDIV instruction".to_string()));
+        }
+
+        let divisor = self.get_operand_value(instruction, 0, state)? as i64;
+        if divisor == 0 {
+            return Err(crate::EmulatorError::Cpu("Division by zero".to_string()));
+        }
+
+        let dividend = ((state.registers.rdx as i64) << 64) | (state.registers.rax as i64);
+        let quotient = dividend / divisor;
+        let remainder = dividend % divisor;
+        
+        state.registers.rax = quotient as u64;
+        state.registers.rdx = remainder as u64;
+        Ok(())
+    }
+
+    fn execute_neg(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid NEG instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let result = 0u64.wrapping_sub(src);
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_arithmetic_flags(result, src, 0, true, state);
+        Ok(())
+    }
+
+    fn execute_not(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid NOT instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let result = !src;
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+        Ok(())
+    }
+
+    fn execute_shl(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid SHL instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        let result = src << count;
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_shift_flags(result, src, count, state);
+        Ok(())
+    }
+
+    fn execute_shr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid SHR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        let result = src >> count;
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_shift_flags(result, src, count, state);
+        Ok(())
+    }
+
+    fn execute_sar(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid SAR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)? as i64;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        let result = (src >> count) as u64;
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_shift_flags(result, src as u64, count, state);
+        Ok(())
+    }
+
+    fn execute_rol(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid ROL instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        let result = src.rotate_left(count as u32);
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_rotate_flags(result, src, count, state);
+        Ok(())
+    }
+
+    fn execute_ror(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid ROR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        let result = src.rotate_right(count as u32);
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_rotate_flags(result, src, count, state);
+        Ok(())
+    }
+
+    fn execute_rcl(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid RCL instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        let carry = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
+        let result = (src << count) | (carry << (count - 1));
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_rotate_flags(result, src, count, state);
+        Ok(())
+    }
+
+    fn execute_rcr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid RCR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        let carry = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
+        let result = (src >> count) | (carry << (63 - count));
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_rotate_flags(result, src, count, state);
+        Ok(())
+    }
+
+    fn execute_stc(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Set carry flag
+        state.registers.set_flag(RFlags::CARRY, true);
+        Ok(())
+    }
+
+    fn execute_clc(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Clear carry flag
+        state.registers.set_flag(RFlags::CARRY, false);
+        Ok(())
+    }
+
+    fn execute_cmc(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Complement carry flag
+        let current = state.registers.get_flag(RFlags::CARRY);
+        state.registers.set_flag(RFlags::CARRY, !current);
+        Ok(())
+    }
+
+    fn execute_std(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Set direction flag
+        state.registers.set_flag(RFlags::DIRECTION, true);
+        Ok(())
+    }
+
+    fn execute_cld(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Clear direction flag
+        state.registers.set_flag(RFlags::DIRECTION, false);
+        Ok(())
+    }
+
+    fn execute_xlat(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Table lookup: AL = [BX + AL]
+        let offset = (state.registers.rbx & 0xFFFF) + (state.registers.rax & 0xFF);
+        let value = state.read_u8(offset)?;
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | (value as u64);
+        Ok(())
+    }
+
+    fn execute_cpuid(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 0 {
+            return Err(crate::EmulatorError::Cpu("Invalid CPUID instruction".to_string()));
+        }
+
+        // CPUID returns processor identification information
+        // For now, return basic x86_64 information
+        let eax = state.registers.rax & 0xFFFFFFFF;
+        
+        match eax {
+            0 => {
+                // Maximum input value for basic CPUID information
+                state.registers.rax = 0x0000000D; // Maximum supported leaf
+                state.registers.rbx = 0x68747541; // "Auth"
+                state.registers.rcx = 0x444D4163; // "cAMD"
+                state.registers.rdx = 0x69746E65; // "enti"
+            }
+            1 => {
+                // Processor info and feature bits
+                state.registers.rax = 0x00060F01; // Family 6, Model 15, Stepping 1
+                state.registers.rbx = 0x00000000; // Brand index, CLFLUSH, etc.
+                state.registers.rcx = 0x00000000; // Feature flags
+                state.registers.rdx = 0x00000000; // Feature flags
+            }
+            _ => {
+                // Unsupported leaf
+                state.registers.rax = 0;
+                state.registers.rbx = 0;
+                state.registers.rcx = 0;
+                state.registers.rdx = 0;
+            }
+        }
+        Ok(())
+    }
+
+    fn execute_wait(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // WAIT instruction - wait for floating point operations
+        // For now, just do nothing (no floating point unit)
         Ok(())
     }
 }
