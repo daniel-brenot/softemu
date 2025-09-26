@@ -16,7 +16,7 @@ impl InstructionDecoder<'_> {
         let bit_pos = bit_index & 0x3F; // Mask to 6 bits for 64-bit
         
         let bit_value = (src >> bit_pos) & 1;
-        
+        Ok(())
     }
 
     pub fn execute_blcfill(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
@@ -373,6 +373,59 @@ impl InstructionDecoder<'_> {
             let bit_index = 63 - src.leading_zeros() as u64;
             self.set_operand_value(instruction, 1, bit_index, state)?;
         }
+        Ok(())
+    }
+
+    pub fn execute_bndldx(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // BNDLDX - Load Extended Bounds Using Address Translation
+        // Simplified implementation - just log for now
+        log::debug!("BNDLDX instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_bndmk(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // BNDMK - Make Bounds
+        // Simplified implementation - just log for now
+        log::debug!("BNDMK instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_bndmov(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // BNDMOV - Move Bounds
+        // Simplified implementation - just log for now
+        log::debug!("BNDMOV instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_bndstx(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // BNDSTX - Store Extended Bounds Using Address Translation
+        // Simplified implementation - just log for now
+        log::debug!("BNDSTX instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_bound(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // BOUND - Check Array Index Against Bounds
+        // Simplified implementation - just log for now
+        log::debug!("BOUND instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_bswap(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid BSWAP instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let result = src.swap_bytes();
+        self.set_operand_value(instruction, 0, result, state)?;
+        Ok(())
+    }
+
+    pub fn execute_bzhi(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // BZHI - Zero High Bits Starting with Specified Bit Position
+        // Simplified implementation - just log for now
+        log::debug!("BZHI instruction executed");
         Ok(())
     }
 }
