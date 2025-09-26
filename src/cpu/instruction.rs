@@ -61,6 +61,72 @@ impl<'a> InstructionDecoder<'a> {
             iced_x86::Mnemonic::Iret => {
                 self.execute_iret(instruction, state)
             }
+            // Additional arithmetic instructions
+            iced_x86::Mnemonic::Cmp => {
+                self.execute_cmp(instruction, state)
+            }
+            iced_x86::Mnemonic::Inc => {
+                self.execute_inc(instruction, state)
+            }
+            iced_x86::Mnemonic::Dec => {
+                self.execute_dec(instruction, state)
+            }
+            // Logical instructions
+            iced_x86::Mnemonic::And => {
+                self.execute_and(instruction, state)
+            }
+            iced_x86::Mnemonic::Or => {
+                self.execute_or(instruction, state)
+            }
+            iced_x86::Mnemonic::Xor => {
+                self.execute_xor(instruction, state)
+            }
+            iced_x86::Mnemonic::Test => {
+                self.execute_test(instruction, state)
+            }
+            // Conditional jumps
+            iced_x86::Mnemonic::Je => {
+                self.execute_je(instruction, state)
+            }
+            iced_x86::Mnemonic::Jne => {
+                self.execute_jne(instruction, state)
+            }
+            iced_x86::Mnemonic::Jl => {
+                self.execute_jl(instruction, state)
+            }
+            iced_x86::Mnemonic::Jle => {
+                self.execute_jle(instruction, state)
+            }
+            iced_x86::Mnemonic::Jg => {
+                self.execute_jg(instruction, state)
+            }
+            iced_x86::Mnemonic::Jge => {
+                self.execute_jge(instruction, state)
+            }
+            iced_x86::Mnemonic::Jb => {
+                self.execute_jb(instruction, state)
+            }
+            iced_x86::Mnemonic::Jbe => {
+                self.execute_jbe(instruction, state)
+            }
+            iced_x86::Mnemonic::Ja => {
+                self.execute_ja(instruction, state)
+            }
+            iced_x86::Mnemonic::Jae => {
+                self.execute_jae(instruction, state)
+            }
+            iced_x86::Mnemonic::Js => {
+                self.execute_js(instruction, state)
+            }
+            iced_x86::Mnemonic::Jns => {
+                self.execute_jns(instruction, state)
+            }
+            iced_x86::Mnemonic::Jo => {
+                self.execute_jo(instruction, state)
+            }
+            iced_x86::Mnemonic::Jno => {
+                self.execute_jno(instruction, state)
+            }
             _ => {
                 // Unimplemented instruction
                 log::warn!("Unimplemented instruction: {:?}", instruction.mnemonic());
@@ -126,7 +192,7 @@ impl<'a> InstructionDecoder<'a> {
         Ok(())
     }
 
-    fn execute_ret(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+    fn execute_ret(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Pop return address
         let return_addr = state.read_u64(state.registers.rsp)?;
         state.registers.rsp += 8;
@@ -156,7 +222,7 @@ impl<'a> InstructionDecoder<'a> {
         Ok(())
     }
 
-    fn execute_iret(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+    fn execute_iret(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Pop RIP, CS, RFLAGS
         let rip = state.read_u64(state.registers.rsp)?;
         state.registers.rsp += 8;
@@ -271,7 +337,7 @@ impl<'a> InstructionDecoder<'a> {
     }
 
     fn update_arithmetic_flags(&self, result: u64, src: u64, dst: u64, is_subtraction: bool, state: &mut CpuState) {
-        let flags = state.registers.get_flags();
+        let _flags = state.registers.get_flags();
         
         // Zero flag
         state.registers.set_flag(RFlags::ZERO, result == 0);
@@ -299,5 +365,254 @@ impl<'a> InstructionDecoder<'a> {
         let low_byte = (result & 0xFF) as u8;
         let parity = low_byte.count_ones() % 2 == 0;
         state.registers.set_flag(RFlags::PARITY, parity);
+    }
+
+    // Additional instruction implementations
+    fn execute_cmp(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid CMP instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let result = dst.wrapping_sub(src);
+
+        // Update flags (CMP doesn't store result)
+        self.update_arithmetic_flags(result, src, dst, true, state);
+        Ok(())
+    }
+
+    fn execute_inc(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid INC instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let result = src.wrapping_add(1);
+        self.set_operand_value(instruction, 0, result, state)?;
+        
+        // Update flags (INC doesn't affect carry flag)
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
+        state.registers.set_flag(RFlags::OVERFLOW, result == 0x8000000000000000);
+        
+        let low_byte = (result & 0xFF) as u8;
+        let parity = low_byte.count_ones() % 2 == 0;
+        state.registers.set_flag(RFlags::PARITY, parity);
+        Ok(())
+    }
+
+    fn execute_dec(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid DEC instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let result = src.wrapping_sub(1);
+        self.set_operand_value(instruction, 0, result, state)?;
+        
+        // Update flags (DEC doesn't affect carry flag)
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
+        state.registers.set_flag(RFlags::OVERFLOW, result == 0x7FFFFFFFFFFFFFFF);
+        
+        let low_byte = (result & 0xFF) as u8;
+        let parity = low_byte.count_ones() % 2 == 0;
+        state.registers.set_flag(RFlags::PARITY, parity);
+        Ok(())
+    }
+
+    fn execute_and(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid AND instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let result = dst & src;
+
+        self.set_operand_value(instruction, 1, result, state)?;
+        self.update_logical_flags(result, state);
+        Ok(())
+    }
+
+    fn execute_or(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid OR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let result = dst | src;
+
+        self.set_operand_value(instruction, 1, result, state)?;
+        self.update_logical_flags(result, state);
+        Ok(())
+    }
+
+    fn execute_xor(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid XOR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let result = dst ^ src;
+
+        self.set_operand_value(instruction, 1, result, state)?;
+        self.update_logical_flags(result, state);
+        Ok(())
+    }
+
+    fn execute_test(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid TEST instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let result = dst & src;
+
+        // Update flags (TEST doesn't store result)
+        self.update_logical_flags(result, state);
+        Ok(())
+    }
+
+    fn update_logical_flags(&self, result: u64, state: &mut CpuState) {
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        state.registers.set_flag(RFlags::OVERFLOW, false);
+        
+        let low_byte = (result & 0xFF) as u8;
+        let parity = low_byte.count_ones() % 2 == 0;
+        state.registers.set_flag(RFlags::PARITY, parity);
+    }
+
+    // Conditional jump implementations
+    fn execute_je(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if state.registers.get_flag(RFlags::ZERO) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jne(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if !state.registers.get_flag(RFlags::ZERO) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jl(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        let sign = state.registers.get_flag(RFlags::SIGN);
+        let overflow = state.registers.get_flag(RFlags::OVERFLOW);
+        if sign != overflow {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jle(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        let zero = state.registers.get_flag(RFlags::ZERO);
+        let sign = state.registers.get_flag(RFlags::SIGN);
+        let overflow = state.registers.get_flag(RFlags::OVERFLOW);
+        if zero || (sign != overflow) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jg(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        let zero = state.registers.get_flag(RFlags::ZERO);
+        let sign = state.registers.get_flag(RFlags::SIGN);
+        let overflow = state.registers.get_flag(RFlags::OVERFLOW);
+        if !zero && (sign == overflow) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jge(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        let sign = state.registers.get_flag(RFlags::SIGN);
+        let overflow = state.registers.get_flag(RFlags::OVERFLOW);
+        if sign == overflow {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if state.registers.get_flag(RFlags::CARRY) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jbe(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        let carry = state.registers.get_flag(RFlags::CARRY);
+        let zero = state.registers.get_flag(RFlags::ZERO);
+        if carry || zero {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_ja(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        let carry = state.registers.get_flag(RFlags::CARRY);
+        let zero = state.registers.get_flag(RFlags::ZERO);
+        if !carry && !zero {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jae(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if !state.registers.get_flag(RFlags::CARRY) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_js(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if state.registers.get_flag(RFlags::SIGN) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jns(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if !state.registers.get_flag(RFlags::SIGN) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jo(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if state.registers.get_flag(RFlags::OVERFLOW) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    fn execute_jno(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if !state.registers.get_flag(RFlags::OVERFLOW) {
+            let target = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rip = target;
+        }
+        Ok(())
     }
 }
