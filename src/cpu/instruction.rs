@@ -23,355 +23,42 @@ impl<'a> InstructionDecoder<'a> {
 
     pub fn execute_instruction(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         match instruction.mnemonic() {
-            iced_x86::Mnemonic::Nop => {
-                // NOP instruction - do nothing
-                Ok(())
+            iced_x86::Mnemonic::INVALID => {
+                Err(crate::EmulatorError::Cpu("Invalid instruction".to_string()))
             }
-            iced_x86::Mnemonic::Mov => {
-                self.execute_mov(instruction, state)
+            iced_x86::Mnemonic::Aaa => {
+                self.execute_aaa(instruction, state)
             }
-            iced_x86::Mnemonic::Xchg => {
-                self.execute_xchg(instruction, state)
+            iced_x86::Mnemonic::Aad => {
+                self.execute_aad(instruction, state)
             }
-            iced_x86::Mnemonic::Lea => {
-                self.execute_lea(instruction, state)
+            iced_x86::Mnemonic::Aam => {
+                self.execute_aam(instruction, state)
+            }
+            iced_x86::Mnemonic::Aas => {
+                self.execute_aas(instruction, state)
+            }
+            iced_x86::Mnemonic::Adc => {
+                self.execute_adc(instruction, state)
             }
             iced_x86::Mnemonic::Add => {
                 self.execute_add(instruction, state)
             }
-            iced_x86::Mnemonic::Sub => {
-                self.execute_sub(instruction, state)
-            }
-            iced_x86::Mnemonic::Jmp => {
-                self.execute_jmp(instruction, state)
-            }
-            iced_x86::Mnemonic::Call => {
-                self.execute_call(instruction, state)
-            }
-            iced_x86::Mnemonic::Ret => {
-                self.execute_ret(instruction, state)
-            }
-            iced_x86::Mnemonic::Push => {
-                self.execute_push(instruction, state)
-            }
-            iced_x86::Mnemonic::Pop => {
-                self.execute_pop(instruction, state)
-            }
-            iced_x86::Mnemonic::Hlt => {
-                state.halt();
-                Ok(())
-            }
-            iced_x86::Mnemonic::Int => {
-                self.execute_int(instruction, state)
-            }
-            iced_x86::Mnemonic::Iret => {
-                self.execute_iret(instruction, state)
-            }
-            // Additional arithmetic instructions
-            iced_x86::Mnemonic::Cmp => {
-                self.execute_cmp(instruction, state)
-            }
-            iced_x86::Mnemonic::Inc => {
-                self.execute_inc(instruction, state)
-            }
-            iced_x86::Mnemonic::Dec => {
-                self.execute_dec(instruction, state)
-            }
-            iced_x86::Mnemonic::Mul => {
-                self.execute_mul(instruction, state)
-            }
-            iced_x86::Mnemonic::Imul => {
-                self.execute_imul(instruction, state)
-            }
-            iced_x86::Mnemonic::Div => {
-                self.execute_div(instruction, state)
-            }
-            iced_x86::Mnemonic::Idiv => {
-                self.execute_idiv(instruction, state)
-            }
-            iced_x86::Mnemonic::Neg => {
-                self.execute_neg(instruction, state)
-            }
-            // Logical instructions
             iced_x86::Mnemonic::And => {
                 self.execute_and(instruction, state)
             }
-            iced_x86::Mnemonic::Or => {
-                self.execute_or(instruction, state)
+            iced_x86::Mnemonic::Arpl => {
+                self.execute_arpl(instruction, state)
             }
-            iced_x86::Mnemonic::Xor => {
-                self.execute_xor(instruction, state)
+            iced_x86::Mnemonic::Bsf => {
+                self.execute_bsf(instruction, state)
             }
-            iced_x86::Mnemonic::Test => {
-                self.execute_test(instruction, state)
+            iced_x86::Mnemonic::Bsr => {
+                self.execute_bsr(instruction, state)
             }
-            iced_x86::Mnemonic::Not => {
-                self.execute_not(instruction, state)
+            iced_x86::Mnemonic::Bswap => {
+                self.execute_bswap(instruction, state)
             }
-            iced_x86::Mnemonic::Shl => {
-                self.execute_shl(instruction, state)
-            }
-            iced_x86::Mnemonic::Shr => {
-                self.execute_shr(instruction, state)
-            }
-            iced_x86::Mnemonic::Sar => {
-                self.execute_sar(instruction, state)
-            }
-            iced_x86::Mnemonic::Rol => {
-                self.execute_rol(instruction, state)
-            }
-            iced_x86::Mnemonic::Ror => {
-                self.execute_ror(instruction, state)
-            }
-            iced_x86::Mnemonic::Rcl => {
-                self.execute_rcl(instruction, state)
-            }
-            iced_x86::Mnemonic::Rcr => {
-                self.execute_rcr(instruction, state)
-            }
-            // Conditional jumps
-            iced_x86::Mnemonic::Je => {
-                self.execute_je(instruction, state)
-            }
-            iced_x86::Mnemonic::Jne => {
-                self.execute_jne(instruction, state)
-            }
-            iced_x86::Mnemonic::Jl => {
-                self.execute_jl(instruction, state)
-            }
-            iced_x86::Mnemonic::Jle => {
-                self.execute_jle(instruction, state)
-            }
-            iced_x86::Mnemonic::Jg => {
-                self.execute_jg(instruction, state)
-            }
-            iced_x86::Mnemonic::Jge => {
-                self.execute_jge(instruction, state)
-            }
-            iced_x86::Mnemonic::Jb => {
-                self.execute_jb(instruction, state)
-            }
-            iced_x86::Mnemonic::Jbe => {
-                self.execute_jbe(instruction, state)
-            }
-            iced_x86::Mnemonic::Ja => {
-                self.execute_ja(instruction, state)
-            }
-            iced_x86::Mnemonic::Jae => {
-                self.execute_jae(instruction, state)
-            }
-            iced_x86::Mnemonic::Js => {
-                self.execute_js(instruction, state)
-            }
-            iced_x86::Mnemonic::Jns => {
-                self.execute_jns(instruction, state)
-            }
-            iced_x86::Mnemonic::Jo => {
-                self.execute_jo(instruction, state)
-            }
-            iced_x86::Mnemonic::Jno => {
-                self.execute_jno(instruction, state)
-            }
-            // Loop instructions
-            iced_x86::Mnemonic::Loop => {
-                self.execute_loop(instruction, state)
-            }
-            iced_x86::Mnemonic::Loope => {
-                self.execute_loope(instruction, state)
-            }
-            iced_x86::Mnemonic::Loopne => {
-                self.execute_loopne(instruction, state)
-            }
-            iced_x86::Mnemonic::Jcxz => {
-                self.execute_jcxz(instruction, state)
-            }
-            iced_x86::Mnemonic::Jecxz => {
-                self.execute_jecxz(instruction, state)
-            }
-            iced_x86::Mnemonic::Jrcxz => {
-                self.execute_jrcxz(instruction, state)
-            }
-            // String instructions
-            iced_x86::Mnemonic::Movsb => {
-                self.execute_movsb(instruction, state)
-            }
-            iced_x86::Mnemonic::Movsw => {
-                self.execute_movsw(instruction, state)
-            }
-            iced_x86::Mnemonic::Movsd => {
-                self.execute_movsd(instruction, state)
-            }
-            iced_x86::Mnemonic::Movsq => {
-                self.execute_movsq(instruction, state)
-            }
-            iced_x86::Mnemonic::Cmpsb => {
-                self.execute_cmpsb(instruction, state)
-            }
-            iced_x86::Mnemonic::Cmpsw => {
-                self.execute_cmpsw(instruction, state)
-            }
-            iced_x86::Mnemonic::Cmpsd => {
-                self.execute_cmpsd(instruction, state)
-            }
-            iced_x86::Mnemonic::Cmpsq => {
-                self.execute_cmpsq(instruction, state)
-            }
-            iced_x86::Mnemonic::Scasb => {
-                self.execute_scasb(instruction, state)
-            }
-            iced_x86::Mnemonic::Scasw => {
-                self.execute_scasw(instruction, state)
-            }
-            iced_x86::Mnemonic::Scasd => {
-                self.execute_scasd(instruction, state)
-            }
-            iced_x86::Mnemonic::Scasq => {
-                self.execute_scasq(instruction, state)
-            }
-            iced_x86::Mnemonic::Lodsb => {
-                self.execute_lodsb(instruction, state)
-            }
-            iced_x86::Mnemonic::Lodsw => {
-                self.execute_lodsw(instruction, state)
-            }
-            iced_x86::Mnemonic::Lodsd => {
-                self.execute_lodsd(instruction, state)
-            }
-            iced_x86::Mnemonic::Lodsq => {
-                self.execute_lodsq(instruction, state)
-            }
-            iced_x86::Mnemonic::Stosb => {
-                self.execute_stosb(instruction, state)
-            }
-            iced_x86::Mnemonic::Stosw => {
-                self.execute_stosw(instruction, state)
-            }
-            iced_x86::Mnemonic::Stosd => {
-                self.execute_stosd(instruction, state)
-            }
-            iced_x86::Mnemonic::Stosq => {
-                self.execute_stosq(instruction, state)
-            }
-            // Additional control flow instructions
-            iced_x86::Mnemonic::Syscall => {
-                self.execute_syscall(instruction, state)
-            }
-            iced_x86::Mnemonic::Sysret => {
-                self.execute_sysret(instruction, state)
-            }
-            // I/O instructions
-            iced_x86::Mnemonic::In => {
-                self.execute_in(instruction, state)
-            }
-            iced_x86::Mnemonic::Out => {
-                self.execute_out(instruction, state)
-            }
-            iced_x86::Mnemonic::Insb => {
-                self.execute_insb(instruction, state)
-            }
-            iced_x86::Mnemonic::Insw => {
-                self.execute_insw(instruction, state)
-            }
-            iced_x86::Mnemonic::Insd => {
-                self.execute_insd(instruction, state)
-            }
-            iced_x86::Mnemonic::Outsb => {
-                self.execute_outsb(instruction, state)
-            }
-            iced_x86::Mnemonic::Outsw => {
-                self.execute_outsw(instruction, state)
-            }
-            iced_x86::Mnemonic::Outsd => {
-                self.execute_outsd(instruction, state)
-            }
-            // System instructions
-            iced_x86::Mnemonic::Cli => {
-                self.execute_cli(instruction, state)
-            }
-            iced_x86::Mnemonic::Sti => {
-                self.execute_sti(instruction, state)
-            }
-            iced_x86::Mnemonic::Stc => {
-                self.execute_stc(instruction, state)
-            }
-            iced_x86::Mnemonic::Clc => {
-                self.execute_clc(instruction, state)
-            }
-            iced_x86::Mnemonic::Cmc => {
-                self.execute_cmc(instruction, state)
-            }
-            iced_x86::Mnemonic::Std => {
-                self.execute_std(instruction, state)
-            }
-            iced_x86::Mnemonic::Cld => {
-                self.execute_cld(instruction, state)
-            }
-            iced_x86::Mnemonic::Lgdt => {
-                self.execute_lgdt(instruction, state)
-            }
-            iced_x86::Mnemonic::Lidt => {
-                self.execute_lidt(instruction, state)
-            }
-            iced_x86::Mnemonic::Ltr => {
-                self.execute_ltr(instruction, state)
-            }
-            iced_x86::Mnemonic::Str => {
-                self.execute_str(instruction, state)
-            }
-            iced_x86::Mnemonic::Lmsw => {
-                self.execute_lmsw(instruction, state)
-            }
-            iced_x86::Mnemonic::Smsw => {
-                self.execute_smsw(instruction, state)
-            }
-            // Register operations
-            iced_x86::Mnemonic::Pusha => {
-                self.execute_pusha(instruction, state)
-            }
-            iced_x86::Mnemonic::Popa => {
-                self.execute_popa(instruction, state)
-            }
-            iced_x86::Mnemonic::Pushad => {
-                self.execute_pushad(instruction, state)
-            }
-            iced_x86::Mnemonic::Popad => {
-                self.execute_popad(instruction, state)
-            }
-            iced_x86::Mnemonic::Lahf => {
-                self.execute_lahf(instruction, state)
-            }
-            iced_x86::Mnemonic::Sahf => {
-                self.execute_sahf(instruction, state)
-            }
-            iced_x86::Mnemonic::Pushf => {
-                self.execute_pushf(instruction, state)
-            }
-            iced_x86::Mnemonic::Popf => {
-                self.execute_popf(instruction, state)
-            }
-            // Segment operations
-            iced_x86::Mnemonic::Lds => {
-                self.execute_lds(instruction, state)
-            }
-            iced_x86::Mnemonic::Les => {
-                self.execute_les(instruction, state)
-            }
-            iced_x86::Mnemonic::Lfs => {
-                self.execute_lfs(instruction, state)
-            }
-            iced_x86::Mnemonic::Lgs => {
-                self.execute_lgs(instruction, state)
-            }
-            iced_x86::Mnemonic::Lss => {
-                self.execute_lss(instruction, state)
-            }
-            iced_x86::Mnemonic::Movsx => {
-                self.execute_movsx(instruction, state)
-            }
-            iced_x86::Mnemonic::Movzx => {
-                self.execute_movzx(instruction, state)
-            }
-            // Bit manipulation instructions
             iced_x86::Mnemonic::Bt => {
                 self.execute_bt(instruction, state)
             }
@@ -384,24 +71,460 @@ impl<'a> InstructionDecoder<'a> {
             iced_x86::Mnemonic::Bts => {
                 self.execute_bts(instruction, state)
             }
-            iced_x86::Mnemonic::Bsf => {
-                self.execute_bsf(instruction, state)
+            iced_x86::Mnemonic::Call => {
+                self.execute_call(instruction, state)
             }
-            iced_x86::Mnemonic::Bsr => {
-                self.execute_bsr(instruction, state)
+            iced_x86::Mnemonic::Cbw => {
+                self.execute_cbw(instruction, state)
             }
-            iced_x86::Mnemonic::Popcnt => {
-                self.execute_popcnt(instruction, state)
+            iced_x86::Mnemonic::Cdq => {
+                self.execute_cdq(instruction, state)
             }
-            // Additional missing instructions
-            iced_x86::Mnemonic::Xlatb => {
-                self.execute_xlat(instruction, state)
+            iced_x86::Mnemonic::Cdqe => {
+                self.execute_cdqe(instruction, state)
+            }
+            iced_x86::Mnemonic::Clc => {
+                self.execute_clc(instruction, state)
+            }
+            iced_x86::Mnemonic::Cld => {
+                self.execute_cld(instruction, state)
+            }
+            iced_x86::Mnemonic::Cli => {
+                self.execute_cli(instruction, state)
+            }
+            iced_x86::Mnemonic::Clts => {
+                self.execute_clts(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmc => {
+                self.execute_cmc(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmp => {
+                self.execute_cmp(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpsb => {
+                self.execute_cmpsb(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpsd => {
+                self.execute_cmpsd(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpsq => {
+                self.execute_cmpsq(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpsw => {
+                self.execute_cmpsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpxchg => {
+                self.execute_cmpxchg(instruction, state)
             }
             iced_x86::Mnemonic::Cpuid => {
                 self.execute_cpuid(instruction, state)
             }
-            iced_x86::Mnemonic::Wait => {
-                self.execute_wait(instruction, state)
+            iced_x86::Mnemonic::Cqo => {
+                self.execute_cqo(instruction, state)
+            }
+            iced_x86::Mnemonic::Cwd => {
+                self.execute_cwd(instruction, state)
+            }
+            iced_x86::Mnemonic::Cwde => {
+                self.execute_cwde(instruction, state)
+            }
+            iced_x86::Mnemonic::Daa => {
+                self.execute_daa(instruction, state)
+            }
+            iced_x86::Mnemonic::Das => {
+                self.execute_das(instruction, state)
+            }
+            iced_x86::Mnemonic::Dec => {
+                self.execute_dec(instruction, state)
+            }
+            iced_x86::Mnemonic::Div => {
+                self.execute_div(instruction, state)
+            }
+            iced_x86::Mnemonic::Enter => {
+                self.execute_enter(instruction, state)
+            }
+            iced_x86::Mnemonic::Hlt => {
+                state.halt();
+                Ok(())
+            }
+            iced_x86::Mnemonic::Idiv => {
+                self.execute_idiv(instruction, state)
+            }
+            iced_x86::Mnemonic::Imul => {
+                self.execute_imul(instruction, state)
+            }
+            iced_x86::Mnemonic::In => {
+                self.execute_in(instruction, state)
+            }
+            iced_x86::Mnemonic::Inc => {
+                self.execute_inc(instruction, state)
+            }
+            iced_x86::Mnemonic::Insb => {
+                self.execute_insb(instruction, state)
+            }
+            iced_x86::Mnemonic::Insd => {
+                self.execute_insd(instruction, state)
+            }
+            iced_x86::Mnemonic::Insw => {
+                self.execute_insw(instruction, state)
+            }
+            iced_x86::Mnemonic::Int => {
+                self.execute_int(instruction, state)
+            }
+            iced_x86::Mnemonic::Into => {
+                self.execute_into(instruction, state)
+            }
+            iced_x86::Mnemonic::Invd => {
+                self.execute_invd(instruction, state)
+            }
+            iced_x86::Mnemonic::Invlpg => {
+                self.execute_invlpg(instruction, state)
+            }
+            iced_x86::Mnemonic::Iret => {
+                self.execute_iret(instruction, state)
+            }
+            iced_x86::Mnemonic::Ja => {
+                self.execute_ja(instruction, state)
+            }
+            iced_x86::Mnemonic::Jae => {
+                self.execute_jae(instruction, state)
+            }
+            iced_x86::Mnemonic::Jb => {
+                self.execute_jb(instruction, state)
+            }
+            iced_x86::Mnemonic::Jbe => {
+                self.execute_jbe(instruction, state)
+            }
+            iced_x86::Mnemonic::Jcxz => {
+                self.execute_jcxz(instruction, state)
+            }
+            iced_x86::Mnemonic::Je => {
+                self.execute_je(instruction, state)
+            }
+            iced_x86::Mnemonic::Jecxz => {
+                self.execute_jecxz(instruction, state)
+            }
+            iced_x86::Mnemonic::Jg => {
+                self.execute_jg(instruction, state)
+            }
+            iced_x86::Mnemonic::Jge => {
+                self.execute_jge(instruction, state)
+            }
+            iced_x86::Mnemonic::Jl => {
+                self.execute_jl(instruction, state)
+            }
+            iced_x86::Mnemonic::Jle => {
+                self.execute_jle(instruction, state)
+            }
+            iced_x86::Mnemonic::Jmp => {
+                self.execute_jmp(instruction, state)
+            }
+            iced_x86::Mnemonic::Jne => {
+                self.execute_jne(instruction, state)
+            }
+            iced_x86::Mnemonic::Jno => {
+                self.execute_jno(instruction, state)
+            }
+            iced_x86::Mnemonic::Jns => {
+                self.execute_jns(instruction, state)
+            }
+            iced_x86::Mnemonic::Jo => {
+                self.execute_jo(instruction, state)
+            }
+            iced_x86::Mnemonic::Jrcxz => {
+                self.execute_jrcxz(instruction, state)
+            }
+            iced_x86::Mnemonic::Js => {
+                self.execute_js(instruction, state)
+            }
+            iced_x86::Mnemonic::Lahf => {
+                self.execute_lahf(instruction, state)
+            }
+            iced_x86::Mnemonic::Lar => {
+                self.execute_lar(instruction, state)
+            }
+            iced_x86::Mnemonic::Lds => {
+                self.execute_lds(instruction, state)
+            }
+            iced_x86::Mnemonic::Lea => {
+                self.execute_lea(instruction, state)
+            }
+            iced_x86::Mnemonic::Leave => {
+                self.execute_leave(instruction, state)
+            }
+            iced_x86::Mnemonic::Les => {
+                self.execute_les(instruction, state)
+            }
+            iced_x86::Mnemonic::Lfence => {
+                self.execute_lfence(instruction, state)
+            }
+            iced_x86::Mnemonic::Lfs => {
+                self.execute_lfs(instruction, state)
+            }
+            iced_x86::Mnemonic::Lgdt => {
+                self.execute_lgdt(instruction, state)
+            }
+            iced_x86::Mnemonic::Lgs => {
+                self.execute_lgs(instruction, state)
+            }
+            iced_x86::Mnemonic::Lidt => {
+                self.execute_lidt(instruction, state)
+            }
+            iced_x86::Mnemonic::Lldt => {
+                self.execute_lldt(instruction, state)
+            }
+            iced_x86::Mnemonic::Lmsw => {
+                self.execute_lmsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Lodsb => {
+                self.execute_lodsb(instruction, state)
+            }
+            iced_x86::Mnemonic::Lodsd => {
+                self.execute_lodsd(instruction, state)
+            }
+            iced_x86::Mnemonic::Lodsq => {
+                self.execute_lodsq(instruction, state)
+            }
+            iced_x86::Mnemonic::Lodsw => {
+                self.execute_lodsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Loop => {
+                self.execute_loop(instruction, state)
+            }
+            iced_x86::Mnemonic::Loope => {
+                self.execute_loope(instruction, state)
+            }
+            iced_x86::Mnemonic::Loopne => {
+                self.execute_loopne(instruction, state)
+            }
+            iced_x86::Mnemonic::Lsl => {
+                self.execute_lsl(instruction, state)
+            }
+            iced_x86::Mnemonic::Lss => {
+                self.execute_lss(instruction, state)
+            }
+            iced_x86::Mnemonic::Ltr => {
+                self.execute_ltr(instruction, state)
+            }
+            iced_x86::Mnemonic::Mfence => {
+                self.execute_mfence(instruction, state)
+            }
+            iced_x86::Mnemonic::Mov => {
+                self.execute_mov(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsb => {
+                self.execute_movsb(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsd => {
+                self.execute_movsd(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsq => {
+                self.execute_movsq(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsw => {
+                self.execute_movsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsx => {
+                self.execute_movsx(instruction, state)
+            }
+            iced_x86::Mnemonic::Movzx => {
+                self.execute_movzx(instruction, state)
+            }
+            iced_x86::Mnemonic::Mul => {
+                self.execute_mul(instruction, state)
+            }
+            iced_x86::Mnemonic::Neg => {
+                self.execute_neg(instruction, state)
+            }
+            iced_x86::Mnemonic::Nop => {
+                // NOP instruction - do nothing
+                Ok(())
+            }
+            iced_x86::Mnemonic::Not => {
+                self.execute_not(instruction, state)
+            }
+            iced_x86::Mnemonic::Or => {
+                self.execute_or(instruction, state)
+            }
+            iced_x86::Mnemonic::Out => {
+                self.execute_out(instruction, state)
+            }
+            iced_x86::Mnemonic::Outsb => {
+                self.execute_outsb(instruction, state)
+            }
+            iced_x86::Mnemonic::Outsd => {
+                self.execute_outsd(instruction, state)
+            }
+            iced_x86::Mnemonic::Outsw => {
+                self.execute_outsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Pause => {
+                self.execute_pause(instruction, state)
+            }
+            iced_x86::Mnemonic::Pop => {
+                self.execute_pop(instruction, state)
+            }
+            iced_x86::Mnemonic::Popa => {
+                self.execute_popa(instruction, state)
+            }
+            iced_x86::Mnemonic::Popcnt => {
+                self.execute_popcnt(instruction, state)
+            }
+            iced_x86::Mnemonic::Popf => {
+                self.execute_popf(instruction, state)
+            }
+            iced_x86::Mnemonic::Push => {
+                self.execute_push(instruction, state)
+            }
+            iced_x86::Mnemonic::Pusha => {
+                self.execute_pusha(instruction, state)
+            }
+            iced_x86::Mnemonic::Pushf => {
+                self.execute_pushf(instruction, state)
+            }
+            iced_x86::Mnemonic::Rcl => {
+                self.execute_rcl(instruction, state)
+            }
+            iced_x86::Mnemonic::Rcr => {
+                self.execute_rcr(instruction, state)
+            }
+            iced_x86::Mnemonic::Rdmsr => {
+                self.execute_rdmsr(instruction, state)
+            }
+            iced_x86::Mnemonic::Rdpmc => {
+                self.execute_rdpmc(instruction, state)
+            }
+            iced_x86::Mnemonic::Rdrand => {
+                self.execute_rdrand(instruction, state)
+            }
+            iced_x86::Mnemonic::Rdseed => {
+                self.execute_rdseed(instruction, state)
+            }
+            iced_x86::Mnemonic::Rdtsc => {
+                self.execute_rdtsc(instruction, state)
+            }
+            iced_x86::Mnemonic::Rdtscp => {
+                self.execute_rdtscp(instruction, state)
+            }
+            iced_x86::Mnemonic::Ret => {
+                self.execute_ret(instruction, state)
+            }
+            iced_x86::Mnemonic::Rol => {
+                self.execute_rol(instruction, state)
+            }
+            iced_x86::Mnemonic::Ror => {
+                self.execute_ror(instruction, state)
+            }
+            iced_x86::Mnemonic::Rsm => {
+                self.execute_rsm(instruction, state)
+            }
+            iced_x86::Mnemonic::Sahf => {
+                self.execute_sahf(instruction, state)
+            }
+            iced_x86::Mnemonic::Sal => {
+                self.execute_shl(instruction, state)
+            }
+            iced_x86::Mnemonic::Salc => {
+                self.execute_salc(instruction, state)
+            }
+            iced_x86::Mnemonic::Sar => {
+                self.execute_sar(instruction, state)
+            }
+            iced_x86::Mnemonic::Sbb => {
+                self.execute_sbb(instruction, state)
+            }
+            iced_x86::Mnemonic::Scasb => {
+                self.execute_scasb(instruction, state)
+            }
+            iced_x86::Mnemonic::Scasd => {
+                self.execute_scasd(instruction, state)
+            }
+            iced_x86::Mnemonic::Scasq => {
+                self.execute_scasq(instruction, state)
+            }
+            iced_x86::Mnemonic::Scasw => {
+                self.execute_scasw(instruction, state)
+            }
+            iced_x86::Mnemonic::Sfence => {
+                self.execute_sfence(instruction, state)
+            }
+            iced_x86::Mnemonic::Sgdt => {
+                self.execute_sgdt(instruction, state)
+            }
+            iced_x86::Mnemonic::Shl => {
+                self.execute_shl(instruction, state)
+            }
+            iced_x86::Mnemonic::Shr => {
+                self.execute_shr(instruction, state)
+            }
+            iced_x86::Mnemonic::Sidt => {
+                self.execute_sidt(instruction, state)
+            }
+            iced_x86::Mnemonic::Sldt => {
+                self.execute_sldt(instruction, state)
+            }
+            iced_x86::Mnemonic::Smsw => {
+                self.execute_smsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Stc => {
+                self.execute_stc(instruction, state)
+            }
+            iced_x86::Mnemonic::Std => {
+                self.execute_std(instruction, state)
+            }
+            iced_x86::Mnemonic::Sti => {
+                self.execute_sti(instruction, state)
+            }
+            iced_x86::Mnemonic::Stosb => {
+                self.execute_stosb(instruction, state)
+            }
+            iced_x86::Mnemonic::Stosd => {
+                self.execute_stosd(instruction, state)
+            }
+            iced_x86::Mnemonic::Stosq => {
+                self.execute_stosq(instruction, state)
+            }
+            iced_x86::Mnemonic::Stosw => {
+                self.execute_stosw(instruction, state)
+            }
+            iced_x86::Mnemonic::Str => {
+                self.execute_str(instruction, state)
+            }
+            iced_x86::Mnemonic::Sub => {
+                self.execute_sub(instruction, state)
+            }
+            iced_x86::Mnemonic::Swapgs => {
+                self.execute_swapgs(instruction, state)
+            }
+            iced_x86::Mnemonic::Syscall => {
+                self.execute_syscall(instruction, state)
+            }
+            iced_x86::Mnemonic::Sysret => {
+                self.execute_sysret(instruction, state)
+            }
+            iced_x86::Mnemonic::Test => {
+                self.execute_test(instruction, state)
+            }
+            iced_x86::Mnemonic::Verr => {
+                self.execute_verr(instruction, state)
+            }
+            iced_x86::Mnemonic::Verw => {
+                self.execute_verw(instruction, state)
+            }
+            iced_x86::Mnemonic::Wbinvd => {
+                self.execute_wbinvd(instruction, state)
+            }
+            iced_x86::Mnemonic::Wrmsr => {
+                self.execute_wrmsr(instruction, state)
+            }
+            iced_x86::Mnemonic::Xchg => {
+                self.execute_xchg(instruction, state)
+            }
+            iced_x86::Mnemonic::Xlatb => {
+                self.execute_xlat(instruction, state)
+            }
+            iced_x86::Mnemonic::Xor => {
+                self.execute_xor(instruction, state)
             }
             _ => {
                 // Unimplemented instruction
@@ -2240,6 +2363,518 @@ impl<'a> InstructionDecoder<'a> {
     fn execute_wait(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
         // WAIT instruction - wait for floating point operations
         // For now, just do nothing (no floating point unit)
+        Ok(())
+    }
+
+    // Additional missing instruction implementations
+    fn execute_aaa(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // ASCII Adjust After Addition
+        let al = (state.registers.rax & 0xFF) as u8;
+        if (al & 0x0F) > 9 || state.registers.get_flag(RFlags::AUXILIARY) {
+            state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | ((al + 6) as u64);
+            state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFF00FF) | (((state.registers.rax >> 8) + 1) << 8);
+            state.registers.set_flag(RFlags::AUXILIARY, true);
+            state.registers.set_flag(RFlags::CARRY, true);
+        } else {
+            state.registers.set_flag(RFlags::AUXILIARY, false);
+            state.registers.set_flag(RFlags::CARRY, false);
+        }
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF0F) | ((state.registers.rax & 0x0F) as u64);
+        Ok(())
+    }
+
+    fn execute_aad(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // ASCII Adjust Before Division
+        let imm = if instruction.op_count() == 1 {
+            self.get_operand_value(instruction, 0, state)? as u8
+        } else {
+            10
+        };
+        let al = (state.registers.rax & 0xFF) as u8;
+        let ah = ((state.registers.rax >> 8) & 0xFF) as u8;
+        let result = al + (ah * imm);
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFF0000) | (result as u64);
+        self.update_logical_flags(result as u64, state);
+        Ok(())
+    }
+
+    fn execute_aam(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // ASCII Adjust After Multiplication
+        let imm = if instruction.op_count() == 1 {
+            self.get_operand_value(instruction, 0, state)? as u8
+        } else {
+            10
+        };
+        let al = (state.registers.rax & 0xFF) as u8;
+        let ah = al / imm;
+        let new_al = al % imm;
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFF0000) | ((ah as u64) << 8) | (new_al as u64);
+        self.update_logical_flags(new_al as u64, state);
+        Ok(())
+    }
+
+    fn execute_aas(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // ASCII Adjust After Subtraction
+        let al = (state.registers.rax & 0xFF) as u8;
+        if (al & 0x0F) > 9 || state.registers.get_flag(RFlags::AUXILIARY) {
+            state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | ((al - 6) as u64);
+            state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFF00FF) | (((state.registers.rax >> 8) - 1) << 8);
+            state.registers.set_flag(RFlags::AUXILIARY, true);
+            state.registers.set_flag(RFlags::CARRY, true);
+        } else {
+            state.registers.set_flag(RFlags::AUXILIARY, false);
+            state.registers.set_flag(RFlags::CARRY, false);
+        }
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF0F) | ((state.registers.rax & 0x0F) as u64);
+        Ok(())
+    }
+
+    fn execute_adc(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid ADC instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let carry = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
+        let result = dst.wrapping_add(src).wrapping_add(carry);
+
+        self.set_operand_value(instruction, 1, result, state)?;
+        self.update_arithmetic_flags(result, src, dst, false, state);
+        Ok(())
+    }
+
+    fn execute_arpl(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid ARPL instruction".to_string()));
+        }
+        // Adjust RPL (simplified - just log for now)
+        log::debug!("ARPL instruction executed");
+        Ok(())
+    }
+
+    fn execute_bswap(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid BSWAP instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let result = src.swap_bytes();
+        self.set_operand_value(instruction, 0, result, state)?;
+        Ok(())
+    }
+
+    fn execute_cbw(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Convert Byte to Word (sign extend AL to AX)
+        let al = (state.registers.rax & 0xFF) as i8;
+        let ax = al as i16 as u16;
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFF0000) | (ax as u64);
+        Ok(())
+    }
+
+    fn execute_cdq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Convert Doubleword to Quadword (sign extend EAX to EDX:EAX)
+        let eax = (state.registers.rax & 0xFFFFFFFF) as i32;
+        let edx = (eax >> 31) as u32;
+        state.registers.rdx = (state.registers.rdx & 0xFFFFFFFF00000000) | (edx as u64);
+        Ok(())
+    }
+
+    fn execute_cdqe(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Convert Doubleword to Quadword (sign extend EAX to RAX)
+        let eax = (state.registers.rax & 0xFFFFFFFF) as i32;
+        state.registers.rax = eax as i64 as u64;
+        Ok(())
+    }
+
+    fn execute_clts(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Clear Task-Switched Flag (simplified - just log for now)
+        log::debug!("CLTS instruction executed");
+        Ok(())
+    }
+
+    fn execute_cmpxchg(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid CMPXCHG instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let accumulator = state.registers.rax;
+
+        if accumulator == dst {
+            self.set_operand_value(instruction, 1, src, state)?;
+            state.registers.set_flag(RFlags::ZERO, true);
+        } else {
+            state.registers.rax = dst;
+            state.registers.set_flag(RFlags::ZERO, false);
+        }
+        Ok(())
+    }
+
+    fn execute_cqo(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Convert Quadword to Octaword (sign extend RAX to RDX:RAX)
+        let rax = state.registers.rax as i64;
+        state.registers.rdx = (rax >> 63) as u64;
+        Ok(())
+    }
+
+    fn execute_cwd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Convert Word to Doubleword (sign extend AX to DX:AX)
+        let ax = (state.registers.rax & 0xFFFF) as i16;
+        let dx = (ax >> 15) as u16;
+        state.registers.rdx = (state.registers.rdx & 0xFFFFFFFFFFFF0000) | (dx as u64);
+        Ok(())
+    }
+
+    fn execute_cwde(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Convert Word to Extended Doubleword (sign extend AX to EAX)
+        let ax = (state.registers.rax & 0xFFFF) as i16;
+        let eax = ax as i32 as u32;
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFF00000000) | (eax as u64);
+        Ok(())
+    }
+
+    fn execute_daa(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Decimal Adjust After Addition
+        let al = (state.registers.rax & 0xFF) as u8;
+        let mut result = al;
+        let mut cf = false;
+
+        if (al & 0x0F) > 9 || state.registers.get_flag(RFlags::AUXILIARY) {
+            result += 6;
+            state.registers.set_flag(RFlags::AUXILIARY, true);
+        } else {
+            state.registers.set_flag(RFlags::AUXILIARY, false);
+        }
+
+        if al > 0x99 || state.registers.get_flag(RFlags::CARRY) {
+            result += 0x60;
+            cf = true;
+        }
+
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | (result as u64);
+        state.registers.set_flag(RFlags::CARRY, cf);
+        self.update_logical_flags(result as u64, state);
+        Ok(())
+    }
+
+    fn execute_das(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Decimal Adjust After Subtraction
+        let al = (state.registers.rax & 0xFF) as u8;
+        let mut result = al;
+        let mut cf = false;
+
+        if (al & 0x0F) > 9 || state.registers.get_flag(RFlags::AUXILIARY) {
+            result -= 6;
+            state.registers.set_flag(RFlags::AUXILIARY, true);
+        } else {
+            state.registers.set_flag(RFlags::AUXILIARY, false);
+        }
+
+        if al > 0x99 || state.registers.get_flag(RFlags::CARRY) {
+            result -= 0x60;
+            cf = true;
+        }
+
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | (result as u64);
+        state.registers.set_flag(RFlags::CARRY, cf);
+        self.update_logical_flags(result as u64, state);
+        Ok(())
+    }
+
+    fn execute_enter(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid ENTER instruction".to_string()));
+        }
+
+        let frame_size = self.get_operand_value(instruction, 0, state)? as u32;
+        let nesting_level = self.get_operand_value(instruction, 1, state)? as u32;
+
+        // Push current frame pointer
+        state.registers.rsp -= 8;
+        state.write_u64(state.registers.rsp, state.registers.rbp)?;
+
+        // Set new frame pointer
+        state.registers.rbp = state.registers.rsp;
+
+        // Allocate local variables
+        state.registers.rsp -= frame_size as u64;
+
+        // Handle nesting levels (simplified)
+        for _ in 0..nesting_level.min(31) {
+            state.registers.rsp -= 8;
+            // In real implementation, would push previous frame pointers
+        }
+        Ok(())
+    }
+
+    fn execute_into(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Interrupt on Overflow
+        if state.registers.get_flag(RFlags::OVERFLOW) {
+            // Trigger interrupt 4
+            self.execute_int(&Instruction::default(), state)?;
+        }
+        Ok(())
+    }
+
+    fn execute_invd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Invalidate Cache (simplified - just log for now)
+        log::debug!("INVD instruction executed");
+        Ok(())
+    }
+
+    fn execute_invlpg(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid INVLPG instruction".to_string()));
+        }
+        // Invalidate TLB Entry (simplified - just log for now)
+        log::debug!("INVLPG instruction executed");
+        Ok(())
+    }
+
+    fn execute_lar(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid LAR instruction".to_string()));
+        }
+        // Load Access Rights (simplified - just log for now)
+        log::debug!("LAR instruction executed");
+        Ok(())
+    }
+
+    fn execute_leave(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Leave procedure (opposite of ENTER)
+        state.registers.rsp = state.registers.rbp;
+        state.registers.rbp = state.read_u64(state.registers.rsp)?;
+        state.registers.rsp += 8;
+        Ok(())
+    }
+
+    fn execute_lfence(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Load Fence (memory ordering)
+        // For now, just do nothing
+        Ok(())
+    }
+
+    fn execute_lldt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid LLDT instruction".to_string()));
+        }
+        // Load Local Descriptor Table (simplified - just log for now)
+        log::debug!("LLDT instruction executed");
+        Ok(())
+    }
+
+    fn execute_lsl(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid LSL instruction".to_string()));
+        }
+        // Load Segment Limit (simplified - just log for now)
+        log::debug!("LSL instruction executed");
+        Ok(())
+    }
+
+    fn execute_mfence(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Memory Fence (memory ordering)
+        // For now, just do nothing
+        Ok(())
+    }
+
+    fn execute_pause(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Pause instruction (for spin loops)
+        // For now, just do nothing
+        Ok(())
+    }
+
+    fn execute_rdmsr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 0 {
+            return Err(crate::EmulatorError::Cpu("Invalid RDMSR instruction".to_string()));
+        }
+
+        let ecx = (state.registers.rcx & 0xFFFFFFFF) as u32;
+        match ecx {
+            0x1B => {
+                // IA32_APIC_BASE
+                state.registers.rax = 0xFEE00000;
+                state.registers.rdx = 0;
+            }
+            _ => {
+                // Unsupported MSR
+                state.registers.rax = 0;
+                state.registers.rdx = 0;
+            }
+        }
+        Ok(())
+    }
+
+    fn execute_rdpmc(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 0 {
+            return Err(crate::EmulatorError::Cpu("Invalid RDPMC instruction".to_string()));
+        }
+
+        let ecx = (state.registers.rcx & 0xFFFFFFFF) as u32;
+        // Return dummy performance counter values
+        state.registers.rax = ecx as u64;
+        state.registers.rdx = 0;
+        Ok(())
+    }
+
+    fn execute_rdrand(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid RDRAND instruction".to_string()));
+        }
+
+        // Generate a pseudo-random number
+        let random_value = (state.registers.rax ^ state.registers.rcx ^ state.registers.rdx) as u64;
+        self.set_operand_value(instruction, 0, random_value, state)?;
+        state.registers.set_flag(RFlags::CARRY, true); // Indicate success
+        Ok(())
+    }
+
+    fn execute_rdseed(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid RDSEED instruction".to_string()));
+        }
+
+        // Generate a pseudo-random number (simplified)
+        let random_value = (state.registers.rax ^ state.registers.rcx ^ state.registers.rdx) as u64;
+        self.set_operand_value(instruction, 0, random_value, state)?;
+        state.registers.set_flag(RFlags::CARRY, true); // Indicate success
+        Ok(())
+    }
+
+    fn execute_rdtsc(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 0 {
+            return Err(crate::EmulatorError::Cpu("Invalid RDTSC instruction".to_string()));
+        }
+
+        // Return dummy timestamp counter values
+        state.registers.rax = 0x12345678;
+        state.registers.rdx = 0x9ABCDEF0;
+        Ok(())
+    }
+
+    fn execute_rdtscp(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 0 {
+            return Err(crate::EmulatorError::Cpu("Invalid RDTSCP instruction".to_string()));
+        }
+
+        // Return dummy timestamp counter values
+        state.registers.rax = 0x12345678;
+        state.registers.rdx = 0x9ABCDEF0;
+        state.registers.rcx = 0; // Processor ID
+        Ok(())
+    }
+
+    fn execute_rsm(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Resume from System Management Mode (simplified - just log for now)
+        log::debug!("RSM instruction executed");
+        Ok(())
+    }
+
+    fn execute_salc(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Set AL on Carry
+        let al_value = if state.registers.get_flag(RFlags::CARRY) { 0xFF } else { 0x00 };
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | (al_value as u64);
+        Ok(())
+    }
+
+    fn execute_sbb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid SBB instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let borrow = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
+        let result = dst.wrapping_sub(src).wrapping_sub(borrow);
+
+        self.set_operand_value(instruction, 1, result, state)?;
+        self.update_arithmetic_flags(result, src, dst, true, state);
+        Ok(())
+    }
+
+    fn execute_sfence(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Store Fence (memory ordering)
+        // For now, just do nothing
+        Ok(())
+    }
+
+    fn execute_sgdt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid SGDT instruction".to_string()));
+        }
+        // Store Global Descriptor Table (simplified - just log for now)
+        log::debug!("SGDT instruction executed");
+        Ok(())
+    }
+
+    fn execute_sidt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid SIDT instruction".to_string()));
+        }
+        // Store Interrupt Descriptor Table (simplified - just log for now)
+        log::debug!("SIDT instruction executed");
+        Ok(())
+    }
+
+    fn execute_sldt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid SLDT instruction".to_string()));
+        }
+        // Store Local Descriptor Table (simplified - just log for now)
+        log::debug!("SLDT instruction executed");
+        Ok(())
+    }
+
+    fn execute_swapgs(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Swap GS Base (simplified - just log for now)
+        log::debug!("SWAPGS instruction executed");
+        Ok(())
+    }
+
+    fn execute_verr(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid VERR instruction".to_string()));
+        }
+        // Verify segment for read (simplified - just log for now)
+        log::debug!("VERR instruction executed");
+        Ok(())
+    }
+
+    fn execute_verw(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid VERW instruction".to_string()));
+        }
+        // Verify segment for write (simplified - just log for now)
+        log::debug!("VERW instruction executed");
+        Ok(())
+    }
+
+    fn execute_wbinvd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        // Write Back and Invalidate Cache (simplified - just log for now)
+        log::debug!("WBINVD instruction executed");
+        Ok(())
+    }
+
+    fn execute_wrmsr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 0 {
+            return Err(crate::EmulatorError::Cpu("Invalid WRMSR instruction".to_string()));
+        }
+
+        let ecx = (state.registers.rcx & 0xFFFFFFFF) as u32;
+        let eax = (state.registers.rax & 0xFFFFFFFF) as u32;
+        let edx = (state.registers.rdx & 0xFFFFFFFF) as u32;
+        
+        match ecx {
+            0x1B => {
+                // IA32_APIC_BASE
+                log::debug!("WRMSR: IA32_APIC_BASE = 0x{:08x}{:08x}", edx, eax);
+            }
+            _ => {
+                log::debug!("WRMSR: Unsupported MSR 0x{:08x} = 0x{:08x}{:08x}", ecx, edx, eax);
+            }
+        }
         Ok(())
     }
 }
