@@ -146,6 +146,67 @@ impl<'a> InstructionDecoder<'a> {
             iced_x86::Mnemonic::Jrcxz => {
                 self.execute_jrcxz(instruction, state)
             }
+            // String instructions
+            iced_x86::Mnemonic::Movsb => {
+                self.execute_movsb(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsw => {
+                self.execute_movsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsd => {
+                self.execute_movsd(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsq => {
+                self.execute_movsq(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpsb => {
+                self.execute_cmpsb(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpsw => {
+                self.execute_cmpsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpsd => {
+                self.execute_cmpsd(instruction, state)
+            }
+            iced_x86::Mnemonic::Cmpsq => {
+                self.execute_cmpsq(instruction, state)
+            }
+            iced_x86::Mnemonic::Scasb => {
+                self.execute_scasb(instruction, state)
+            }
+            iced_x86::Mnemonic::Scasw => {
+                self.execute_scasw(instruction, state)
+            }
+            iced_x86::Mnemonic::Scasd => {
+                self.execute_scasd(instruction, state)
+            }
+            iced_x86::Mnemonic::Scasq => {
+                self.execute_scasq(instruction, state)
+            }
+            iced_x86::Mnemonic::Lodsb => {
+                self.execute_lodsb(instruction, state)
+            }
+            iced_x86::Mnemonic::Lodsw => {
+                self.execute_lodsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Lodsd => {
+                self.execute_lodsd(instruction, state)
+            }
+            iced_x86::Mnemonic::Lodsq => {
+                self.execute_lodsq(instruction, state)
+            }
+            iced_x86::Mnemonic::Stosb => {
+                self.execute_stosb(instruction, state)
+            }
+            iced_x86::Mnemonic::Stosw => {
+                self.execute_stosw(instruction, state)
+            }
+            iced_x86::Mnemonic::Stosd => {
+                self.execute_stosd(instruction, state)
+            }
+            iced_x86::Mnemonic::Stosq => {
+                self.execute_stosq(instruction, state)
+            }
             _ => {
                 // Unimplemented instruction
                 log::warn!("Unimplemented instruction: {:?}", instruction.mnemonic());
@@ -719,6 +780,383 @@ impl<'a> InstructionDecoder<'a> {
         if state.registers.rcx == 0 {
             let target = self.get_operand_value(instruction, 0, state)?;
             state.registers.rip = target;
+        }
+        Ok(())
+    }
+
+    // String instruction implementations
+    fn execute_movsb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Move byte from [RSI] to [RDI]
+        let src_addr = state.registers.rsi;
+        let dst_addr = state.registers.rdi;
+        
+        let value = state.read_u8(src_addr)?;
+        state.write_u8(dst_addr, value)?;
+        
+        // Update pointers based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(1);
+            state.registers.rdi = state.registers.rdi.wrapping_sub(1);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(1);
+            state.registers.rdi = state.registers.rdi.wrapping_add(1);
+        }
+        Ok(())
+    }
+
+    fn execute_movsw(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Move word from [RSI] to [RDI]
+        let src_addr = state.registers.rsi;
+        let dst_addr = state.registers.rdi;
+        
+        let value = state.read_u16(src_addr)?;
+        state.write_u16(dst_addr, value)?;
+        
+        // Update pointers based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(2);
+            state.registers.rdi = state.registers.rdi.wrapping_sub(2);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(2);
+            state.registers.rdi = state.registers.rdi.wrapping_add(2);
+        }
+        Ok(())
+    }
+
+    fn execute_movsd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Move doubleword from [RSI] to [RDI]
+        let src_addr = state.registers.rsi;
+        let dst_addr = state.registers.rdi;
+        
+        let value = state.read_u32(src_addr)?;
+        state.write_u32(dst_addr, value)?;
+        
+        // Update pointers based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(4);
+            state.registers.rdi = state.registers.rdi.wrapping_sub(4);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(4);
+            state.registers.rdi = state.registers.rdi.wrapping_add(4);
+        }
+        Ok(())
+    }
+
+    fn execute_movsq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Move quadword from [RSI] to [RDI]
+        let src_addr = state.registers.rsi;
+        let dst_addr = state.registers.rdi;
+        
+        let value = state.read_u64(src_addr)?;
+        state.write_u64(dst_addr, value)?;
+        
+        // Update pointers based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(8);
+            state.registers.rdi = state.registers.rdi.wrapping_sub(8);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(8);
+            state.registers.rdi = state.registers.rdi.wrapping_add(8);
+        }
+        Ok(())
+    }
+
+    fn execute_cmpsb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Compare byte at [RSI] with byte at [RDI]
+        let src_addr = state.registers.rsi;
+        let dst_addr = state.registers.rdi;
+        
+        let src_value = state.read_u8(src_addr)? as u64;
+        let dst_value = state.read_u8(dst_addr)? as u64;
+        let result = dst_value.wrapping_sub(src_value);
+        
+        // Update flags
+        self.update_arithmetic_flags(result, src_value, dst_value, true, state);
+        
+        // Update pointers based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(1);
+            state.registers.rdi = state.registers.rdi.wrapping_sub(1);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(1);
+            state.registers.rdi = state.registers.rdi.wrapping_add(1);
+        }
+        Ok(())
+    }
+
+    fn execute_cmpsw(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Compare word at [RSI] with word at [RDI]
+        let src_addr = state.registers.rsi;
+        let dst_addr = state.registers.rdi;
+        
+        let src_value = state.read_u16(src_addr)? as u64;
+        let dst_value = state.read_u16(dst_addr)? as u64;
+        let result = dst_value.wrapping_sub(src_value);
+        
+        // Update flags
+        self.update_arithmetic_flags(result, src_value, dst_value, true, state);
+        
+        // Update pointers based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(2);
+            state.registers.rdi = state.registers.rdi.wrapping_sub(2);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(2);
+            state.registers.rdi = state.registers.rdi.wrapping_add(2);
+        }
+        Ok(())
+    }
+
+    fn execute_cmpsd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Compare doubleword at [RSI] with doubleword at [RDI]
+        let src_addr = state.registers.rsi;
+        let dst_addr = state.registers.rdi;
+        
+        let src_value = state.read_u32(src_addr)? as u64;
+        let dst_value = state.read_u32(dst_addr)? as u64;
+        let result = dst_value.wrapping_sub(src_value);
+        
+        // Update flags
+        self.update_arithmetic_flags(result, src_value, dst_value, true, state);
+        
+        // Update pointers based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(4);
+            state.registers.rdi = state.registers.rdi.wrapping_sub(4);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(4);
+            state.registers.rdi = state.registers.rdi.wrapping_add(4);
+        }
+        Ok(())
+    }
+
+    fn execute_cmpsq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Compare quadword at [RSI] with quadword at [RDI]
+        let src_addr = state.registers.rsi;
+        let dst_addr = state.registers.rdi;
+        
+        let src_value = state.read_u64(src_addr)?;
+        let dst_value = state.read_u64(dst_addr)?;
+        let result = dst_value.wrapping_sub(src_value);
+        
+        // Update flags
+        self.update_arithmetic_flags(result, src_value, dst_value, true, state);
+        
+        // Update pointers based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(8);
+            state.registers.rdi = state.registers.rdi.wrapping_sub(8);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(8);
+            state.registers.rdi = state.registers.rdi.wrapping_add(8);
+        }
+        Ok(())
+    }
+
+    fn execute_scasb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Compare AL with byte at [RDI]
+        let dst_addr = state.registers.rdi;
+        
+        let src_value = (state.registers.rax & 0xFF) as u64;
+        let dst_value = state.read_u8(dst_addr)? as u64;
+        let result = src_value.wrapping_sub(dst_value);
+        
+        // Update flags
+        self.update_arithmetic_flags(result, dst_value, src_value, true, state);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(1);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(1);
+        }
+        Ok(())
+    }
+
+    fn execute_scasw(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Compare AX with word at [RDI]
+        let dst_addr = state.registers.rdi;
+        
+        let src_value = (state.registers.rax & 0xFFFF) as u64;
+        let dst_value = state.read_u16(dst_addr)? as u64;
+        let result = src_value.wrapping_sub(dst_value);
+        
+        // Update flags
+        self.update_arithmetic_flags(result, dst_value, src_value, true, state);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(2);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(2);
+        }
+        Ok(())
+    }
+
+    fn execute_scasd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Compare EAX with doubleword at [RDI]
+        let dst_addr = state.registers.rdi;
+        
+        let src_value = (state.registers.rax & 0xFFFFFFFF) as u64;
+        let dst_value = state.read_u32(dst_addr)? as u64;
+        let result = src_value.wrapping_sub(dst_value);
+        
+        // Update flags
+        self.update_arithmetic_flags(result, dst_value, src_value, true, state);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(4);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(4);
+        }
+        Ok(())
+    }
+
+    fn execute_scasq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Compare RAX with quadword at [RDI]
+        let dst_addr = state.registers.rdi;
+        
+        let src_value = state.registers.rax;
+        let dst_value = state.read_u64(dst_addr)?;
+        let result = src_value.wrapping_sub(dst_value);
+        
+        // Update flags
+        self.update_arithmetic_flags(result, dst_value, src_value, true, state);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(8);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(8);
+        }
+        Ok(())
+    }
+
+    fn execute_lodsb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Load byte from [RSI] into AL
+        let src_addr = state.registers.rsi;
+        
+        let value = state.read_u8(src_addr)?;
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | (value as u64);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(1);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(1);
+        }
+        Ok(())
+    }
+
+    fn execute_lodsw(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Load word from [RSI] into AX
+        let src_addr = state.registers.rsi;
+        
+        let value = state.read_u16(src_addr)?;
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFF0000) | (value as u64);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(2);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(2);
+        }
+        Ok(())
+    }
+
+    fn execute_lodsd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Load doubleword from [RSI] into EAX
+        let src_addr = state.registers.rsi;
+        
+        let value = state.read_u32(src_addr)?;
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFF00000000) | (value as u64);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(4);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(4);
+        }
+        Ok(())
+    }
+
+    fn execute_lodsq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Load quadword from [RSI] into RAX
+        let src_addr = state.registers.rsi;
+        
+        let value = state.read_u64(src_addr)?;
+        state.registers.rax = value;
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(8);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(8);
+        }
+        Ok(())
+    }
+
+    fn execute_stosb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Store AL to byte at [RDI]
+        let dst_addr = state.registers.rdi;
+        
+        let value = (state.registers.rax & 0xFF) as u8;
+        state.write_u8(dst_addr, value)?;
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(1);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(1);
+        }
+        Ok(())
+    }
+
+    fn execute_stosw(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Store AX to word at [RDI]
+        let dst_addr = state.registers.rdi;
+        
+        let value = (state.registers.rax & 0xFFFF) as u16;
+        state.write_u16(dst_addr, value)?;
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(2);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(2);
+        }
+        Ok(())
+    }
+
+    fn execute_stosd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Store EAX to doubleword at [RDI]
+        let dst_addr = state.registers.rdi;
+        
+        let value = (state.registers.rax & 0xFFFFFFFF) as u32;
+        state.write_u32(dst_addr, value)?;
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(4);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(4);
+        }
+        Ok(())
+    }
+
+    fn execute_stosq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Store RAX to quadword at [RDI]
+        let dst_addr = state.registers.rdi;
+        
+        let value = state.registers.rax;
+        state.write_u64(dst_addr, value)?;
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(8);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(8);
         }
         Ok(())
     }
