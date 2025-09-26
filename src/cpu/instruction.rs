@@ -207,6 +207,132 @@ impl<'a> InstructionDecoder<'a> {
             iced_x86::Mnemonic::Stosq => {
                 self.execute_stosq(instruction, state)
             }
+            // Additional control flow instructions
+            iced_x86::Mnemonic::Syscall => {
+                self.execute_syscall(instruction, state)
+            }
+            iced_x86::Mnemonic::Sysret => {
+                self.execute_sysret(instruction, state)
+            }
+            // I/O instructions
+            iced_x86::Mnemonic::In => {
+                self.execute_in(instruction, state)
+            }
+            iced_x86::Mnemonic::Out => {
+                self.execute_out(instruction, state)
+            }
+            iced_x86::Mnemonic::Insb => {
+                self.execute_insb(instruction, state)
+            }
+            iced_x86::Mnemonic::Insw => {
+                self.execute_insw(instruction, state)
+            }
+            iced_x86::Mnemonic::Insd => {
+                self.execute_insd(instruction, state)
+            }
+            iced_x86::Mnemonic::Outsb => {
+                self.execute_outsb(instruction, state)
+            }
+            iced_x86::Mnemonic::Outsw => {
+                self.execute_outsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Outsd => {
+                self.execute_outsd(instruction, state)
+            }
+            // System instructions
+            iced_x86::Mnemonic::Cli => {
+                self.execute_cli(instruction, state)
+            }
+            iced_x86::Mnemonic::Sti => {
+                self.execute_sti(instruction, state)
+            }
+            iced_x86::Mnemonic::Lgdt => {
+                self.execute_lgdt(instruction, state)
+            }
+            iced_x86::Mnemonic::Lidt => {
+                self.execute_lidt(instruction, state)
+            }
+            iced_x86::Mnemonic::Ltr => {
+                self.execute_ltr(instruction, state)
+            }
+            iced_x86::Mnemonic::Str => {
+                self.execute_str(instruction, state)
+            }
+            iced_x86::Mnemonic::Lmsw => {
+                self.execute_lmsw(instruction, state)
+            }
+            iced_x86::Mnemonic::Smsw => {
+                self.execute_smsw(instruction, state)
+            }
+            // Register operations
+            iced_x86::Mnemonic::Pusha => {
+                self.execute_pusha(instruction, state)
+            }
+            iced_x86::Mnemonic::Popa => {
+                self.execute_popa(instruction, state)
+            }
+            iced_x86::Mnemonic::Pushad => {
+                self.execute_pushad(instruction, state)
+            }
+            iced_x86::Mnemonic::Popad => {
+                self.execute_popad(instruction, state)
+            }
+            iced_x86::Mnemonic::Lahf => {
+                self.execute_lahf(instruction, state)
+            }
+            iced_x86::Mnemonic::Sahf => {
+                self.execute_sahf(instruction, state)
+            }
+            iced_x86::Mnemonic::Pushf => {
+                self.execute_pushf(instruction, state)
+            }
+            iced_x86::Mnemonic::Popf => {
+                self.execute_popf(instruction, state)
+            }
+            // Segment operations
+            iced_x86::Mnemonic::Lds => {
+                self.execute_lds(instruction, state)
+            }
+            iced_x86::Mnemonic::Les => {
+                self.execute_les(instruction, state)
+            }
+            iced_x86::Mnemonic::Lfs => {
+                self.execute_lfs(instruction, state)
+            }
+            iced_x86::Mnemonic::Lgs => {
+                self.execute_lgs(instruction, state)
+            }
+            iced_x86::Mnemonic::Lss => {
+                self.execute_lss(instruction, state)
+            }
+            iced_x86::Mnemonic::Movsx => {
+                self.execute_movsx(instruction, state)
+            }
+            iced_x86::Mnemonic::Movzx => {
+                self.execute_movzx(instruction, state)
+            }
+            // Bit manipulation instructions
+            iced_x86::Mnemonic::Bt => {
+                self.execute_bt(instruction, state)
+            }
+            iced_x86::Mnemonic::Btc => {
+                self.execute_btc(instruction, state)
+            }
+            iced_x86::Mnemonic::Btr => {
+                self.execute_btr(instruction, state)
+            }
+            iced_x86::Mnemonic::Bts => {
+                self.execute_bts(instruction, state)
+            }
+            iced_x86::Mnemonic::Bsf => {
+                self.execute_bsf(instruction, state)
+            }
+            iced_x86::Mnemonic::Bsr => {
+                self.execute_bsr(instruction, state)
+            }
+            iced_x86::Mnemonic::Popcnt => {
+                self.execute_popcnt(instruction, state)
+            }
             _ => {
                 // Unimplemented instruction
                 log::warn!("Unimplemented instruction: {:?}", instruction.mnemonic());
@@ -1158,6 +1284,550 @@ impl<'a> InstructionDecoder<'a> {
         } else {
             state.registers.rdi = state.registers.rdi.wrapping_add(8);
         }
+        Ok(())
+    }
+
+    // Additional control flow instructions
+    fn execute_syscall(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Save return address and flags
+        state.registers.rsp -= 8;
+        state.write_u64(state.registers.rsp, state.registers.rip)?;
+        state.registers.rsp -= 8;
+        state.write_u64(state.registers.rsp, state.registers.rflags)?;
+        
+        // Load new RIP from LSTAR MSR (simplified)
+        state.registers.rip = state.registers.msr_lstar;
+        
+        // Clear direction flag and interrupt flag
+        state.registers.set_flag(RFlags::DIRECTION, false);
+        state.registers.set_flag(RFlags::INTERRUPT, false);
+        
+        // Set privilege level to 0 (kernel mode)
+        state.set_privilege_level(0);
+        Ok(())
+    }
+
+    fn execute_sysret(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Restore flags and return address
+        let rflags = state.read_u64(state.registers.rsp)?;
+        state.registers.rsp += 8;
+        let rip = state.read_u64(state.registers.rsp)?;
+        state.registers.rsp += 8;
+        
+        state.registers.rflags = rflags;
+        state.registers.rip = rip;
+        
+        // Set privilege level to 3 (user mode)
+        state.set_privilege_level(3);
+        Ok(())
+    }
+
+    // I/O instructions
+    fn execute_in(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid IN instruction".to_string()));
+        }
+
+        let _port = self.get_operand_value(instruction, 0, state)? as u16;
+        // For now, return 0 for all I/O operations (placeholder)
+        let value = 0u64;
+        self.set_operand_value(instruction, 1, value, state)?;
+        Ok(())
+    }
+
+    fn execute_out(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid OUT instruction".to_string()));
+        }
+
+        let port = self.get_operand_value(instruction, 0, state)? as u16;
+        let value = self.get_operand_value(instruction, 1, state)?;
+        // For now, ignore I/O operations (placeholder)
+        log::debug!("OUT to port 0x{:x}: 0x{:x}", port, value);
+        Ok(())
+    }
+
+    fn execute_insb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Input byte from port DX to [RDI]
+        let _port = (state.registers.rdx & 0xFFFF) as u16;
+        let dst_addr = state.registers.rdi;
+        
+        // For now, write 0 (placeholder)
+        state.write_u8(dst_addr, 0)?;
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(1);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(1);
+        }
+        Ok(())
+    }
+
+    fn execute_insw(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Input word from port DX to [RDI]
+        let _port = (state.registers.rdx & 0xFFFF) as u16;
+        let dst_addr = state.registers.rdi;
+        
+        // For now, write 0 (placeholder)
+        state.write_u16(dst_addr, 0)?;
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(2);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(2);
+        }
+        Ok(())
+    }
+
+    fn execute_insd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Input doubleword from port DX to [RDI]
+        let _port = (state.registers.rdx & 0xFFFF) as u16;
+        let dst_addr = state.registers.rdi;
+        
+        // For now, write 0 (placeholder)
+        state.write_u32(dst_addr, 0)?;
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rdi = state.registers.rdi.wrapping_sub(4);
+        } else {
+            state.registers.rdi = state.registers.rdi.wrapping_add(4);
+        }
+        Ok(())
+    }
+
+    fn execute_outsb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Output byte from [RSI] to port DX
+        let port = (state.registers.rdx & 0xFFFF) as u16;
+        let src_addr = state.registers.rsi;
+        
+        let value = state.read_u8(src_addr)?;
+        log::debug!("OUTSB to port 0x{:x}: 0x{:x}", port, value);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(1);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(1);
+        }
+        Ok(())
+    }
+
+    fn execute_outsw(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Output word from [RSI] to port DX
+        let port = (state.registers.rdx & 0xFFFF) as u16;
+        let src_addr = state.registers.rsi;
+        
+        let value = state.read_u16(src_addr)?;
+        log::debug!("OUTSW to port 0x{:x}: 0x{:x}", port, value);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(2);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(2);
+        }
+        Ok(())
+    }
+
+    fn execute_outsd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Output doubleword from [RSI] to port DX
+        let port = (state.registers.rdx & 0xFFFF) as u16;
+        let src_addr = state.registers.rsi;
+        
+        let value = state.read_u32(src_addr)?;
+        log::debug!("OUTSD to port 0x{:x}: 0x{:x}", port, value);
+        
+        // Update pointer based on direction flag
+        if state.registers.get_flag(RFlags::DIRECTION) {
+            state.registers.rsi = state.registers.rsi.wrapping_sub(4);
+        } else {
+            state.registers.rsi = state.registers.rsi.wrapping_add(4);
+        }
+        Ok(())
+    }
+
+    // System instructions
+    fn execute_cli(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Clear interrupt flag
+        state.registers.set_flag(RFlags::INTERRUPT, false);
+        Ok(())
+    }
+
+    fn execute_sti(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Set interrupt flag
+        state.registers.set_flag(RFlags::INTERRUPT, true);
+        Ok(())
+    }
+
+    fn execute_lgdt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid LGDT instruction".to_string()));
+        }
+        // Load Global Descriptor Table (simplified - just log for now)
+        log::debug!("LGDT instruction executed");
+        Ok(())
+    }
+
+    fn execute_lidt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid LIDT instruction".to_string()));
+        }
+        // Load Interrupt Descriptor Table (simplified - just log for now)
+        log::debug!("LIDT instruction executed");
+        Ok(())
+    }
+
+    fn execute_ltr(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid LTR instruction".to_string()));
+        }
+        // Load Task Register (simplified - just log for now)
+        log::debug!("LTR instruction executed");
+        Ok(())
+    }
+
+    fn execute_str(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid STR instruction".to_string()));
+        }
+        // Store Task Register (simplified - just log for now)
+        log::debug!("STR instruction executed");
+        Ok(())
+    }
+
+    fn execute_lmsw(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid LMSW instruction".to_string()));
+        }
+        // Load Machine Status Word (simplified - just log for now)
+        log::debug!("LMSW instruction executed");
+        Ok(())
+    }
+
+    fn execute_smsw(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 1 {
+            return Err(crate::EmulatorError::Cpu("Invalid SMSW instruction".to_string()));
+        }
+        // Store Machine Status Word (simplified - just log for now)
+        log::debug!("SMSW instruction executed");
+        Ok(())
+    }
+
+    // Register operations
+    fn execute_pusha(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Push all 16-bit registers (AX, CX, DX, BX, SP, BP, SI, DI)
+        let ax = (state.registers.rax & 0xFFFF) as u16;
+        let cx = (state.registers.rcx & 0xFFFF) as u16;
+        let dx = (state.registers.rdx & 0xFFFF) as u16;
+        let bx = (state.registers.rbx & 0xFFFF) as u16;
+        let sp = (state.registers.rsp & 0xFFFF) as u16;
+        let bp = (state.registers.rbp & 0xFFFF) as u16;
+        let si = (state.registers.rsi & 0xFFFF) as u16;
+        let di = (state.registers.rdi & 0xFFFF) as u16;
+
+        // Push in reverse order
+        state.registers.rsp -= 2; state.write_u16(state.registers.rsp, di)?;
+        state.registers.rsp -= 2; state.write_u16(state.registers.rsp, si)?;
+        state.registers.rsp -= 2; state.write_u16(state.registers.rsp, bp)?;
+        state.registers.rsp -= 2; state.write_u16(state.registers.rsp, sp)?;
+        state.registers.rsp -= 2; state.write_u16(state.registers.rsp, bx)?;
+        state.registers.rsp -= 2; state.write_u16(state.registers.rsp, dx)?;
+        state.registers.rsp -= 2; state.write_u16(state.registers.rsp, cx)?;
+        state.registers.rsp -= 2; state.write_u16(state.registers.rsp, ax)?;
+        Ok(())
+    }
+
+    fn execute_popa(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Pop all 16-bit registers (AX, CX, DX, BX, SP, BP, SI, DI)
+        let ax = state.read_u16(state.registers.rsp)?; state.registers.rsp += 2;
+        let cx = state.read_u16(state.registers.rsp)?; state.registers.rsp += 2;
+        let dx = state.read_u16(state.registers.rsp)?; state.registers.rsp += 2;
+        let bx = state.read_u16(state.registers.rsp)?; state.registers.rsp += 2;
+        let sp = state.read_u16(state.registers.rsp)?; state.registers.rsp += 2;
+        let bp = state.read_u16(state.registers.rsp)?; state.registers.rsp += 2;
+        let si = state.read_u16(state.registers.rsp)?; state.registers.rsp += 2;
+        let di = state.read_u16(state.registers.rsp)?; state.registers.rsp += 2;
+
+        // Update registers (preserve upper bits)
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFF0000) | (ax as u64);
+        state.registers.rcx = (state.registers.rcx & 0xFFFFFFFFFFFF0000) | (cx as u64);
+        state.registers.rdx = (state.registers.rdx & 0xFFFFFFFFFFFF0000) | (dx as u64);
+        state.registers.rbx = (state.registers.rbx & 0xFFFFFFFFFFFF0000) | (bx as u64);
+        state.registers.rsp = (state.registers.rsp & 0xFFFFFFFFFFFF0000) | (sp as u64);
+        state.registers.rbp = (state.registers.rbp & 0xFFFFFFFFFFFF0000) | (bp as u64);
+        state.registers.rsi = (state.registers.rsi & 0xFFFFFFFFFFFF0000) | (si as u64);
+        state.registers.rdi = (state.registers.rdi & 0xFFFFFFFFFFFF0000) | (di as u64);
+        Ok(())
+    }
+
+    fn execute_pushad(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Push all 32-bit registers (EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI)
+        let eax = (state.registers.rax & 0xFFFFFFFF) as u32;
+        let ecx = (state.registers.rcx & 0xFFFFFFFF) as u32;
+        let edx = (state.registers.rdx & 0xFFFFFFFF) as u32;
+        let ebx = (state.registers.rbx & 0xFFFFFFFF) as u32;
+        let esp = (state.registers.rsp & 0xFFFFFFFF) as u32;
+        let ebp = (state.registers.rbp & 0xFFFFFFFF) as u32;
+        let esi = (state.registers.rsi & 0xFFFFFFFF) as u32;
+        let edi = (state.registers.rdi & 0xFFFFFFFF) as u32;
+
+        // Push in reverse order
+        state.registers.rsp -= 4; state.write_u32(state.registers.rsp, edi)?;
+        state.registers.rsp -= 4; state.write_u32(state.registers.rsp, esi)?;
+        state.registers.rsp -= 4; state.write_u32(state.registers.rsp, ebp)?;
+        state.registers.rsp -= 4; state.write_u32(state.registers.rsp, esp)?;
+        state.registers.rsp -= 4; state.write_u32(state.registers.rsp, ebx)?;
+        state.registers.rsp -= 4; state.write_u32(state.registers.rsp, edx)?;
+        state.registers.rsp -= 4; state.write_u32(state.registers.rsp, ecx)?;
+        state.registers.rsp -= 4; state.write_u32(state.registers.rsp, eax)?;
+        Ok(())
+    }
+
+    fn execute_popad(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Pop all 32-bit registers (EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI)
+        let eax = state.read_u32(state.registers.rsp)?; state.registers.rsp += 4;
+        let ecx = state.read_u32(state.registers.rsp)?; state.registers.rsp += 4;
+        let edx = state.read_u32(state.registers.rsp)?; state.registers.rsp += 4;
+        let ebx = state.read_u32(state.registers.rsp)?; state.registers.rsp += 4;
+        let esp = state.read_u32(state.registers.rsp)?; state.registers.rsp += 4;
+        let ebp = state.read_u32(state.registers.rsp)?; state.registers.rsp += 4;
+        let esi = state.read_u32(state.registers.rsp)?; state.registers.rsp += 4;
+        let edi = state.read_u32(state.registers.rsp)?; state.registers.rsp += 4;
+
+        // Update registers (preserve upper bits)
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFF00000000) | (eax as u64);
+        state.registers.rcx = (state.registers.rcx & 0xFFFFFFFF00000000) | (ecx as u64);
+        state.registers.rdx = (state.registers.rdx & 0xFFFFFFFF00000000) | (edx as u64);
+        state.registers.rbx = (state.registers.rbx & 0xFFFFFFFF00000000) | (ebx as u64);
+        state.registers.rsp = (state.registers.rsp & 0xFFFFFFFF00000000) | (esp as u64);
+        state.registers.rbp = (state.registers.rbp & 0xFFFFFFFF00000000) | (ebp as u64);
+        state.registers.rsi = (state.registers.rsi & 0xFFFFFFFF00000000) | (esi as u64);
+        state.registers.rdi = (state.registers.rdi & 0xFFFFFFFF00000000) | (edi as u64);
+        Ok(())
+    }
+
+    fn execute_lahf(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Load flags into AH register
+        let flags = state.registers.get_flags();
+        let ah_value = (flags.bits() & 0xFF) as u8;
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | (ah_value as u64);
+        Ok(())
+    }
+
+    fn execute_sahf(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Store AH register into flags
+        let ah_value = (state.registers.rax >> 8) & 0xFF;
+        let current_flags = state.registers.get_flags();
+        let new_flags = RFlags::from_bits_truncate((current_flags.bits() & 0xFFFFFFFFFFFFFF00) | ah_value);
+        state.registers.set_flags(new_flags);
+        Ok(())
+    }
+
+    fn execute_pushf(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Push flags register
+        state.registers.rsp -= 8;
+        state.write_u64(state.registers.rsp, state.registers.rflags)?;
+        Ok(())
+    }
+
+    fn execute_popf(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Pop flags register
+        let flags = state.read_u64(state.registers.rsp)?;
+        state.registers.rsp += 8;
+        state.registers.rflags = flags;
+        Ok(())
+    }
+
+    // Segment operations
+    fn execute_lds(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid LDS instruction".to_string()));
+        }
+        // Load DS segment and offset (simplified - just log for now)
+        log::debug!("LDS instruction executed");
+        Ok(())
+    }
+
+    fn execute_les(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid LES instruction".to_string()));
+        }
+        // Load ES segment and offset (simplified - just log for now)
+        log::debug!("LES instruction executed");
+        Ok(())
+    }
+
+    fn execute_lfs(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid LFS instruction".to_string()));
+        }
+        // Load FS segment and offset (simplified - just log for now)
+        log::debug!("LFS instruction executed");
+        Ok(())
+    }
+
+    fn execute_lgs(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid LGS instruction".to_string()));
+        }
+        // Load GS segment and offset (simplified - just log for now)
+        log::debug!("LGS instruction executed");
+        Ok(())
+    }
+
+    fn execute_lss(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid LSS instruction".to_string()));
+        }
+        // Load SS segment and offset (simplified - just log for now)
+        log::debug!("LSS instruction executed");
+        Ok(())
+    }
+
+    fn execute_movsx(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid MOVSX instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        // Sign extend based on source size (simplified - assume 32-bit to 64-bit)
+        let result = src as i32 as i64 as u64;
+        self.set_operand_value(instruction, 1, result, state)?;
+        Ok(())
+    }
+
+    fn execute_movzx(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid MOVZX instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        // Zero extend (no change needed for 64-bit)
+        self.set_operand_value(instruction, 1, src, state)?;
+        Ok(())
+    }
+
+    // Bit manipulation instructions
+    fn execute_bt(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid BT instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let bit_index = self.get_operand_value(instruction, 1, state)?;
+        let bit_pos = bit_index & 0x3F; // Mask to 6 bits for 64-bit
+        
+        let bit_value = (src >> bit_pos) & 1;
+        state.registers.set_flag(RFlags::CARRY, bit_value != 0);
+        Ok(())
+    }
+
+    fn execute_btc(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid BTC instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let bit_index = self.get_operand_value(instruction, 1, state)?;
+        let bit_pos = bit_index & 0x3F; // Mask to 6 bits for 64-bit
+        
+        let bit_value = (src >> bit_pos) & 1;
+        state.registers.set_flag(RFlags::CARRY, bit_value != 0);
+        
+        // Toggle the bit
+        let result = src ^ (1 << bit_pos);
+        self.set_operand_value(instruction, 0, result, state)?;
+        Ok(())
+    }
+
+    fn execute_btr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid BTR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let bit_index = self.get_operand_value(instruction, 1, state)?;
+        let bit_pos = bit_index & 0x3F; // Mask to 6 bits for 64-bit
+        
+        let bit_value = (src >> bit_pos) & 1;
+        state.registers.set_flag(RFlags::CARRY, bit_value != 0);
+        
+        // Clear the bit
+        let result = src & !(1 << bit_pos);
+        self.set_operand_value(instruction, 0, result, state)?;
+        Ok(())
+    }
+
+    fn execute_bts(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid BTS instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let bit_index = self.get_operand_value(instruction, 1, state)?;
+        let bit_pos = bit_index & 0x3F; // Mask to 6 bits for 64-bit
+        
+        let bit_value = (src >> bit_pos) & 1;
+        state.registers.set_flag(RFlags::CARRY, bit_value != 0);
+        
+        // Set the bit
+        let result = src | (1 << bit_pos);
+        self.set_operand_value(instruction, 0, result, state)?;
+        Ok(())
+    }
+
+    fn execute_bsf(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid BSF instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        
+        if src == 0 {
+            state.registers.set_flag(RFlags::ZERO, true);
+        } else {
+            state.registers.set_flag(RFlags::ZERO, false);
+            let bit_index = src.trailing_zeros() as u64;
+            self.set_operand_value(instruction, 1, bit_index, state)?;
+        }
+        Ok(())
+    }
+
+    fn execute_bsr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid BSR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        
+        if src == 0 {
+            state.registers.set_flag(RFlags::ZERO, true);
+        } else {
+            state.registers.set_flag(RFlags::ZERO, false);
+            let bit_index = 63 - src.leading_zeros() as u64;
+            self.set_operand_value(instruction, 1, bit_index, state)?;
+        }
+        Ok(())
+    }
+
+    fn execute_popcnt(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid POPCNT instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = src.count_ones() as u64;
+        
+        // Update flags
+        state.registers.set_flag(RFlags::ZERO, count == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        state.registers.set_flag(RFlags::OVERFLOW, false);
+        state.registers.set_flag(RFlags::SIGN, false);
+        
+        self.set_operand_value(instruction, 1, count, state)?;
         Ok(())
     }
 }
