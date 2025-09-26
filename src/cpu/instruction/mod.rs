@@ -116,17 +116,63 @@ impl InstructionDecoder<'_> {
             Mnemonic::Cbw => self.execute_cbw(instruction, state),
             Mnemonic::Cdq => self.execute_cdq(instruction, state),
             Mnemonic::Cdqe => self.execute_cdqe(instruction, state),
+            Mnemonic::Clac => self.execute_clac(instruction, state),
             Mnemonic::Clc => self.execute_clc(instruction, state),
             Mnemonic::Cld => self.execute_cld(instruction, state),
+            Mnemonic::Cldemote => self.execute_cldemote(instruction, state),
+            Mnemonic::Clflush => self.execute_clflush(instruction, state),
+            Mnemonic::Clflushopt => self.execute_clflushopt(instruction, state),
+            Mnemonic::Clgi => self.execute_clgi(instruction, state),
             Mnemonic::Cli => self.execute_cli(instruction, state),
+            Mnemonic::Clrssbsy => self.execute_clrssbsy(instruction, state),
             Mnemonic::Clts => self.execute_clts(instruction, state),
+            Mnemonic::Clui => self.execute_clui(instruction, state),
+            Mnemonic::Clwb => self.execute_clwb(instruction, state),
+            Mnemonic::Clzero => self.execute_clzero(instruction, state),
             Mnemonic::Cmc => self.execute_cmc(instruction, state),
+            Mnemonic::Cmova => self.execute_cmova(instruction, state),
+            Mnemonic::Cmovae => self.execute_cmovae(instruction, state),
+            Mnemonic::Cmovb => self.execute_cmovb(instruction, state),
+            Mnemonic::Cmovbe => self.execute_cmovbe(instruction, state),
+            Mnemonic::Cmove => self.execute_cmove(instruction, state),
+            Mnemonic::Cmovg => self.execute_cmovg(instruction, state),
+            Mnemonic::Cmovge => self.execute_cmovge(instruction, state),
+            Mnemonic::Cmovl => self.execute_cmovl(instruction, state),
+            Mnemonic::Cmovle => self.execute_cmovle(instruction, state),
+            Mnemonic::Cmovne => self.execute_cmovne(instruction, state),
+            Mnemonic::Cmovno => self.execute_cmovno(instruction, state),
+            Mnemonic::Cmovnp => self.execute_cmovnp(instruction, state),
+            Mnemonic::Cmovns => self.execute_cmovns(instruction, state),
+            Mnemonic::Cmovo => self.execute_cmovo(instruction, state),
+            Mnemonic::Cmovp => self.execute_cmovp(instruction, state),
+            Mnemonic::Cmovs => self.execute_cmovs(instruction, state),
             Mnemonic::Cmp => self.execute_cmp(instruction, state),
+            Mnemonic::Cmpbexadd => self.execute_cmpbexadd(instruction, state),
+            Mnemonic::Cmpbxadd => self.execute_cmpbxadd(instruction, state),
+            Mnemonic::Cmplexadd => self.execute_cmplexadd(instruction, state),
+            Mnemonic::Cmplxadd => self.execute_cmplxadd(instruction, state),
+            Mnemonic::Cmpnbexadd => self.execute_cmpnbexadd(instruction, state),
+            Mnemonic::Cmpnbxadd => self.execute_cmpnbxadd(instruction, state),
+            Mnemonic::Cmpnlexadd => self.execute_cmpnlexadd(instruction, state),
+            Mnemonic::Cmpnlxadd => self.execute_cmpnlxadd(instruction, state),
+            Mnemonic::Cmpnoxadd => self.execute_cmpnoxadd(instruction, state),
+            Mnemonic::Cmpnpxadd => self.execute_cmpnpxadd(instruction, state),
+            Mnemonic::Cmpnsxadd => self.execute_cmpnsxadd(instruction, state),
+            Mnemonic::Cmpnzxadd => self.execute_cmpnzxadd(instruction, state),
+            Mnemonic::Cmpoxadd => self.execute_cmpoxadd(instruction, state),
+            Mnemonic::Cmppd => self.execute_cmppd(instruction, state),
+            Mnemonic::Cmppxadd => self.execute_cmppxadd(instruction, state),
+            Mnemonic::Cmpps => self.execute_cmpps(instruction, state),
             Mnemonic::Cmpsb => self.execute_cmpsb(instruction, state),
             Mnemonic::Cmpsd => self.execute_cmpsd(instruction, state),
             Mnemonic::Cmpsq => self.execute_cmpsq(instruction, state),
+            Mnemonic::Cmpsxadd => self.execute_cmpsxadd(instruction, state),
+            Mnemonic::Cmpss => self.execute_cmpss(instruction, state),
             Mnemonic::Cmpsw => self.execute_cmpsw(instruction, state),
             Mnemonic::Cmpxchg => self.execute_cmpxchg(instruction, state),
+            Mnemonic::Cmpzxadd => self.execute_cmpzxadd(instruction, state),
+            Mnemonic::Comisd => self.execute_comisd(instruction, state),
+            Mnemonic::Comiss => self.execute_comiss(instruction, state),
             Mnemonic::Cpuid => self.execute_cpuid(instruction, state),
             Mnemonic::Cqo => self.execute_cqo(instruction, state),
             Mnemonic::Cwd => self.execute_cwd(instruction, state),
@@ -412,13 +458,6 @@ impl InstructionDecoder<'_> {
         let parity = low_byte.count_ones() % 2 == 0;
         state.registers.set_flag(RFlags::PARITY, parity);
     }
-
-    // Additional instruction implementations
-
-
-
-
-
 
     fn update_logical_flags(&self, result: u64, state: &mut CpuState) {
         state.registers.set_flag(RFlags::ZERO, result == 0);

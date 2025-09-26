@@ -13,7 +13,7 @@ vm-memory = { version = "0.16", features = ["backend-mmap"] }
 vm-device = "0.1"
 linux-loader = "0.13"
 memfd = "0.1"
-iced-x86 = "1.21"
+iced-x86 = { version = "1.21", features = ["exhaustive_enums"] }
 vm-allocator = "0.1"
 
 # Async runtime
