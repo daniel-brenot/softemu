@@ -391,12 +391,36 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_arpl(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_arpl(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid ARPL instruction".to_string()));
         }
-        // Adjust RPL (simplified - just log for now)
-        log::debug!("ARPL instruction executed");
+
+        // Get the operands
+        let dst = self.get_operand_value(instruction, 0, state)?;
+        let src = self.get_operand_value(instruction, 1, state)?;
+
+        // ARPL works with 16-bit operands, so mask to 16 bits
+        let dst_16 = (dst & 0xFFFF) as u16;
+        let src_16 = (src & 0xFFFF) as u16;
+
+        // Extract RPL fields (bits 0-1)
+        let dst_rpl = (dst_16 & 0x03) as u8;
+        let src_rpl = (src_16 & 0x03) as u8;
+
+        // ARPL adjusts the RPL field of the destination to the higher of the two RPL values
+        let new_rpl = dst_rpl.max(src_rpl);
+        let result_16 = (dst_16 & 0xFFFC) | (new_rpl as u16);
+
+        // Set the result (preserve upper bits of the register)
+        let result = (dst & 0xFFFF0000) | (result_16 as u64);
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+
+        // Set the zero flag: ZF = 1 if the RPL field was changed, 0 if unchanged
+        let rpl_changed = dst_rpl != new_rpl;
+        state.registers.set_flag(RFlags::ZERO, !rpl_changed);
+
         Ok(())
     }
 

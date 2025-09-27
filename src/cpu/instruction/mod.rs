@@ -2094,11 +2094,19 @@ impl InstructionDecoder<'_> {
         // In a real implementation, this would properly handle all addressing modes
         let mut addr = 0u64;
 
-        // For now, just use a simple base address
-        // This is a placeholder implementation
+        // For memory operands, use the base register from the instruction
         if instruction.op_count() > op_index {
-            // Try to get a register value as base
-            // if let Ok(reg) = instruction.try_op_register(op_index) addr = self.get_register_value(reg, state);,
+            let operand = instruction.try_op_kind(op_index).unwrap();
+            if operand == OpKind::Memory {
+                // Use the base register from the instruction
+                let base_reg = instruction.memory_base();
+                if base_reg != iced_x86::Register::None {
+                    addr = self.get_register_value(base_reg, state);
+                }
+                
+                // Add displacement if present
+                addr = addr.wrapping_add(instruction.memory_displacement64());
+            }
         }
 
         Ok(addr)

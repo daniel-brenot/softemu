@@ -40,7 +40,7 @@ impl MmioManager {
 
         // Check for overlaps
         for (existing_start, existing_end, existing_name) in &self.device_ranges {
-            if (start_addr <= *existing_end && end_addr >= *existing_start) {
+            if start_addr <= *existing_end && end_addr >= *existing_start {
                 return Err(crate::EmulatorError::Device(
                     format!("Device {} overlaps with existing device {}", name, existing_name)
                 ));
