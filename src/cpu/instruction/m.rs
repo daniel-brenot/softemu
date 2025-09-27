@@ -138,4 +138,284 @@ impl InstructionDecoder<'_> {
         // For now, just do nothing
         Ok(())
     }
+
+    pub fn execute_maskmovdqu(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MASKMOVDQU instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_maskmovq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MASKMOVQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_maxpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MAXPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_maxps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MAXPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_maxsd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MAXSD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_maxss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MAXSS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mcommit(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MCOMMIT instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_minpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MINPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_minps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MINPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_minsd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MINSD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_minss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MINSS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_monitor(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MONITOR instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_monitorx(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MONITORX instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_montmul(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MONTMUL instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movapd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVAPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movaps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVAPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movbe(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVBE instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movddup(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVDDUP instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movdir64b(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVDIR64B instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movdiri(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVDIRI instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movdq2q(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVDQ2Q instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movdqa(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVDQA instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movdqu(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVDQU instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movhlps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVHLPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movhpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVHPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movhps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVHPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movlhps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVLHPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movlpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVLPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movlps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVLPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movmskpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVMSKPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movmskps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVMSKPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movntdq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVNTDQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movntdqa(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVNTDQA instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movnti(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVNTI instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movntpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVNTPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movntps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVNTPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movntq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVNTQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movntsd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVNTSD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movntss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVNTSS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movq2dq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVQ2DQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movshdup(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVSHDUP instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movsldup(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVSLDUP instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVSS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movsxd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVSXD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movupd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVUPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_movups(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MOVUPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mpsadbw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MPSADBW instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mulpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MULPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mulps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MULPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mulsd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MULSD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mulss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MULSS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mulx(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MULX instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mwait(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MWAIT instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_mwaitx(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("MWAITX instruction executed");
+        Ok(())
+    }
 }

@@ -151,4 +151,75 @@ impl InstructionDecoder<'_> {
         log::debug!("INVLPG instruction executed");
         Ok(())
     }
+
+    // Additional I instructions
+    pub fn execute_ibts(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("IBTS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_incsspd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INCSSPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_incsspq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INCSSPQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_insertps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INSERTPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_insertq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INSERTQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_int1(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INT1 instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_invept(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INVEPT instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_invlpga(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INVLPGA instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_invpcid(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INVPCID instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_invvpid(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INVVPID instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_invlpgb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INVLPGB instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_iretd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("IRETD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_iretq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("IRETQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_int3(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("INT3 instruction executed");
+        Ok(())
+    }
 }

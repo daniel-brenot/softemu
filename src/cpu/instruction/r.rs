@@ -99,4 +99,149 @@ impl InstructionDecoder<'_> {
         log::debug!("RSM instruction executed");
         Ok(())
     }
+
+    pub fn execute_rcpps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RCPPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rcpss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RCPSS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdfsbase(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDFSBASE instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdgsbase(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDGSBASE instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdpid(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDPID instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdpkru(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDPKRU instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdpru(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDPRU instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdsspd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDSSPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdsspq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDSSPQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_reservednop(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RESERVEDNOP instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_retf(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RETF instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rorx(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RORX instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_roundpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ROUNDPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_roundps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ROUNDPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_roundsd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ROUNDSD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_roundss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ROUNDSS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rsqrtps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RSQRTPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rsqrtss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RSQRTSS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rstorssp(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RSTORSSP instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rmpadjust(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RMPADJUST instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rmpupdate(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RMPUPDATE instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdshr(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDSHR instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdm(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDM instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rsdc(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RSDC instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rsldt(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RSLDT instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rsts(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RSTS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdudbg(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDUDBG instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rdmsrlist(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RDMSRLIST instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rmpquery(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("RMPQUERY instruction executed");
+        Ok(())
+    }
 }

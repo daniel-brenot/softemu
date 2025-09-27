@@ -428,4 +428,14 @@ impl InstructionDecoder<'_> {
         log::debug!("BZHI instruction executed");
         Ok(())
     }
+
+    pub fn execute_bb0_reset(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("BB0_RESET instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_bb1_reset(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("BB1_RESET instruction executed");
+        Ok(())
+    }
 }

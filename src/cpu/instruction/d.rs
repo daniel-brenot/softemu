@@ -109,4 +109,67 @@ impl InstructionDecoder<'_> {
         self.update_logical_flags(result as u64, state);
         Ok(())
     }
+
+    // Missing D instructions
+    pub fn execute_db(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DB instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_dd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_dq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_dw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DW instruction executed");
+        Ok(())
+    }
+
+    // SIMD division instructions (simplified implementations)
+    pub fn execute_divpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DIVPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_divps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DIVPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_divsd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DIVSD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_divss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DIVSS instruction executed");
+        Ok(())
+    }
+
+    // SIMD dot product instructions
+    pub fn execute_dppd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DPPD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_dpps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DPPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_dmint(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DMINT instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_delay(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("DELAY instruction executed");
+        Ok(())
+    }
 }

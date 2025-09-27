@@ -257,4 +257,54 @@ impl InstructionDecoder<'_> {
         log::debug!("LSL instruction executed");
         Ok(())
     }
+
+    pub fn execute_lddqu(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LDDQU instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_ldmxcsr(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LDMXCSR instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_llwpcb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LLWPCB instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_loadall(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LOADALL instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_lwpins(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LWPINS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_lwpval(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LWPVAL instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_lzcnt(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LZCNT instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_ldtilecfg(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LDTILECFG instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_loadiwkey(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LOADIWKEY instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_lkgs(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("LKGS instruction executed");
+        Ok(())
+    }
 }

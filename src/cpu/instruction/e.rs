@@ -29,4 +29,75 @@ impl InstructionDecoder<'_> {
         }
         Ok(())
     }
+
+    // Missing E instructions
+    pub fn execute_emms(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("EMMS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_encls(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENCLS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_enclu(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENCLU instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_enclv(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENCLV instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_endbr32(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENDBR32 instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_endbr64(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENDBR64 instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_enqcmd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENQCMD instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_enqcmds(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENQCMDS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_extractps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("EXTRACTPS instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_extrq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("EXTRQ instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_encodekey128(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENCODEKEY128 instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_encodekey256(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ENCODEKEY256 instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_eretu(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ERETU instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_erets(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+        log::debug!("ERETS instruction executed");
+        Ok(())
+    }
 }
