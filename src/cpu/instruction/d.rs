@@ -34,12 +34,12 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Division by zero".to_string()));
         }
 
-        let dividend = (state.registers.rdx << 64) | state.registers.rax;
-        let quotient = dividend / divisor;
-        let remainder = dividend % divisor;
+        let dividend = (state.registers.rdx as u128) << 64 | state.registers.rax as u128;
+        let quotient = dividend / (divisor as u128);
+        let remainder = dividend % (divisor as u128);
         
-        state.registers.rax = quotient;
-        state.registers.rdx = remainder;
+        state.registers.rax = quotient as u64;
+        state.registers.rdx = remainder as u64;
         Ok(())
     }
 
@@ -53,9 +53,9 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Division by zero".to_string()));
         }
 
-        let dividend = ((state.registers.rdx as i64) << 64) | (state.registers.rax as i64);
-        let quotient = dividend / divisor;
-        let remainder = dividend % divisor;
+        let dividend = ((state.registers.rdx as i128) << 64) | (state.registers.rax as i128);
+        let quotient = dividend / (divisor as i128);
+        let remainder = dividend % (divisor as i128);
         
         state.registers.rax = quotient as u64;
         state.registers.rdx = remainder as u64;
