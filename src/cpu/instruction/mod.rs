@@ -128,7 +128,6 @@ impl InstructionDecoder<'_> {
             Mnemonic::Cli => self.execute_cli(instruction, state),
             Mnemonic::Clrssbsy => self.execute_clrssbsy(instruction, state),
             Mnemonic::Clts => self.execute_clts(instruction, state),
-            Mnemonic::Clui => self.execute_clui(instruction, state),
             Mnemonic::Clwb => self.execute_clwb(instruction, state),
             Mnemonic::Clzero => self.execute_clzero(instruction, state),
             Mnemonic::Cmc => self.execute_cmc(instruction, state),
@@ -149,38 +148,20 @@ impl InstructionDecoder<'_> {
             Mnemonic::Cmovp => self.execute_cmovp(instruction, state),
             Mnemonic::Cmovs => self.execute_cmovs(instruction, state),
             Mnemonic::Cmp => self.execute_cmp(instruction, state),
-            Mnemonic::Cmpbexadd => self.execute_cmpbexadd(instruction, state),
-            Mnemonic::Cmpbxadd => self.execute_cmpbxadd(instruction, state),
-            Mnemonic::Cmplexadd => self.execute_cmplexadd(instruction, state),
-            Mnemonic::Cmplxadd => self.execute_cmplxadd(instruction, state),
-            Mnemonic::Cmpnbexadd => self.execute_cmpnbexadd(instruction, state),
-            Mnemonic::Cmpnbxadd => self.execute_cmpnbxadd(instruction, state),
-            Mnemonic::Cmpnlexadd => self.execute_cmpnlexadd(instruction, state),
-            Mnemonic::Cmpnlxadd => self.execute_cmpnlxadd(instruction, state),
-            Mnemonic::Cmpnoxadd => self.execute_cmpnoxadd(instruction, state),
-            Mnemonic::Cmpnpxadd => self.execute_cmpnpxadd(instruction, state),
-            Mnemonic::Cmpnsxadd => self.execute_cmpnsxadd(instruction, state),
-            Mnemonic::Cmpnzxadd => self.execute_cmpnzxadd(instruction, state),
-            Mnemonic::Cmpoxadd => self.execute_cmpoxadd(instruction, state),
             Mnemonic::Cmppd => self.execute_cmppd(instruction, state),
-            Mnemonic::Cmppxadd => self.execute_cmppxadd(instruction, state),
             Mnemonic::Cmpps => self.execute_cmpps(instruction, state),
             Mnemonic::Cmpsb => self.execute_cmpsb(instruction, state),
             Mnemonic::Cmpsd => self.execute_cmpsd(instruction, state),
             Mnemonic::Cmpsq => self.execute_cmpsq(instruction, state),
-            Mnemonic::Cmpsxadd => self.execute_cmpsxadd(instruction, state),
             Mnemonic::Cmpss => self.execute_cmpss(instruction, state),
             Mnemonic::Cmpsw => self.execute_cmpsw(instruction, state),
             Mnemonic::Cmpxchg => self.execute_cmpxchg(instruction, state),
-            Mnemonic::Cmpzxadd => self.execute_cmpzxadd(instruction, state),
+            Mnemonic::Cmpxchg16b => todo!(),
+            Mnemonic::Cmpxchg8b => todo!(),
             Mnemonic::Comisd => self.execute_comisd(instruction, state),
             Mnemonic::Comiss => self.execute_comiss(instruction, state),
             Mnemonic::Cpuid => self.execute_cpuid(instruction, state),
             Mnemonic::Cqo => self.execute_cqo(instruction, state),
-            Mnemonic::Cwd => self.execute_cwd(instruction, state),
-            Mnemonic::Cwde => self.execute_cwde(instruction, state),
-            Mnemonic::Cmpxchg16b => todo!(),
-            Mnemonic::Cmpxchg8b => todo!(),
             Mnemonic::Crc32 => todo!(),
             Mnemonic::Cvtdq2pd => todo!(),
             Mnemonic::Cvtdq2ps => todo!(),
@@ -207,10 +188,10 @@ impl InstructionDecoder<'_> {
             // D
             Mnemonic::Daa => self.execute_daa(instruction, state),
             Mnemonic::Das => self.execute_das(instruction, state),
-            Mnemonic::Dec => self.execute_dec(instruction, state),
-            Mnemonic::Div => self.execute_div(instruction, state),
             Mnemonic::Db => todo!(),
             Mnemonic::Dd => todo!(),
+            Mnemonic::Dec => self.execute_dec(instruction, state),
+            Mnemonic::Div => self.execute_div(instruction, state),
             Mnemonic::Divpd => todo!(),
             Mnemonic::Divps => todo!(),
             Mnemonic::Divsd => todo!(),
@@ -220,7 +201,6 @@ impl InstructionDecoder<'_> {
             Mnemonic::Dq => todo!(),
             Mnemonic::Dw => todo!(),
             // E
-            Mnemonic::Enter => self.execute_enter(instruction, state),
             Mnemonic::Emms => todo!(),
             Mnemonic::Encls => todo!(),
             Mnemonic::Enclu => todo!(),
@@ -229,6 +209,7 @@ impl InstructionDecoder<'_> {
             Mnemonic::Endbr64 => todo!(),
             Mnemonic::Enqcmd => todo!(),
             Mnemonic::Enqcmds => todo!(),
+            Mnemonic::Enter => self.execute_enter(instruction, state),
             Mnemonic::Extractps => todo!(),
             Mnemonic::Extrq => todo!(),
             // F
@@ -346,34 +327,34 @@ impl InstructionDecoder<'_> {
             Mnemonic::Gf2p8affineqb => todo!(),
             Mnemonic::Gf2p8mulb => todo!(),
             // H
-            Mnemonic::Hlt => self.execute_hlt(instruction, state),
             Mnemonic::Haddpd => todo!(),
             Mnemonic::Haddps => todo!(),
+            Mnemonic::Hlt => self.execute_hlt(instruction, state),
             Mnemonic::Hsubpd => todo!(),
             Mnemonic::Hsubps => todo!(),
             // I
+            Mnemonic::Ibts => todo!(),
             Mnemonic::Idiv => self.execute_idiv(instruction, state),
             Mnemonic::Imul => self.execute_imul(instruction, state),
             Mnemonic::In => self.execute_in(instruction, state),
             Mnemonic::Inc => self.execute_inc(instruction, state),
-            Mnemonic::Insb => self.execute_insb(instruction, state),
-            Mnemonic::Insd => self.execute_insd(instruction, state),
-            Mnemonic::Insw => self.execute_insw(instruction, state),
-            Mnemonic::Int => self.execute_int(instruction, state),
-            Mnemonic::Into => self.execute_into(instruction, state),
-            Mnemonic::Invd => self.execute_invd(instruction, state),
-            Mnemonic::Invlpg => self.execute_invlpg(instruction, state),
-            Mnemonic::Iret => self.execute_iret(instruction, state),
-            Mnemonic::Ibts => todo!(),
             Mnemonic::Incsspd => todo!(),
             Mnemonic::Incsspq => todo!(),
+            Mnemonic::Insb => self.execute_insb(instruction, state),
+            Mnemonic::Insd => self.execute_insd(instruction, state),
             Mnemonic::Insertps => todo!(),
             Mnemonic::Insertq => todo!(),
+            Mnemonic::Insw => self.execute_insw(instruction, state),
+            Mnemonic::Int => self.execute_int(instruction, state),
             Mnemonic::Int1 => todo!(),
+            Mnemonic::Into => self.execute_into(instruction, state),
+            Mnemonic::Invd => self.execute_invd(instruction, state),
             Mnemonic::Invept => todo!(),
+            Mnemonic::Invlpg => self.execute_invlpg(instruction, state),
             Mnemonic::Invlpga => todo!(),
             Mnemonic::Invpcid => todo!(),
             Mnemonic::Invvpid => todo!(),
+            Mnemonic::Iret => self.execute_iret(instruction, state),
             // J
             Mnemonic::Ja => self.execute_ja(instruction, state),
             Mnemonic::Jae => self.execute_jae(instruction, state),
@@ -1629,25 +1610,6 @@ impl InstructionDecoder<'_> {
             Mnemonic::Xsha256 => todo!(),
             Mnemonic::Xstore => todo!(),
             Mnemonic::Xtest => todo!(),
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             Mnemonic::Rmpadjust => todo!(),
             Mnemonic::Rmpupdate => todo!(),
             Mnemonic::Psmash => todo!(),
@@ -1987,6 +1949,24 @@ impl InstructionDecoder<'_> {
             Mnemonic::Vsm3rnds2 => todo!(),
             Mnemonic::Vsm4key4 => todo!(),
             Mnemonic::Vsm4rnds4 => todo!(),
+            // Additional newer instruction variants
+            Mnemonic::Clui => todo!(),
+            Mnemonic::Cmpbexadd => todo!(),
+            Mnemonic::Cmpbxadd => todo!(),
+            Mnemonic::Cmplexadd => todo!(),
+            Mnemonic::Cmplxadd => todo!(),
+            Mnemonic::Cmpnbexadd => todo!(),
+            Mnemonic::Cmpnbxadd => todo!(),
+            Mnemonic::Cmpnlexadd => todo!(),
+            Mnemonic::Cmpnlxadd => todo!(),
+            Mnemonic::Cmpnoxadd => todo!(),
+            Mnemonic::Cmpnpxadd => todo!(),
+            Mnemonic::Cmpnsxadd => todo!(),
+            Mnemonic::Cmpnzxadd => todo!(),
+            Mnemonic::Cmpoxadd => todo!(),
+            Mnemonic::Cmppxadd => todo!(),
+            Mnemonic::Cmpsxadd => todo!(),
+            Mnemonic::Cmpzxadd => todo!(),
         }
     }
 
