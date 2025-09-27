@@ -2301,10 +2301,9 @@ impl InstructionDecoder<'_> {
                 let reg = instruction.op_register(op_index);
                 let reg_size = self.get_register_size(reg);
                 
-                // In 64-bit mode, if the register is 32-bit but we're in a 64-bit context,
-                // we should treat it as 64-bit. This handles cases like POPCNT where
-                // the instruction is decoded as 32-bit but should operate on 64-bit values.
-                if reg_size == 32 && self.is_64_bit_register(reg) {
+                // In 64-bit mode, for specific instructions like POPCNT, if the register is 32-bit 
+                // but we're in a 64-bit context, we should treat it as 64-bit.
+                if reg_size == 32 && self.is_64_bit_register(reg) && self.should_force_64bit_operand_size(instruction) {
                     64
                 } else {
                     reg_size
@@ -2389,6 +2388,13 @@ impl InstructionDecoder<'_> {
             iced_x86::Register::R15D => true,
             _ => false,
         }
+    }
+
+    fn should_force_64bit_operand_size(&self, instruction: &Instruction) -> bool {
+        // Only force 64-bit operand size for specific instructions that need it
+        matches!(instruction.mnemonic(), 
+            Mnemonic::Popcnt
+        )
     }
 
     fn get_operand_value_with_size(&self, instruction: &Instruction, op_index: u32, size: u32, state: &CpuState) -> Result<u64> {

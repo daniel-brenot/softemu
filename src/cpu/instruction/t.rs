@@ -13,8 +13,12 @@ impl InstructionDecoder<'_> {
         let dst = self.get_operand_value(instruction, 1, state)?;
         let result = dst & src;
 
+
+        // Get operand size for proper flag calculation
+        let operand_size = self.get_operand_size(instruction, 0);
+
         // Update flags (TEST doesn't store result)
-        self.update_logical_flags(result, state);
+        self.update_logical_flags_with_size(result, operand_size, state);
         Ok(())
     }
 
