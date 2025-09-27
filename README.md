@@ -17,14 +17,14 @@ A software-based x86_64 virtual machine emulator written in Rust that runs witho
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    SoftEmu Virtual Machine                 │
+│                    SoftEmu Virtual Machine                  │
 ├─────────────────────────────────────────────────────────────┤
-│  CPU Cores (x86_64)  │  Memory Management  │  MMIO Devices │
+│  CPU Cores (x86_64)  │  Memory Management  │  MMIO Devices  │
 │  - Instruction Decode │  - Guest Memory     │  - UART       │
 │  - Register State     │  - Address Trans.   │  - Timer      │
 │  - Interrupt Handling │  - Memory Mapping   │  - Console    │
 ├─────────────────────────────────────────────────────────────┤
-│  Network Stack        │  Device Manager     │  Interrupts  │
+│  Network Stack        │  Device Manager     │  Interrupts   │
 │  - Packet Processing  │  - MMIO Routing     │  - Handlers   │
 │  - Protocol Support   │  - Device Discovery │  - Vectors    │
 └─────────────────────────────────────────────────────────────┘
@@ -92,16 +92,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut vm = VirtualMachine::new(1024 * 1024 * 1024, 2)?;
     
     // Load kernel
-    vm.load_kernel(std::path::Path::new("vmlinux")).await?;
+    vm.load_kernel(std::path::Path::new("vmlinux"))?;
     
     // Load initrd
-    vm.load_initrd(std::path::Path::new("initrd.img")).await?;
+    vm.load_initrd(std::path::Path::new("initrd.img"))?;
     
     // Enable network
-    vm.enable_network("eth0").await?;
+    vm.enable_network("eth0")?;
     
     // Run the VM
-    vm.run().await?;
+    vm.run()?;
     
     Ok(())
 }
@@ -145,24 +145,24 @@ Network devices are mapped to host network interfaces and can be configured via 
 
 ```
 src/
-├── main.rs              # CLI entry point
-├── lib.rs               # Library exports
-├── cpu/                 # CPU emulation
-│   ├── core.rs         # CPU core implementation
-│   ├── instruction.rs  # Instruction decoder/executor
-│   ├── registers.rs    # CPU registers
-│   └── state.rs        # CPU state management
-├── memory/              # Memory management
-│   ├── guest_memory.rs # Guest memory implementation
-│   └── mmio.rs         # MMIO device handling
-├── network/             # Network support
-│   ├── device.rs       # Network device
-│   └── manager.rs      # Network manager
-├── devices/             # Virtual devices
-│   ├── console.rs      # Console device
-│   ├── timer.rs        # Timer device
-│   └── interrupt.rs    # Interrupt controller
-└── vm/                  # VM orchestration
+├── main.rs                # CLI entry point
+├── lib.rs                 # Library exports
+├── cpu/                   # CPU emulation
+│   ├── core.rs            # CPU core implementation
+│   ├── instruction.rs     # Instruction decoder/executor
+│   ├── registers.rs       # CPU registers
+│   └── state.rs           # CPU state management
+├── memory/                # Memory management
+│   ├── guest_memory.rs    # Guest memory implementation
+│   └── mmio.rs            # MMIO device handling
+├── network/               # Network support
+│   ├── device.rs          # Network device
+│   └── manager.rs         # Network manager
+├── devices/               # Virtual devices
+│   ├── console.rs         # Console device
+│   ├── timer.rs           # Timer device
+│   └── interrupt.rs       # Interrupt controller
+└── vm/                    # VM orchestration
     └── virtual_machine.rs # Main VM implementation
 ```
 
