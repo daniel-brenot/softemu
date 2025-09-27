@@ -57,6 +57,16 @@ pub struct CpuRegisters {
 
     // Flags register
     pub rflags: u64,
+
+    // K-mask registers (AVX-512 mask registers)
+    pub k0: u64,
+    pub k1: u64,
+    pub k2: u64,
+    pub k3: u64,
+    pub k4: u64,
+    pub k5: u64,
+    pub k6: u64,
+    pub k7: u64,
 }
 
 bitflags! {
@@ -160,5 +170,35 @@ impl CpuRegisters {
 
     pub fn get_flag(&self, flag: RFlags) -> bool {
         self.rflags & flag.bits() != 0
+    }
+
+    /// Get K-mask register value
+    pub fn get_k_register(&self, index: u8) -> u64 {
+        match index {
+            0 => self.k0,
+            1 => self.k1,
+            2 => self.k2,
+            3 => self.k3,
+            4 => self.k4,
+            5 => self.k5,
+            6 => self.k6,
+            7 => self.k7,
+            _ => 0,
+        }
+    }
+
+    /// Set K-mask register value
+    pub fn set_k_register(&mut self, index: u8, value: u64) {
+        match index {
+            0 => self.k0 = value,
+            1 => self.k1 = value,
+            2 => self.k2 = value,
+            3 => self.k3 = value,
+            4 => self.k4 = value,
+            5 => self.k5 = value,
+            6 => self.k6 = value,
+            7 => self.k7 = value,
+            _ => {}
+        }
     }
 }

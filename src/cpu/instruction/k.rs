@@ -5,258 +5,809 @@ use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
 
 impl InstructionDecoder<'_> {
 
-    pub fn execute_kaddb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KADDB instruction executed");
+    pub fn execute_kaddb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KADDB k1, k2, k3 - Add byte mask k2 + k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = ((src1 & 0xFF) + (src2 & 0xFF)) & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kaddd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KADDD instruction executed");
+    pub fn execute_kaddd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KADDD k1, k2, k3 - Add doubleword mask k2 + k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = ((src1 & 0xFFFFFFFF) + (src2 & 0xFFFFFFFF)) & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kaddq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KADDQ instruction executed");
+    pub fn execute_kaddq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KADDQ k1, k2, k3 - Add quadword mask k2 + k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src1.wrapping_add(src2);
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kaddw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KADDW instruction executed");
+    pub fn execute_kaddw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KADDW k1, k2, k3 - Add word mask k2 + k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = ((src1 & 0xFFFF) + (src2 & 0xFFFF)) & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kandb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KANDB instruction executed");
+    pub fn execute_kandb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KANDB k1, k2, k3 - AND byte mask k2 & k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (src1 & src2) & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kandd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KANDD instruction executed");
+    pub fn execute_kandd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KANDD k1, k2, k3 - AND doubleword mask k2 & k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (src1 & src2) & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kandnb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KANDNB instruction executed");
+    pub fn execute_kandnb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KANDNB k1, k2, k3 - AND NOT byte mask k2 & ~k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (src1 & !src2) & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kandnd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KANDND instruction executed");
+    pub fn execute_kandnd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KANDND k1, k2, k3 - AND NOT doubleword mask k2 & ~k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (src1 & !src2) & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kandnq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KANDNQ instruction executed");
+    pub fn execute_kandnq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KANDNQ k1, k2, k3 - AND NOT quadword mask k2 & ~k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src1 & !src2;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kandnw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KANDNW instruction executed");
+    pub fn execute_kandnw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KANDNW k1, k2, k3 - AND NOT word mask k2 & ~k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (src1 & !src2) & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kandq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KANDQ instruction executed");
+    pub fn execute_kandq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KANDQ k1, k2, k3 - AND quadword mask k2 & k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src1 & src2;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kandw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KANDW instruction executed");
+    pub fn execute_kandw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KANDW k1, k2, k3 - AND word mask k2 & k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (src1 & src2) & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kmovb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KMOVB instruction executed");
+    pub fn execute_kmovb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KMOVB k1, k2 - Move byte mask k2 to k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = src & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kmovd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KMOVD instruction executed");
+    pub fn execute_kmovd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KMOVD k1, k2 - Move doubleword mask k2 to k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = src & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kmovq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KMOVQ instruction executed");
+    pub fn execute_kmovq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KMOVQ k1, k2 - Move quadword mask k2 to k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        self.set_k_register_value(dst_reg, src, state);
         Ok(())
     }
 
-    pub fn execute_kmovw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KMOVW instruction executed");
+    pub fn execute_kmovw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KMOVW k1, k2 - Move word mask k2 to k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = src & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_knotb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KNOTB instruction executed");
+    pub fn execute_knotb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KNOTB k1, k2 - NOT byte mask ~k2, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (!src) & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_knotd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KNOTD instruction executed");
+    pub fn execute_knotd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KNOTD k1, k2 - NOT doubleword mask ~k2, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (!src) & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_knotq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KNOTQ instruction executed");
+    pub fn execute_knotq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KNOTQ k1, k2 - NOT quadword mask ~k2, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = !src;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_knotw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KNOTW instruction executed");
+    pub fn execute_knotw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KNOTW k1, k2 - NOT word mask ~k2, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (!src) & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_korb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KORB instruction executed");
+    pub fn execute_korb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KORB k1, k2, k3 - OR byte mask k2 | k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (src1 | src2) & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kord(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KORD instruction executed");
+    pub fn execute_kord(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KORD k1, k2, k3 - OR doubleword mask k2 | k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (src1 | src2) & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_korq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KORQ instruction executed");
+    pub fn execute_korq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KORQ k1, k2, k3 - OR quadword mask k2 | k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src1 | src2;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kortestb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KORTESTB instruction executed");
+    pub fn execute_kortestb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KORTESTB k1, k2 - OR test byte mask k1 | k2, set flags
+        let src1_reg = instruction.op_register(0);
+        let src2_reg = instruction.op_register(1);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (src1 | src2) & 0xFF;
+        
+        // Set flags based on result
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        
         Ok(())
     }
 
-    pub fn execute_kortestd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KORTESTD instruction executed");
+    pub fn execute_kortestd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KORTESTD k1, k2 - OR test doubleword mask k1 | k2, set flags
+        let src1_reg = instruction.op_register(0);
+        let src2_reg = instruction.op_register(1);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (src1 | src2) & 0xFFFFFFFF;
+        
+        // Set flags based on result
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        
         Ok(())
     }
 
-    pub fn execute_kortestq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KORTESTQ instruction executed");
+    pub fn execute_kortestq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KORTESTQ k1, k2 - OR test quadword mask k1 | k2, set flags
+        let src1_reg = instruction.op_register(0);
+        let src2_reg = instruction.op_register(1);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src1 | src2;
+        
+        // Set flags based on result
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        
         Ok(())
     }
 
-    pub fn execute_kortestw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KORTESTW instruction executed");
+    pub fn execute_kortestw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KORTESTW k1, k2 - OR test word mask k1 | k2, set flags
+        let src1_reg = instruction.op_register(0);
+        let src2_reg = instruction.op_register(1);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (src1 | src2) & 0xFFFF;
+        
+        // Set flags based on result
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        
         Ok(())
     }
 
-    pub fn execute_korw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KORW instruction executed");
+    pub fn execute_korw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KORW k1, k2, k3 - OR word mask k2 | k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (src1 | src2) & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kshiftlb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KSHIFTLB instruction executed");
+    pub fn execute_kshiftlb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KSHIFTLB k1, k2, imm - Shift left byte mask k2 by imm, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        let count = instruction.immediate8() as u64;
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = ((src & 0xFF) << count) & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kshiftld(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KSHIFTLD instruction executed");
+    pub fn execute_kshiftld(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KSHIFTLD k1, k2, imm - Shift left doubleword mask k2 by imm, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        let count = instruction.immediate8() as u64;
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = ((src & 0xFFFFFFFF) << count) & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kshiftlq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KSHIFTLQ instruction executed");
+    pub fn execute_kshiftlq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KSHIFTLQ k1, k2, imm - Shift left quadword mask k2 by imm, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        let count = instruction.immediate8() as u64;
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src << count;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kshiftlw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KSHIFTLW instruction executed");
+    pub fn execute_kshiftlw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KSHIFTLW k1, k2, imm - Shift left word mask k2 by imm, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        let count = instruction.immediate8() as u64;
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = ((src & 0xFFFF) << count) & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kshiftrb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KSHIFTRB instruction executed");
+    pub fn execute_kshiftrb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KSHIFTRB k1, k2, imm - Shift right byte mask k2 by imm, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        let count = instruction.immediate8() as u64;
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (src & 0xFF) >> count;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kshiftrd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KSHIFTRD instruction executed");
+    pub fn execute_kshiftrd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KSHIFTRD k1, k2, imm - Shift right doubleword mask k2 by imm, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        let count = instruction.immediate8() as u64;
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (src & 0xFFFFFFFF) >> count;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kshiftrq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KSHIFTRQ instruction executed");
+    pub fn execute_kshiftrq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KSHIFTRQ k1, k2, imm - Shift right quadword mask k2 by imm, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        let count = instruction.immediate8() as u64;
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src >> count;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kshiftrw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KSHIFTRW instruction executed");
+    pub fn execute_kshiftrw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KSHIFTRW k1, k2, imm - Shift right word mask k2 by imm, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src_reg = instruction.op_register(1);
+        let count = instruction.immediate8() as u64;
+        
+        let src = self.get_k_register_value(src_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (src & 0xFFFF) >> count;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_ktestb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KTESTB instruction executed");
+    pub fn execute_ktestb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KTESTB k1, k2 - Test byte mask k1 & k2, set flags
+        let src1_reg = instruction.op_register(0);
+        let src2_reg = instruction.op_register(1);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (src1 & src2) & 0xFF;
+        
+        // Set flags based on result
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        
         Ok(())
     }
 
-    pub fn execute_ktestd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KTESTD instruction executed");
+    pub fn execute_ktestd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KTESTD k1, k2 - Test doubleword mask k1 & k2, set flags
+        let src1_reg = instruction.op_register(0);
+        let src2_reg = instruction.op_register(1);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (src1 & src2) & 0xFFFFFFFF;
+        
+        // Set flags based on result
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        
         Ok(())
     }
 
-    pub fn execute_ktestq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KTESTQ instruction executed");
+    pub fn execute_ktestq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KTESTQ k1, k2 - Test quadword mask k1 & k2, set flags
+        let src1_reg = instruction.op_register(0);
+        let src2_reg = instruction.op_register(1);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src1 & src2;
+        
+        // Set flags based on result
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        
         Ok(())
     }
 
-    pub fn execute_ktestw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KTESTW instruction executed");
+    pub fn execute_ktestw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KTESTW k1, k2 - Test word mask k1 & k2, set flags
+        let src1_reg = instruction.op_register(0);
+        let src2_reg = instruction.op_register(1);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (src1 & src2) & 0xFFFF;
+        
+        // Set flags based on result
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::CARRY, false);
+        
         Ok(())
     }
 
-    pub fn execute_kunpckbw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KUNPCKBW instruction executed");
+    pub fn execute_kunpckbw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KUNPCKBW k1, k2, k3 - Unpack byte to word mask k2, k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state) & 0xFF;
+        let src2 = self.get_k_register_value(src2_reg, state) & 0xFF;
+        
+        // Interleave bytes to create word
+        let result = (src1 << 8) | src2;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kunpckdq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KUNPCKDQ instruction executed");
+    pub fn execute_kunpckdq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KUNPCKDQ k1, k2, k3 - Unpack doubleword to quadword mask k2, k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state) & 0xFFFFFFFF;
+        let src2 = self.get_k_register_value(src2_reg, state) & 0xFFFFFFFF;
+        
+        // Interleave doublewords to create quadword
+        let result = (src1 << 32) | src2;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kunpckwd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KUNPCKWD instruction executed");
+    pub fn execute_kunpckwd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KUNPCKWD k1, k2, k3 - Unpack word to doubleword mask k2, k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state) & 0xFFFF;
+        let src2 = self.get_k_register_value(src2_reg, state) & 0xFFFF;
+        
+        // Interleave words to create doubleword
+        let result = (src1 << 16) | src2;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kxnorb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KXNORB instruction executed");
+    pub fn execute_kxnorb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KXNORB k1, k2, k3 - XNOR byte mask k2 ^ ~k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (!(src1 ^ src2)) & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kxnord(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KXNORD instruction executed");
+    pub fn execute_kxnord(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KXNORD k1, k2, k3 - XNOR doubleword mask k2 ^ ~k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (!(src1 ^ src2)) & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kxnorq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KXNORQ instruction executed");
+    pub fn execute_kxnorq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KXNORQ k1, k2, k3 - XNOR quadword mask k2 ^ ~k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = !(src1 ^ src2);
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kxnorw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KXNORW instruction executed");
+    pub fn execute_kxnorw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KXNORW k1, k2, k3 - XNOR word mask k2 ^ ~k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (!(src1 ^ src2)) & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kxorb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KXORB instruction executed");
+    pub fn execute_kxorb(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KXORB k1, k2, k3 - XOR byte mask k2 ^ k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For byte operations, we only use the lower 8 bits
+        let result = (src1 ^ src2) & 0xFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kxord(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KXORD instruction executed");
+    pub fn execute_kxord(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KXORD k1, k2, k3 - XOR doubleword mask k2 ^ k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For doubleword operations, we only use the lower 32 bits
+        let result = (src1 ^ src2) & 0xFFFFFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kxorq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KXORQ instruction executed");
+    pub fn execute_kxorq(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KXORQ k1, k2, k3 - XOR quadword mask k2 ^ k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For quadword operations, we use all 64 bits
+        let result = src1 ^ src2;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 
-    pub fn execute_kxorw(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("KXORW instruction executed");
+    pub fn execute_kxorw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // KXORW k1, k2, k3 - XOR word mask k2 ^ k3, store result in k1
+        let dst_reg = instruction.op_register(0);
+        let src1_reg = instruction.op_register(1);
+        let src2_reg = instruction.op_register(2);
+        
+        let src1 = self.get_k_register_value(src1_reg, state);
+        let src2 = self.get_k_register_value(src2_reg, state);
+        
+        // For word operations, we only use the lower 16 bits
+        let result = (src1 ^ src2) & 0xFFFF;
+        
+        self.set_k_register_value(dst_reg, result, state);
         Ok(())
     }
 

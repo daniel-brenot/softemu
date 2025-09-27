@@ -2007,6 +2007,34 @@ impl InstructionDecoder<'_> {
         }
     }
 
+    fn get_k_register_value(&self, reg: iced_x86::Register, state: &CpuState) -> u64 {
+        match reg {
+            iced_x86::Register::K0 => state.registers.k0,
+            iced_x86::Register::K1 => state.registers.k1,
+            iced_x86::Register::K2 => state.registers.k2,
+            iced_x86::Register::K3 => state.registers.k3,
+            iced_x86::Register::K4 => state.registers.k4,
+            iced_x86::Register::K5 => state.registers.k5,
+            iced_x86::Register::K6 => state.registers.k6,
+            iced_x86::Register::K7 => state.registers.k7,
+            _ => 0,
+        }
+    }
+
+    fn set_k_register_value(&self, reg: iced_x86::Register, value: u64, state: &mut CpuState) {
+        match reg {
+            iced_x86::Register::K0 => state.registers.k0 = value,
+            iced_x86::Register::K1 => state.registers.k1 = value,
+            iced_x86::Register::K2 => state.registers.k2 = value,
+            iced_x86::Register::K3 => state.registers.k3 = value,
+            iced_x86::Register::K4 => state.registers.k4 = value,
+            iced_x86::Register::K5 => state.registers.k5 = value,
+            iced_x86::Register::K6 => state.registers.k6 = value,
+            iced_x86::Register::K7 => state.registers.k7 = value,
+            _ => {}
+        }
+    }
+
     fn get_register_value(&self, reg: iced_x86::Register, state: &CpuState) -> u64 {
         match reg {
             // 64-bit registers
