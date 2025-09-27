@@ -14,8 +14,27 @@ impl InstructionDecoder<'_> {
         
         // If RCX != 0, jump to target
         if state.registers.rcx != 0 {
-            let target = self.get_operand_value(instruction, 0, state)?;
+            // LOOP uses relative addressing - get the immediate value and add to current RIP
+            let operand = instruction.try_op_kind(0).unwrap();
+            let target = match operand {
+                iced_x86::OpKind::Immediate8 => {
+                    let offset = instruction.immediate8() as i8 as i64;
+                    (state.registers.rip as i64 + offset) as u64
+                },
+                iced_x86::OpKind::Immediate16 => (state.registers.rip as i64 + instruction.immediate16() as i16 as i64) as u64,
+                iced_x86::OpKind::Immediate32 => (state.registers.rip as i64 + instruction.immediate32() as i32 as i64) as u64,
+                iced_x86::OpKind::NearBranch16 => instruction.near_branch16() as u64,
+                iced_x86::OpKind::NearBranch32 => instruction.near_branch32() as u64,
+                iced_x86::OpKind::NearBranch64 => {
+                    let offset = instruction.near_branch64() as i64;
+                    (state.registers.rip as i64 + offset) as u64
+                },
+                _ => return Err(crate::EmulatorError::Cpu("Invalid LOOP operand".to_string())),
+            };
             state.registers.rip = target;
+        } else {
+            // If RCX == 0, advance RIP by instruction length
+            state.registers.rip += instruction.len() as u64;
         }
         Ok(())
     }
@@ -30,8 +49,24 @@ impl InstructionDecoder<'_> {
         
         // If RCX != 0 AND zero flag is set, jump to target
         if state.registers.rcx != 0 && state.registers.get_flag(RFlags::ZERO) {
-            let target = self.get_operand_value(instruction, 0, state)?;
+            // LOOPE uses relative addressing - get the immediate value and add to current RIP
+            let operand = instruction.try_op_kind(0).unwrap();
+            let target = match operand {
+                iced_x86::OpKind::Immediate8 => (state.registers.rip as i64 + instruction.immediate8() as i8 as i64) as u64,
+                iced_x86::OpKind::Immediate16 => (state.registers.rip as i64 + instruction.immediate16() as i16 as i64) as u64,
+                iced_x86::OpKind::Immediate32 => (state.registers.rip as i64 + instruction.immediate32() as i32 as i64) as u64,
+                iced_x86::OpKind::NearBranch16 => instruction.near_branch16() as u64,
+                iced_x86::OpKind::NearBranch32 => instruction.near_branch32() as u64,
+                iced_x86::OpKind::NearBranch64 => {
+                    let offset = instruction.near_branch64() as i64;
+                    (state.registers.rip as i64 + offset) as u64
+                },
+                _ => return Err(crate::EmulatorError::Cpu("Invalid LOOPE operand".to_string())),
+            };
             state.registers.rip = target;
+        } else {
+            // If RCX == 0 or zero flag is clear, advance RIP by instruction length
+            state.registers.rip += instruction.len() as u64;
         }
         Ok(())
     }
@@ -46,8 +81,24 @@ impl InstructionDecoder<'_> {
         
         // If RCX != 0 AND zero flag is clear, jump to target
         if state.registers.rcx != 0 && !state.registers.get_flag(RFlags::ZERO) {
-            let target = self.get_operand_value(instruction, 0, state)?;
+            // LOOPNE uses relative addressing - get the immediate value and add to current RIP
+            let operand = instruction.try_op_kind(0).unwrap();
+            let target = match operand {
+                iced_x86::OpKind::Immediate8 => (state.registers.rip as i64 + instruction.immediate8() as i8 as i64) as u64,
+                iced_x86::OpKind::Immediate16 => (state.registers.rip as i64 + instruction.immediate16() as i16 as i64) as u64,
+                iced_x86::OpKind::Immediate32 => (state.registers.rip as i64 + instruction.immediate32() as i32 as i64) as u64,
+                iced_x86::OpKind::NearBranch16 => instruction.near_branch16() as u64,
+                iced_x86::OpKind::NearBranch32 => instruction.near_branch32() as u64,
+                iced_x86::OpKind::NearBranch64 => {
+                    let offset = instruction.near_branch64() as i64;
+                    (state.registers.rip as i64 + offset) as u64
+                },
+                _ => return Err(crate::EmulatorError::Cpu("Invalid LOOPNE operand".to_string())),
+            };
             state.registers.rip = target;
+        } else {
+            // If RCX == 0 or zero flag is set, advance RIP by instruction length
+            state.registers.rip += instruction.len() as u64;
         }
         Ok(())
     }
@@ -154,9 +205,16 @@ impl InstructionDecoder<'_> {
 
     pub fn execute_lahf(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Load flags into AH register
-        let flags = state.registers.get_flags();
-        let ah_value = (flags.bits() & 0xFF) as u8;
-        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | (ah_value as u64);
+        // LAHF loads the lower 8 bits of the flags register into AH
+        // The flags are: SF(7), ZF(6), AF(4), PF(2), CF(0)
+        let mut ah_value = 0u8;
+        if state.registers.get_flag(RFlags::SIGN) { ah_value |= 0x80; }      // SF
+        if state.registers.get_flag(RFlags::ZERO) { ah_value |= 0x40; }     // ZF
+        if state.registers.get_flag(RFlags::AUXILIARY) { ah_value |= 0x10; } // AF
+        if state.registers.get_flag(RFlags::PARITY) { ah_value |= 0x04; }   // PF
+        if state.registers.get_flag(RFlags::CARRY) { ah_value |= 0x01; }    // CF
+        
+        state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFF00FF) | ((ah_value as u64) << 8);
         Ok(())
     }
 
@@ -211,9 +269,9 @@ impl InstructionDecoder<'_> {
         }
 
         // LEA loads the effective address of the source operand into the destination
-        // For now, we'll use the source operand value as the address
-        let src = self.get_operand_value(instruction, 0, state)?;
-        self.set_operand_value(instruction, 1, src, state)?;
+        // We need to calculate the effective address without actually accessing memory
+        let effective_addr = self.calculate_memory_address(instruction, 1, state)?;
+        self.set_operand_value(instruction, 0, effective_addr, state)?;
         Ok(())
     }
 

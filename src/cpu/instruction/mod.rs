@@ -2132,8 +2132,17 @@ impl InstructionDecoder<'_> {
                     addr = self.get_register_value(base_reg, state);
                 }
                 
+                // Add index register * scale if present
+                let index_reg = instruction.memory_index();
+                if index_reg != iced_x86::Register::None {
+                    let index_value = self.get_register_value(index_reg, state);
+                    let scale = instruction.memory_index_scale();
+                    addr = addr.wrapping_add(index_value.wrapping_mul(scale as u64));
+                }
+                
                 // Add displacement if present
-                addr = addr.wrapping_add(instruction.memory_displacement64());
+                let displacement = instruction.memory_displacement64();
+                addr = addr.wrapping_add(displacement);
             }
         }
 
