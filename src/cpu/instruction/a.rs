@@ -72,12 +72,12 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid ADC instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let dst = self.get_operand_value(instruction, 1, state)?;
+        let dst = self.get_operand_value(instruction, 0, state)?;  // Destination (first operand)
+        let src = self.get_operand_value(instruction, 1, state)?;  // Source (second operand)
         let carry = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
         let result = dst.wrapping_add(src).wrapping_add(carry);
 
-        self.set_operand_value(instruction, 1, result, state)?;
+        self.set_operand_value(instruction, 0, result, state)?;  // Set result to destination
         self.update_arithmetic_flags(result, src, dst, false, state);
         Ok(())
     }
@@ -116,11 +116,11 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid ADD instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let dst = self.get_operand_value(instruction, 1, state)?;
+        let dst = self.get_operand_value(instruction, 0, state)?;  // Destination (first operand)
+        let src = self.get_operand_value(instruction, 1, state)?;  // Source (second operand)
         let result = dst.wrapping_add(src);
 
-        self.set_operand_value(instruction, 1, result, state)?;
+        self.set_operand_value(instruction, 0, result, state)?;  // Set result to destination
         self.update_arithmetic_flags(result, src, dst, false, state);
         Ok(())
     }
@@ -312,11 +312,11 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid AND instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let dst = self.get_operand_value(instruction, 1, state)?;
+        let dst = self.get_operand_value(instruction, 0, state)?;  // Destination (first operand)
+        let src = self.get_operand_value(instruction, 1, state)?;  // Source (second operand)
         let result = dst & src;
 
-        self.set_operand_value(instruction, 1, result, state)?;
+        self.set_operand_value(instruction, 0, result, state)?;  // Set result to destination
         self.update_logical_flags(result, state);
         Ok(())
     }

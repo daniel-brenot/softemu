@@ -2009,6 +2009,7 @@ impl InstructionDecoder<'_> {
 
     fn get_register_value(&self, reg: iced_x86::Register, state: &CpuState) -> u64 {
         match reg {
+            // 64-bit registers
             iced_x86::Register::RAX => state.registers.rax,
             iced_x86::Register::RBX => state.registers.rbx,
             iced_x86::Register::RCX => state.registers.rcx,
@@ -2026,12 +2027,30 @@ impl InstructionDecoder<'_> {
             iced_x86::Register::R14 => state.registers.r14,
             iced_x86::Register::R15 => state.registers.r15,
             iced_x86::Register::RIP => state.registers.rip,
+            // 32-bit registers (lower 32 bits of 64-bit registers)
+            iced_x86::Register::EAX => state.registers.rax & 0xFFFFFFFF,
+            iced_x86::Register::EBX => state.registers.rbx & 0xFFFFFFFF,
+            iced_x86::Register::ECX => state.registers.rcx & 0xFFFFFFFF,
+            iced_x86::Register::EDX => state.registers.rdx & 0xFFFFFFFF,
+            iced_x86::Register::ESI => state.registers.rsi & 0xFFFFFFFF,
+            iced_x86::Register::EDI => state.registers.rdi & 0xFFFFFFFF,
+            iced_x86::Register::EBP => state.registers.rbp & 0xFFFFFFFF,
+            iced_x86::Register::ESP => state.registers.rsp & 0xFFFFFFFF,
+            iced_x86::Register::R8D => state.registers.r8 & 0xFFFFFFFF,
+            iced_x86::Register::R9D => state.registers.r9 & 0xFFFFFFFF,
+            iced_x86::Register::R10D => state.registers.r10 & 0xFFFFFFFF,
+            iced_x86::Register::R11D => state.registers.r11 & 0xFFFFFFFF,
+            iced_x86::Register::R12D => state.registers.r12 & 0xFFFFFFFF,
+            iced_x86::Register::R13D => state.registers.r13 & 0xFFFFFFFF,
+            iced_x86::Register::R14D => state.registers.r14 & 0xFFFFFFFF,
+            iced_x86::Register::R15D => state.registers.r15 & 0xFFFFFFFF,
             _ => 0,
         }
     }
 
     fn set_register_value(&self, reg: iced_x86::Register, value: u64, state: &mut CpuState) {
         match reg {
+            // 64-bit registers
             iced_x86::Register::RAX => state.registers.rax = value,
             iced_x86::Register::RBX => state.registers.rbx = value,
             iced_x86::Register::RCX => state.registers.rcx = value,
@@ -2049,6 +2068,23 @@ impl InstructionDecoder<'_> {
             iced_x86::Register::R14 => state.registers.r14 = value,
             iced_x86::Register::R15 => state.registers.r15 = value,
             iced_x86::Register::RIP => state.registers.rip = value,
+            // 32-bit registers (zero-extend to 64-bit)
+            iced_x86::Register::EAX => state.registers.rax = value & 0xFFFFFFFF,
+            iced_x86::Register::EBX => state.registers.rbx = value & 0xFFFFFFFF,
+            iced_x86::Register::ECX => state.registers.rcx = value & 0xFFFFFFFF,
+            iced_x86::Register::EDX => state.registers.rdx = value & 0xFFFFFFFF,
+            iced_x86::Register::ESI => state.registers.rsi = value & 0xFFFFFFFF,
+            iced_x86::Register::EDI => state.registers.rdi = value & 0xFFFFFFFF,
+            iced_x86::Register::EBP => state.registers.rbp = value & 0xFFFFFFFF,
+            iced_x86::Register::ESP => state.registers.rsp = value & 0xFFFFFFFF,
+            iced_x86::Register::R8D => state.registers.r8 = value & 0xFFFFFFFF,
+            iced_x86::Register::R9D => state.registers.r9 = value & 0xFFFFFFFF,
+            iced_x86::Register::R10D => state.registers.r10 = value & 0xFFFFFFFF,
+            iced_x86::Register::R11D => state.registers.r11 = value & 0xFFFFFFFF,
+            iced_x86::Register::R12D => state.registers.r12 = value & 0xFFFFFFFF,
+            iced_x86::Register::R13D => state.registers.r13 = value & 0xFFFFFFFF,
+            iced_x86::Register::R14D => state.registers.r14 = value & 0xFFFFFFFF,
+            iced_x86::Register::R15D => state.registers.r15 = value & 0xFFFFFFFF,
             _ => {}
         }
     }
@@ -2089,7 +2125,7 @@ impl InstructionDecoder<'_> {
         let overflow = if is_subtraction {
             ((dst ^ src) & (dst ^ result)) & 0x8000000000000000 != 0
         } else {
-            ((dst ^ src) & (dst ^ result)) & 0x8000000000000000 != 0
+            ((dst ^ result) & (src ^ result)) & 0x8000000000000000 != 0
         };
         state.registers.set_flag(RFlags::OVERFLOW, overflow);
         

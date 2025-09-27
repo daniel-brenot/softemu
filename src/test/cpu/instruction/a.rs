@@ -32,7 +32,17 @@ mod tests {
     #[test]
     fn test_aaa_instruction() {
         // AAA - ASCII Adjust After Addition
-        // Adjusts AL after addition of two unpacked BCD values
+        // NOTE: AAA is not valid in 64-bit mode, so we'll skip this test
+        // or implement it as a stub that returns an error
+        
+        // Test that AAA is indeed invalid in 64-bit mode
+        let instruction = decode_instruction(&[0x37]);
+        assert_eq!(instruction.mnemonic(), iced_x86::Mnemonic::INVALID);
+        
+        // Since AAA is invalid in 64-bit mode, we'll test the error handling
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0x37], state);
+        assert!(result.is_err());
         
         // Test case 1: Normal case - AL = 0x05, AF = 0
         let mut state = create_test_cpu_state().unwrap();
@@ -40,11 +50,9 @@ mod tests {
         state.registers.set_flag(RFlags::AUXILIARY, false);
         state.registers.set_flag(RFlags::CARRY, false);
         
-        let result = execute_instruction(&[0x37], state).unwrap(); // AAA
-        
-        // After AAA: AL should remain 0x05, AH should be 0, flags unchanged
-        assert_eq!(result.registers.rax & 0xFF, 0x05); // AL
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0x00); // AH
+        // This should fail since AAA is invalid in 64-bit mode
+        let result = execute_instruction(&[0x37], state);
+        assert!(result.is_err());
         
         // Test case 2: Adjustment needed - AL = 0x0A, AF = 0
         let mut state = create_test_cpu_state().unwrap();
@@ -78,81 +86,79 @@ mod tests {
     #[test]
     fn test_aad_instruction() {
         // AAD - ASCII Adjust AX Before Division
-        // Converts unpacked BCD digits in AH and AL to binary in AL
+        // NOTE: AAD is not valid in 64-bit mode
+        
+        // Test that AAD is indeed invalid in 64-bit mode
+        let instruction = decode_instruction(&[0xD5, 0x0A]);
+        assert_eq!(instruction.mnemonic(), iced_x86::Mnemonic::INVALID);
         
         // Test case 1: Normal case - AH = 0x02, AL = 0x05 (represents 25)
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x0205; // AH = 0x02, AL = 0x05
         
-        let result = execute_instruction(&[0xD5, 0x0A], state).unwrap(); // AAD (implicit 10)
-        
-        // After AAD: AL should be 0x19 (25 in decimal), AH should be 0x00
-        assert_eq!(result.registers.rax & 0xFF, 0x19); // AL = 25
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0x00); // AH = 0
+        // This should fail since AAD is invalid in 64-bit mode
+        let result = execute_instruction(&[0xD5, 0x0A], state);
+        assert!(result.is_err());
         
         // Test case 2: Different values - AH = 0x01, AL = 0x07 (represents 17)
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x0107; // AH = 0x01, AL = 0x07
         
-        let result = execute_instruction(&[0xD5, 0x0A], state).unwrap(); // AAD (implicit 10)
-        
-        // After AAD: AL should be 0x11 (17 in decimal), AH should be 0x00
-        assert_eq!(result.registers.rax & 0xFF, 0x11); // AL = 17
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0x00); // AH = 0
+        // This should also fail since AAD is invalid in 64-bit mode
+        let result = execute_instruction(&[0xD5, 0x0A], state);
+        assert!(result.is_err());
         
         // Test case 3: Zero case - AH = 0x00, AL = 0x00
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x0000; // AH = 0x00, AL = 0x00
         
-        let result = execute_instruction(&[0xD5, 0x0A], state).unwrap(); // AAD (implicit 10)
-        
-        // After AAD: AL should be 0x00, AH should be 0x00, ZF should be set
-        assert_eq!(result.registers.rax & 0xFF, 0x00); // AL = 0
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0x00); // AH = 0
-        assert!(result.registers.get_flag(RFlags::ZERO));
+        // This should also fail since AAD is invalid in 64-bit mode
+        let result = execute_instruction(&[0xD5, 0x0A], state);
+        assert!(result.is_err());
     }
 
     #[test]
     fn test_aam_instruction() {
         // AAM - ASCII Adjust AX After Multiply
-        // Converts binary result in AL to unpacked BCD in AH and AL
+        // NOTE: AAM is not valid in 64-bit mode
+        
+        // Test that AAM is indeed invalid in 64-bit mode
+        let instruction = decode_instruction(&[0xD4, 0x0A]);
+        assert_eq!(instruction.mnemonic(), iced_x86::Mnemonic::INVALID);
         
         // Test case 1: Normal case - AL = 0x19 (25 in decimal)
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x19; // AL = 25, AH = 0
         
-        let result = execute_instruction(&[0xD4, 0x0A], state).unwrap(); // AAM (implicit 10)
-        
-        // After AAM: AL should be 0x05, AH should be 0x02 (represents 25)
-        assert_eq!(result.registers.rax & 0xFF, 0x05); // AL = 5
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0x02); // AH = 2
+        // This should fail since AAM is invalid in 64-bit mode
+        let result = execute_instruction(&[0xD4, 0x0A], state);
+        assert!(result.is_err());
         
         // Test case 2: Different value - AL = 0x11 (17 in decimal)
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x11; // AL = 17, AH = 0
         
-        let result = execute_instruction(&[0xD4, 0x0A], state).unwrap(); // AAM (implicit 10)
-        
-        // After AAM: AL should be 0x07, AH should be 0x01 (represents 17)
-        assert_eq!(result.registers.rax & 0xFF, 0x07); // AL = 7
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0x01); // AH = 1
+        // This should also fail since AAM is invalid in 64-bit mode
+        let result = execute_instruction(&[0xD4, 0x0A], state);
+        assert!(result.is_err());
         
         // Test case 3: Zero case - AL = 0x00
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x00; // AL = 0, AH = 0
         
-        let result = execute_instruction(&[0xD4, 0x0A], state).unwrap(); // AAM (implicit 10)
-        
-        // After AAM: AL should be 0x00, AH should be 0x00, ZF should be set
-        assert_eq!(result.registers.rax & 0xFF, 0x00); // AL = 0
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0x00); // AH = 0
-        assert!(result.registers.get_flag(RFlags::ZERO));
+        // This should also fail since AAM is invalid in 64-bit mode
+        let result = execute_instruction(&[0xD4, 0x0A], state);
+        assert!(result.is_err());
     }
 
     #[test]
     fn test_aas_instruction() {
         // AAS - ASCII Adjust AL After Subtraction
-        // Adjusts AL after subtraction of two unpacked BCD values
+        // NOTE: AAS is not valid in 64-bit mode
+        
+        // Test that AAS is indeed invalid in 64-bit mode
+        let instruction = decode_instruction(&[0x3F]);
+        assert_eq!(instruction.mnemonic(), iced_x86::Mnemonic::INVALID);
         
         // Test case 1: Normal case - AL = 0x05, AF = 0
         let mut state = create_test_cpu_state().unwrap();
@@ -160,11 +166,9 @@ mod tests {
         state.registers.set_flag(RFlags::AUXILIARY, false);
         state.registers.set_flag(RFlags::CARRY, false);
         
-        let result = execute_instruction(&[0x3F], state).unwrap(); // AAS
-        
-        // After AAS: AL should remain 0x05, AH should be 0, flags unchanged
-        assert_eq!(result.registers.rax & 0xFF, 0x05); // AL
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0x00); // AH
+        // This should fail since AAS is invalid in 64-bit mode
+        let result = execute_instruction(&[0x3F], state);
+        assert!(result.is_err());
         
         // Test case 2: Adjustment needed - AL = 0x0A, AF = 1
         let mut state = create_test_cpu_state().unwrap();
@@ -172,13 +176,9 @@ mod tests {
         state.registers.set_flag(RFlags::AUXILIARY, true);
         state.registers.set_flag(RFlags::CARRY, false);
         
-        let result = execute_instruction(&[0x3F], state).unwrap(); // AAS
-        
-        // After AAS: AL should be 0x04, AH should be 0xFF, AF and CF should be set
-        assert_eq!(result.registers.rax & 0xFF, 0x04); // AL
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0xFF); // AH
-        assert!(result.registers.get_flag(RFlags::AUXILIARY));
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        // This should also fail since AAS is invalid in 64-bit mode
+        let result = execute_instruction(&[0x3F], state);
+        assert!(result.is_err());
         
         // Test case 3: High nibble adjustment - AL = 0x15, AF = 1
         let mut state = create_test_cpu_state().unwrap();
@@ -186,13 +186,9 @@ mod tests {
         state.registers.set_flag(RFlags::AUXILIARY, true);
         state.registers.set_flag(RFlags::CARRY, false);
         
-        let result = execute_instruction(&[0x3F], state).unwrap(); // AAS
-        
-        // After AAS: AL should be 0x0F, AH should be 0xFF, AF and CF should be set
-        assert_eq!(result.registers.rax & 0xFF, 0x0F); // AL
-        assert_eq!((result.registers.rax >> 8) & 0xFF, 0xFF); // AH
-        assert!(result.registers.get_flag(RFlags::AUXILIARY));
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        // This should also fail since AAS is invalid in 64-bit mode
+        let result = execute_instruction(&[0x3F], state);
+        assert!(result.is_err());
     }
 
     #[test]
@@ -200,13 +196,24 @@ mod tests {
         // ADC - Add with Carry
         // Adds source, destination, and carry flag
         
+        // First, let's test what the decoder produces for ADC
+        let instruction = decode_instruction(&[0x48, 0x11, 0xC8]);
+        println!("ADC instruction mnemonic: {:?}", instruction.mnemonic());
+        println!("ADC instruction op_count: {}", instruction.op_count());
+        if instruction.op_count() > 0 {
+            println!("ADC operand 0: {:?}", instruction.op_kind(0));
+            println!("ADC operand 1: {:?}", instruction.op_kind(1));
+        }
+        
         // Test case 1: Simple addition without carry
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x10; // RAX = 16
         state.registers.rcx = 0x20; // RCX = 32
         state.registers.set_flag(RFlags::CARRY, false);
         
-        let result = execute_instruction(&[0x11, 0xC8], state).unwrap(); // ADC RAX, RCX
+        println!("Before ADC: RAX = {}, RCX = {}", state.registers.rax, state.registers.rcx);
+        let result = execute_instruction(&[0x48, 0x11, 0xC8], state).unwrap(); // ADC RAX, RCX
+        println!("After ADC: RAX = {}, RCX = {}", result.registers.rax, result.registers.rcx);
         
         // Result should be 0x30 (48), no carry
         assert_eq!(result.registers.rax, 0x30);
@@ -219,7 +226,7 @@ mod tests {
         state.registers.rcx = 0x20; // RCX = 32
         state.registers.set_flag(RFlags::CARRY, true);
         
-        let result = execute_instruction(&[0x11, 0xC8], state).unwrap(); // ADC RAX, RCX
+        let result = execute_instruction(&[0x48, 0x11, 0xC8], state).unwrap(); // ADC RAX, RCX
         
         // Result should be 0x31 (49), no carry
         assert_eq!(result.registers.rax, 0x31);
@@ -231,7 +238,7 @@ mod tests {
         state.registers.rcx = 0x1; // RCX = 1
         state.registers.set_flag(RFlags::CARRY, false);
         
-        let result = execute_instruction(&[0x11, 0xC8], state).unwrap(); // ADC RAX, RCX
+        let result = execute_instruction(&[0x48, 0x11, 0xC8], state).unwrap(); // ADC RAX, RCX
         
         // Result should overflow to negative, overflow flag set
         assert_eq!(result.registers.rax, 0x8000000000000000);
@@ -259,7 +266,9 @@ mod tests {
         state.registers.rax = 0x10; // RAX = 16
         state.registers.rcx = 0x20; // RCX = 32
         
-        let result = execute_instruction(&[0x01, 0xC8], state).unwrap(); // ADD RAX, RCX
+        let result = execute_instruction(&[0x48, 0x01, 0xC8], state).unwrap(); // ADD RAX, RCX
+        
+        println!("ADD test: RAX = 0x{:X}, RCX = 0x{:X}, result = 0x{:X}", 0x10, 0x20, result.registers.rax);
         
         // Result should be 0x30 (48)
         assert_eq!(result.registers.rax, 0x30);
@@ -273,7 +282,9 @@ mod tests {
         state.registers.rax = 0x10; // RAX = 16
         state.registers.rcx = 0xFFFFFFFFFFFFFFF0; // RCX = -16 (two's complement)
         
-        let result = execute_instruction(&[0x01, 0xC8], state).unwrap(); // ADD RAX, RCX
+        let result = execute_instruction(&[0x48, 0x01, 0xC8], state).unwrap(); // ADD RAX, RCX
+        
+        println!("ADD test case 2: RAX = 0x{:X}, RCX = 0x{:X}, result = 0x{:X}", 0x10, 0xFFFFFFFFFFFFFFF0u64, result.registers.rax);
         
         // Result should be 0x00, zero flag set
         assert_eq!(result.registers.rax, 0x00);
@@ -285,7 +296,7 @@ mod tests {
         state.registers.rax = 0x7FFFFFFFFFFFFFFF; // Max positive 64-bit value
         state.registers.rcx = 0x1; // RCX = 1
         
-        let result = execute_instruction(&[0x01, 0xC8], state).unwrap(); // ADD RAX, RCX
+        let result = execute_instruction(&[0x48, 0x01, 0xC8], state).unwrap(); // ADD RAX, RCX
         
         // Result should overflow to negative, overflow flag set
         assert_eq!(result.registers.rax, 0x8000000000000000);
@@ -307,7 +318,9 @@ mod tests {
         state.registers.rbx = 0x1000; // RBX = memory address
         state.write_u64(0x1000, 0x20).unwrap(); // Store 32 at memory address
         
-        let result = execute_instruction(&[0x03, 0x03], state).unwrap(); // ADD RAX, [RBX]
+        let result = execute_instruction(&[0x48, 0x03, 0x03], state).unwrap(); // ADD RAX, [RBX] (64-bit)
+        
+        println!("ADD memory test: RAX = 0x{:X}, [RBX] = 0x{:X}, result = 0x{:X}", 0x10, 0x20, result.registers.rax);
         
         // Result should be 0x30 (16 + 32)
         assert_eq!(result.registers.rax, 0x30);
@@ -323,7 +336,7 @@ mod tests {
         state.registers.rax = 0x0F; // RAX = 0x0F (00001111)
         state.registers.rcx = 0x33; // RCX = 0x33 (00110011)
         
-        let result = execute_instruction(&[0x21, 0xC8], state).unwrap(); // AND RAX, RCX
+        let result = execute_instruction(&[0x48, 0x21, 0xC8], state).unwrap(); // AND RAX, RCX
         
         // Result should be 0x03 (00000011)
         assert_eq!(result.registers.rax, 0x03);
@@ -337,7 +350,7 @@ mod tests {
         state.registers.rax = 0x0F; // RAX = 0x0F (00001111)
         state.registers.rcx = 0xF0; // RCX = 0xF0 (11110000)
         
-        let result = execute_instruction(&[0x21, 0xC8], state).unwrap(); // AND RAX, RCX
+        let result = execute_instruction(&[0x48, 0x21, 0xC8], state).unwrap(); // AND RAX, RCX
         
         // Result should be 0x00, zero flag set
         assert_eq!(result.registers.rax, 0x00);
@@ -369,7 +382,7 @@ mod tests {
         state.registers.rax = 0x8000000000000000; // RAX = negative value
         state.registers.rcx = 0x8000000000000000; // RCX = negative value
         
-        let result = execute_instruction(&[0x21, 0xC8], state).unwrap(); // AND RAX, RCX
+        let result = execute_instruction(&[0x48, 0x21, 0xC8], state).unwrap(); // AND RAX, RCX
         
         // Result should have sign bit set
         assert_eq!(result.registers.rax, 0x8000000000000000);
