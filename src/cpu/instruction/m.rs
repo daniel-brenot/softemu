@@ -10,8 +10,44 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid MOV instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        self.set_operand_value(instruction, 1, src, state)?;
+        // Handle different MOV instruction types
+        match instruction.code() {
+            iced_x86::Code::Mov_rm64_r64 => {
+                // Check operand types to determine correct source and destination
+                let op0_kind = instruction.try_op_kind(0).unwrap();
+                let op1_kind = instruction.try_op_kind(1).unwrap();
+                
+                match (op0_kind, op1_kind) {
+                    (iced_x86::OpKind::Register, iced_x86::OpKind::Register) => {
+                        // Register to register: operand 0 is source, operand 1 is destination
+                        let src = self.get_operand_value(instruction, 0, state)?;
+                        self.set_operand_value(instruction, 1, src, state)?;
+                    }
+                    (iced_x86::OpKind::Memory, iced_x86::OpKind::Register) => {
+                        // Register to memory: operand 1 is source, operand 0 is destination
+                        let src = self.get_operand_value(instruction, 1, state)?;
+                        self.set_operand_value(instruction, 0, src, state)?;
+                    }
+                    _ => {
+                        return Err(crate::EmulatorError::Cpu("Unsupported MOV operand combination".to_string()));
+                    }
+                }
+            }
+            iced_x86::Code::Mov_rm64_imm32 => {
+                // Immediate to register/memory: operand 0 is destination, operand 1 is source
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            iced_x86::Code::Mov_r64_rm64 => {
+                // Memory/register to register: operand 0 is destination, operand 1 is source
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            _ => {
+                println!("Unsupported MOV instruction type: {:?}", instruction.code());
+                return Err(crate::EmulatorError::Cpu("Unsupported MOV instruction type".to_string()));
+            }
+        }
         Ok(())
     }
 
@@ -96,10 +132,47 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid MOVSX instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        // Sign extend based on source size (simplified - assume 32-bit to 64-bit)
-        let result = src as i32 as i64 as u64;
-        self.set_operand_value(instruction, 1, result, state)?;
+        let src = self.get_operand_value(instruction, 1, state)?;
+        
+        // Sign extend based on source operand size
+        let result = match instruction.op_kind(1) {
+            iced_x86::OpKind::Register => {
+                let reg = instruction.op_register(1);
+                match reg {
+                    // 8-bit registers - sign extend from 8-bit
+                    iced_x86::Register::AL | iced_x86::Register::BL | iced_x86::Register::CL | 
+                    iced_x86::Register::DL | iced_x86::Register::SIL | iced_x86::Register::DIL | 
+                    iced_x86::Register::BPL | iced_x86::Register::SPL | iced_x86::Register::R8L | 
+                    iced_x86::Register::R9L | iced_x86::Register::R10L | iced_x86::Register::R11L | 
+                    iced_x86::Register::R12L | iced_x86::Register::R13L | iced_x86::Register::R14L | 
+                    iced_x86::Register::R15L => {
+                        (src as i8) as i64 as u64
+                    },
+                    // 16-bit registers - sign extend from 16-bit
+                    iced_x86::Register::AX | iced_x86::Register::BX | iced_x86::Register::CX | 
+                    iced_x86::Register::DX | iced_x86::Register::SI | iced_x86::Register::DI | 
+                    iced_x86::Register::BP | iced_x86::Register::SP | iced_x86::Register::R8W | 
+                    iced_x86::Register::R9W | iced_x86::Register::R10W | iced_x86::Register::R11W | 
+                    iced_x86::Register::R12W | iced_x86::Register::R13W | iced_x86::Register::R14W | 
+                    iced_x86::Register::R15W => {
+                        (src as i16) as i64 as u64
+                    },
+                    // 32-bit registers - sign extend from 32-bit
+                    iced_x86::Register::EAX | iced_x86::Register::EBX | iced_x86::Register::ECX | 
+                    iced_x86::Register::EDX | iced_x86::Register::ESI | iced_x86::Register::EDI | 
+                    iced_x86::Register::EBP | iced_x86::Register::ESP | iced_x86::Register::R8D | 
+                    iced_x86::Register::R9D | iced_x86::Register::R10D | iced_x86::Register::R11D | 
+                    iced_x86::Register::R12D | iced_x86::Register::R13D | iced_x86::Register::R14D | 
+                    iced_x86::Register::R15D => {
+                        (src as i32) as i64 as u64
+                    },
+                    _ => src, // 64-bit registers - no extension needed
+                }
+            },
+            _ => src, // For non-register operands, assume no extension needed
+        };
+        
+        self.set_operand_value(instruction, 0, result, state)?;
         Ok(())
     }
 
@@ -108,9 +181,9 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid MOVZX instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
+        let src = self.get_operand_value(instruction, 1, state)?;
         // Zero extend (no change needed for 64-bit)
-        self.set_operand_value(instruction, 1, src, state)?;
+        self.set_operand_value(instruction, 0, src, state)?;
         Ok(())
     }
 
@@ -364,8 +437,17 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_movsxd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("MOVSXD instruction executed");
+    pub fn execute_movsxd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid MOVSXD instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 1, state)?;
+        
+        // Sign extend from 32-bit to 64-bit
+        let result = (src as i32) as i64 as u64;
+        
+        self.set_operand_value(instruction, 0, result, state)?;
         Ok(())
     }
 

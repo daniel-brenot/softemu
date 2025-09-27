@@ -469,7 +469,10 @@ impl InstructionDecoder<'_> {
             Mnemonic::Movsd => self.execute_movsd(instruction, state),
             Mnemonic::Movsq => self.execute_movsq(instruction, state),
             Mnemonic::Movsw => self.execute_movsw(instruction, state),
-            Mnemonic::Movsx => self.execute_movsx(instruction, state),
+            Mnemonic::Movsx => {
+                println!("Executing MOVSX instruction");
+                self.execute_movsx(instruction, state)
+            },
             Mnemonic::Movzx => self.execute_movzx(instruction, state),
             Mnemonic::Mul => self.execute_mul(instruction, state),
             Mnemonic::Maskmovdqu => self.execute_maskmovdqu(instruction, state),
@@ -1982,6 +1985,7 @@ impl InstructionDecoder<'_> {
             OpKind::Immediate8 => Ok(instruction.immediate8() as u64),
             OpKind::Immediate16 => Ok(instruction.immediate16() as u64),
             OpKind::Immediate32 => Ok(instruction.immediate32() as u64),
+            OpKind::Immediate32to64 => Ok(instruction.immediate32() as u64),
             OpKind::Immediate64 => Ok(instruction.immediate64()),
             OpKind::Memory => {
                 let addr = self.calculate_memory_address(instruction, op_index, state)?;
@@ -2072,6 +2076,23 @@ impl InstructionDecoder<'_> {
             iced_x86::Register::R13D => state.registers.r13 & 0xFFFFFFFF,
             iced_x86::Register::R14D => state.registers.r14 & 0xFFFFFFFF,
             iced_x86::Register::R15D => state.registers.r15 & 0xFFFFFFFF,
+            // 8-bit registers (lower 8 bits of 64-bit registers)
+            iced_x86::Register::AL => state.registers.rax & 0xFF,
+            iced_x86::Register::BL => state.registers.rbx & 0xFF,
+            iced_x86::Register::CL => state.registers.rcx & 0xFF,
+            iced_x86::Register::DL => state.registers.rdx & 0xFF,
+            iced_x86::Register::SIL => state.registers.rsi & 0xFF,
+            iced_x86::Register::DIL => state.registers.rdi & 0xFF,
+            iced_x86::Register::BPL => state.registers.rbp & 0xFF,
+            iced_x86::Register::SPL => state.registers.rsp & 0xFF,
+            iced_x86::Register::R8L => state.registers.r8 & 0xFF,
+            iced_x86::Register::R9L => state.registers.r9 & 0xFF,
+            iced_x86::Register::R10L => state.registers.r10 & 0xFF,
+            iced_x86::Register::R11L => state.registers.r11 & 0xFF,
+            iced_x86::Register::R12L => state.registers.r12 & 0xFF,
+            iced_x86::Register::R13L => state.registers.r13 & 0xFF,
+            iced_x86::Register::R14L => state.registers.r14 & 0xFF,
+            iced_x86::Register::R15L => state.registers.r15 & 0xFF,
             _ => 0,
         }
     }
@@ -2113,6 +2134,23 @@ impl InstructionDecoder<'_> {
             iced_x86::Register::R13D => state.registers.r13 = value & 0xFFFFFFFF,
             iced_x86::Register::R14D => state.registers.r14 = value & 0xFFFFFFFF,
             iced_x86::Register::R15D => state.registers.r15 = value & 0xFFFFFFFF,
+            // 8-bit registers (preserve upper bits, update lower 8 bits)
+            iced_x86::Register::AL => state.registers.rax = (state.registers.rax & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::BL => state.registers.rbx = (state.registers.rbx & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::CL => state.registers.rcx = (state.registers.rcx & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::DL => state.registers.rdx = (state.registers.rdx & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::SIL => state.registers.rsi = (state.registers.rsi & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::DIL => state.registers.rdi = (state.registers.rdi & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::BPL => state.registers.rbp = (state.registers.rbp & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::SPL => state.registers.rsp = (state.registers.rsp & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::R8L => state.registers.r8 = (state.registers.r8 & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::R9L => state.registers.r9 = (state.registers.r9 & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::R10L => state.registers.r10 = (state.registers.r10 & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::R11L => state.registers.r11 = (state.registers.r11 & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::R12L => state.registers.r12 = (state.registers.r12 & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::R13L => state.registers.r13 = (state.registers.r13 & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::R14L => state.registers.r14 = (state.registers.r14 & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
+            iced_x86::Register::R15L => state.registers.r15 = (state.registers.r15 & 0xFFFFFFFFFFFFFF00) | (value & 0xFF),
             _ => {}
         }
     }
