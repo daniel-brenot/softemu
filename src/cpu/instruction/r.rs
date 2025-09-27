@@ -4,10 +4,16 @@ use iced_x86::Instruction;
 use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
 
 impl InstructionDecoder<'_> {
-    pub fn execute_ret(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+    pub fn execute_ret(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Pop return address
         let return_addr = state.read_u64(state.registers.rsp)?;
         state.registers.rsp += 8;
+        
+        // Add immediate operand if present (for RET imm16)
+        if instruction.op_count() == 1 {
+            let immediate = self.get_operand_value(instruction, 0, state)?;
+            state.registers.rsp += immediate;
+        }
         
         // Jump to return address
         state.registers.rip = return_addr;
@@ -242,6 +248,129 @@ impl InstructionDecoder<'_> {
 
     pub fn execute_rmpquery(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
         log::debug!("RMPQUERY instruction executed");
+        Ok(())
+    }
+
+    pub fn execute_rol(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid ROL instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        if count == 0 {
+            // No rotation, just update flags
+            self.update_rotate_flags(src, src, 0, state);
+            return Ok(());
+        }
+        
+        let result = src.rotate_left(count as u32);
+        
+        // Set carry flag to the last bit rotated out
+        let operand_size = self.get_operand_size(instruction, 0);
+        let last_bit = (src >> (operand_size as u64 - count)) & 1;
+        state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_rotate_flags(result, src, count, state);
+        Ok(())
+    }
+
+    pub fn execute_ror(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid ROR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        if count == 0 {
+            // No rotation, just update flags
+            self.update_rotate_flags(src, src, 0, state);
+            return Ok(());
+        }
+        
+        let result = src.rotate_right(count as u32);
+        
+        // Set carry flag to the last bit rotated out
+        let last_bit = (src >> (count - 1)) & 1;
+        state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_rotate_flags(result, src, count, state);
+        Ok(())
+    }
+
+    pub fn execute_rcl(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid RCL instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        if count == 0 {
+            // No rotation, just update flags
+            self.update_rotate_flags(src, src, 0, state);
+            return Ok(());
+        }
+        
+        let carry = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
+        let operand_size = self.get_operand_size(instruction, 0);
+        let mask = match operand_size {
+            8 => 0xFF,
+            16 => 0xFFFF,
+            32 => 0xFFFFFFFF,
+            64 => 0xFFFFFFFFFFFFFFFF,
+            _ => 0xFFFFFFFFFFFFFFFF,
+        };
+        
+        // Rotate left through carry
+        let result = ((src << count) | (carry << (count - 1))) & mask;
+        
+        // Set carry flag to the last bit rotated out
+        let last_bit = (src >> (operand_size as u64 - count)) & 1;
+        state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_rotate_flags(result, src, count, state);
+        Ok(())
+    }
+
+    pub fn execute_rcr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid RCR instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
+        
+        if count == 0 {
+            // No rotation, just update flags
+            self.update_rotate_flags(src, src, 0, state);
+            return Ok(());
+        }
+        
+        let carry = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
+        let operand_size = self.get_operand_size(instruction, 0);
+        let mask = match operand_size {
+            8 => 0xFF,
+            16 => 0xFFFF,
+            32 => 0xFFFFFFFF,
+            64 => 0xFFFFFFFFFFFFFFFF,
+            _ => 0xFFFFFFFFFFFFFFFF,
+        };
+        
+        // Rotate right through carry
+        let result = ((src >> count) | (carry << (operand_size as u64 - count))) & mask;
+        
+        // Set carry flag to the last bit rotated out
+        let last_bit = (src >> (count - 1)) & 1;
+        state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.update_rotate_flags(result, src, count, state);
         Ok(())
     }
 }

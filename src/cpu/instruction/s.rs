@@ -271,65 +271,6 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_rol(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
-        if instruction.op_count() != 2 {
-            return Err(crate::EmulatorError::Cpu("Invalid ROL instruction".to_string()));
-        }
-
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
-        
-        let result = src.rotate_left(count as u32);
-        self.set_operand_value(instruction, 0, result, state)?;
-        self.update_rotate_flags(result, src, count, state);
-        Ok(())
-    }
-
-    pub fn execute_ror(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
-        if instruction.op_count() != 2 {
-            return Err(crate::EmulatorError::Cpu("Invalid ROR instruction".to_string()));
-        }
-
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
-        
-        let result = src.rotate_right(count as u32);
-        self.set_operand_value(instruction, 0, result, state)?;
-        self.update_rotate_flags(result, src, count, state);
-        Ok(())
-    }
-
-    pub fn execute_rcl(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
-        if instruction.op_count() != 2 {
-            return Err(crate::EmulatorError::Cpu("Invalid RCL instruction".to_string()));
-        }
-
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
-        
-        let carry = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
-        let result = (src << count) | (carry << (count - 1));
-        
-        self.set_operand_value(instruction, 0, result, state)?;
-        self.update_rotate_flags(result, src, count, state);
-        Ok(())
-    }
-
-    pub fn execute_rcr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
-        if instruction.op_count() != 2 {
-            return Err(crate::EmulatorError::Cpu("Invalid RCR instruction".to_string()));
-        }
-
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let count = self.get_operand_value(instruction, 1, state)? & 0x3F; // Mask to 6 bits
-        
-        let carry = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
-        let result = (src >> count) | (carry << (63 - count));
-        
-        self.set_operand_value(instruction, 0, result, state)?;
-        self.update_rotate_flags(result, src, count, state);
-        Ok(())
-    }
 
     pub fn execute_stc(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Set carry flag

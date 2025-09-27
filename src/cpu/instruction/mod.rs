@@ -2286,11 +2286,8 @@ impl InstructionDecoder<'_> {
         state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
         state.registers.set_flag(RFlags::PARITY, (result.count_ones() & 1) == 0);
         
-        // Carry flag is set to the last bit rotated out
-        if count > 0 {
-            let last_bit = (_src >> (count - 1)) & 1;
-            state.registers.set_flag(RFlags::CARRY, last_bit != 0);
-        }
+        // Note: Carry flag is handled by the specific rotate instruction implementations
+        // (ROL/ROR vs RCL/RCR have different carry flag behavior)
         
         // Overflow flag is undefined for rotate operations
         state.registers.set_flag(RFlags::OVERFLOW, false);
