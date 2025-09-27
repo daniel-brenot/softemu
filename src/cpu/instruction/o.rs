@@ -9,12 +9,22 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid OR instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let dst = self.get_operand_value(instruction, 1, state)?;
+        // Get operand sizes
+        let dst_size = self.get_operand_size(instruction, 0);
+        let src_size = self.get_operand_size(instruction, 1);
+        let result_size = dst_size.max(src_size);
+
+        // Get operand values with proper size handling
+        let dst = self.get_operand_value_with_size(instruction, 0, dst_size, state)?;
+        let src = self.get_operand_value_with_size(instruction, 1, src_size, state)?;
+        
         let result = dst | src;
 
-        self.set_operand_value(instruction, 1, result, state)?;
-        self.update_logical_flags(result, state);
+        // Set result with proper size handling
+        self.set_operand_value_with_size(instruction, 0, result, result_size, state)?;
+        
+        // Update flags based on result size
+        self.update_logical_flags_with_size(result, result_size, state);
         Ok(())
     }
 
