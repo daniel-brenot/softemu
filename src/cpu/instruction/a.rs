@@ -82,6 +82,35 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
+    pub fn execute_adcx(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid ADCX instruction".to_string()));
+        }
+
+        let src = self.get_operand_value(instruction, 0, state)?;
+        let dst = self.get_operand_value(instruction, 1, state)?;
+        let carry_in = if state.registers.get_flag(RFlags::CARRY) { 1 } else { 0 };
+        
+        // Perform addition with carry using overflowing_add
+        let (sum1, overflow1) = dst.overflowing_add(src);
+        let (result, overflow2) = sum1.overflowing_add(carry_in);
+        
+        // Set the result
+        self.set_operand_value(instruction, 1, result, state)?;
+        
+        // Update flags - ADCX only affects the carry flag, not other arithmetic flags
+        let carry_out = overflow1 || overflow2;
+        state.registers.set_flag(RFlags::CARRY, carry_out);
+        
+        // Clear other flags that ADCX doesn't affect
+        state.registers.set_flag(RFlags::ZERO, false);
+        state.registers.set_flag(RFlags::SIGN, false);
+        state.registers.set_flag(RFlags::OVERFLOW, false);
+        state.registers.set_flag(RFlags::PARITY, false);
+        
+        Ok(())
+    }
+
     pub fn execute_add(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid ADD instruction".to_string()));

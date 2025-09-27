@@ -58,7 +58,7 @@ impl InstructionDecoder<'_> {
             Mnemonic::Aam => self.execute_aam(instruction, state),
             Mnemonic::Aas => self.execute_aas(instruction, state),
             Mnemonic::Adc => self.execute_adc(instruction, state),
-            Mnemonic::Adcx => todo!(),
+            Mnemonic::Adcx => self.execute_adcx(instruction, state),
             Mnemonic::Add => self.execute_add(instruction, state),
             Mnemonic::Addpd => self.execute_addpd(instruction, state),
             Mnemonic::Addps => self.execute_addps(instruction, state),
