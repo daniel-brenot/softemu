@@ -185,6 +185,8 @@ impl InstructionDecoder<'_> {
             Mnemonic::Cvttps2pi => todo!(),
             Mnemonic::Cvttsd2si => todo!(),
             Mnemonic::Cvttss2si => todo!(),
+            Mnemonic::Cwd => self.execute_cwd(instruction, state),
+            Mnemonic::Cwde => self.execute_cwde(instruction, state),
             // D
             Mnemonic::Daa => self.execute_daa(instruction, state),
             Mnemonic::Das => self.execute_das(instruction, state),
