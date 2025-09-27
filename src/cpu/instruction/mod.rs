@@ -51,7 +51,7 @@ impl InstructionDecoder<'_> {
 
     pub fn execute_instruction(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         match instruction.mnemonic() {
-            Mnemonic::INVALID => Err(crate::EmulatorError::Cpu("Invalid instruction".to_string())),
+                Mnemonic::INVALID => Err(crate::EmulatorError::Cpu("Invalid instruction".to_string())),
             // A
             Mnemonic::Aaa => self.execute_aaa(instruction, state),
             Mnemonic::Aad => self.execute_aad(instruction, state),
@@ -2302,7 +2302,16 @@ impl InstructionDecoder<'_> {
         match operand {
             OpKind::Register => {
                 let reg = instruction.op_register(op_index);
-                self.get_register_size(reg)
+                let reg_size = self.get_register_size(reg);
+                
+                // In 64-bit mode, if the register is 32-bit but we're in a 64-bit context,
+                // we should treat it as 64-bit. This handles cases like POPCNT where
+                // the instruction is decoded as 32-bit but should operate on 64-bit values.
+                if reg_size == 32 && self.is_64_bit_register(reg) {
+                    64
+                } else {
+                    reg_size
+                }
             }
             OpKind::Immediate8 => 8,
             OpKind::Immediate16 => 16,
@@ -2365,19 +2374,67 @@ impl InstructionDecoder<'_> {
         }
     }
 
+    fn is_64_bit_register(&self, reg: iced_x86::Register) -> bool {
+        match reg {
+            // These are the 64-bit general-purpose registers
+            iced_x86::Register::RAX | iced_x86::Register::RBX | iced_x86::Register::RCX |
+            iced_x86::Register::RDX | iced_x86::Register::RSI | iced_x86::Register::RDI |
+            iced_x86::Register::RBP | iced_x86::Register::RSP | iced_x86::Register::R8 |
+            iced_x86::Register::R9 | iced_x86::Register::R10 | iced_x86::Register::R11 |
+            iced_x86::Register::R12 | iced_x86::Register::R13 | iced_x86::Register::R14 |
+            iced_x86::Register::R15 => true,
+            // These are the 32-bit versions of the same registers
+            iced_x86::Register::EAX | iced_x86::Register::EBX | iced_x86::Register::ECX |
+            iced_x86::Register::EDX | iced_x86::Register::ESI | iced_x86::Register::EDI |
+            iced_x86::Register::EBP | iced_x86::Register::ESP | iced_x86::Register::R8D |
+            iced_x86::Register::R9D | iced_x86::Register::R10D | iced_x86::Register::R11D |
+            iced_x86::Register::R12D | iced_x86::Register::R13D | iced_x86::Register::R14D |
+            iced_x86::Register::R15D => true,
+            _ => false,
+        }
+    }
+
     fn get_operand_value_with_size(&self, instruction: &Instruction, op_index: u32, size: u32, state: &CpuState) -> Result<u64> {
         let operand = instruction.try_op_kind(op_index).unwrap();
         match operand {
             OpKind::Register => {
                 let reg = instruction.op_register(op_index);
                 let value = self.get_register_value(reg, state);
-                // Mask to the appropriate size
-                match size {
-                    8 => Ok(value & 0xFF),
-                    16 => Ok(value & 0xFFFF),
-                    32 => Ok(value & 0xFFFFFFFF),
-                    64 => Ok(value),
-                    _ => Ok(value & 0xFFFFFFFF),
+                
+                // If we want 64-bit operand size but the register is decoded as 32-bit,
+                // we need to read the full 64-bit register value
+                if size == 64 && self.get_register_size(reg) == 32 {
+                    // Map 32-bit register to its 64-bit counterpart
+                    let reg_64 = match reg {
+                        iced_x86::Register::EAX => iced_x86::Register::RAX,
+                        iced_x86::Register::EBX => iced_x86::Register::RBX,
+                        iced_x86::Register::ECX => iced_x86::Register::RCX,
+                        iced_x86::Register::EDX => iced_x86::Register::RDX,
+                        iced_x86::Register::ESI => iced_x86::Register::RSI,
+                        iced_x86::Register::EDI => iced_x86::Register::RDI,
+                        iced_x86::Register::EBP => iced_x86::Register::RBP,
+                        iced_x86::Register::ESP => iced_x86::Register::RSP,
+                        iced_x86::Register::R8D => iced_x86::Register::R8,
+                        iced_x86::Register::R9D => iced_x86::Register::R9,
+                        iced_x86::Register::R10D => iced_x86::Register::R10,
+                        iced_x86::Register::R11D => iced_x86::Register::R11,
+                        iced_x86::Register::R12D => iced_x86::Register::R12,
+                        iced_x86::Register::R13D => iced_x86::Register::R13,
+                        iced_x86::Register::R14D => iced_x86::Register::R14,
+                        iced_x86::Register::R15D => iced_x86::Register::R15,
+                        _ => reg, // Keep the same register if no mapping exists
+                    };
+                    let value_64 = self.get_register_value(reg_64, state);
+                    Ok(value_64)
+                } else {
+                    // Mask to the appropriate size
+                    match size {
+                        8 => Ok(value & 0xFF),
+                        16 => Ok(value & 0xFFFF),
+                        32 => Ok(value & 0xFFFFFFFF),
+                        64 => Ok(value),
+                        _ => Ok(value & 0xFFFFFFFF),
+                    }
                 }
             }
             OpKind::Immediate8 => Ok(instruction.immediate8() as u64),

@@ -130,7 +130,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid POPCNT instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
+        let operand_size = self.get_operand_size(instruction, 1);
+        let src = self.get_operand_value_with_size(instruction, 1, operand_size, state)?; // Source is operand 1
         let count = src.count_ones() as u64;
         
         // Update flags
@@ -139,7 +140,7 @@ impl InstructionDecoder<'_> {
         state.registers.set_flag(RFlags::OVERFLOW, false);
         state.registers.set_flag(RFlags::SIGN, false);
         
-        self.set_operand_value(instruction, 1, count, state)?;
+        self.set_operand_value(instruction, 0, count, state)?; // Destination is operand 0
         Ok(())
     }
 
@@ -1030,8 +1031,10 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_pushfq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("PUSHFQ instruction executed");
+    pub fn execute_pushfq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Push 64-bit flags register
+        state.registers.rsp -= 8;
+        state.write_u64(state.registers.rsp, state.registers.rflags)?;
         Ok(())
     }
 
@@ -1040,8 +1043,11 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_popfq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("POPFQ instruction executed");
+    pub fn execute_popfq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        // Pop 64-bit flags register
+        let flags = state.read_u64(state.registers.rsp)?;
+        state.registers.rsp += 8;
+        state.registers.rflags = flags;
         Ok(())
     }
 
