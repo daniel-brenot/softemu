@@ -182,14 +182,14 @@ impl InstructionDecoder<'_> {
     }
 
     pub fn execute_sysret(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
-        // Restore flags and return address
-        let rflags = state.read_u64(state.registers.rsp)?;
-        state.registers.rsp += 8;
+        // Restore return address and flags
         let rip = state.read_u64(state.registers.rsp)?;
         state.registers.rsp += 8;
+        let rflags = state.read_u64(state.registers.rsp)?;
+        state.registers.rsp += 8;
         
-        state.registers.rflags = rflags;
         state.registers.rip = rip;
+        state.registers.rflags = rflags;
         
         // Set privilege level to 3 (user mode)
         state.set_privilege_level(3);
@@ -239,7 +239,21 @@ impl InstructionDecoder<'_> {
         
         let result = src << count;
         self.set_operand_value(instruction, 0, result, state)?;
-        self.update_shift_flags(result, src, count, state);
+        
+        // Update flags for SHL
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
+        state.registers.set_flag(RFlags::PARITY, (result.count_ones() & 1) == 0);
+        
+        // Carry flag is set to the last bit shifted out from the left
+        if count > 0 {
+            let last_bit = (src >> (64 - count)) & 1;
+            state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        }
+        
+        // Overflow flag is undefined for shift operations
+        state.registers.set_flag(RFlags::OVERFLOW, false);
+        
         Ok(())
     }
 
@@ -253,7 +267,21 @@ impl InstructionDecoder<'_> {
         
         let result = src >> count;
         self.set_operand_value(instruction, 0, result, state)?;
-        self.update_shift_flags(result, src, count, state);
+        
+        // Update flags for SHR
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
+        state.registers.set_flag(RFlags::PARITY, (result.count_ones() & 1) == 0);
+        
+        // Carry flag is set to the last bit shifted out from the right
+        if count > 0 {
+            let last_bit = (src >> (count - 1)) & 1;
+            state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        }
+        
+        // Overflow flag is undefined for shift operations
+        state.registers.set_flag(RFlags::OVERFLOW, false);
+        
         Ok(())
     }
 
@@ -267,7 +295,21 @@ impl InstructionDecoder<'_> {
         
         let result = (src >> count) as u64;
         self.set_operand_value(instruction, 0, result, state)?;
-        self.update_shift_flags(result, src as u64, count, state);
+        
+        // Update flags for SAR
+        state.registers.set_flag(RFlags::ZERO, result == 0);
+        state.registers.set_flag(RFlags::SIGN, (result & 0x8000000000000000) != 0);
+        state.registers.set_flag(RFlags::PARITY, (result.count_ones() & 1) == 0);
+        
+        // Carry flag is set to the last bit shifted out from the right
+        if count > 0 {
+            let last_bit = (src as u64 >> (count - 1)) & 1;
+            state.registers.set_flag(RFlags::CARRY, last_bit != 0);
+        }
+        
+        // Overflow flag is undefined for shift operations
+        state.registers.set_flag(RFlags::OVERFLOW, false);
+        
         Ok(())
     }
 

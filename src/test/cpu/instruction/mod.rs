@@ -15,3 +15,4 @@ pub mod n;
 pub mod o;
 pub mod p;
 pub mod r;
+pub mod s;
