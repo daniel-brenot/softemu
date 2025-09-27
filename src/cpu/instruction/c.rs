@@ -22,8 +22,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMP instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let dst = self.get_operand_value(instruction, 1, state)?;
+        let dst = self.get_operand_value(instruction, 0, state)?;
+        let src = self.get_operand_value(instruction, 1, state)?;
         let result = dst.wrapping_sub(src);
 
         // Update flags (CMP doesn't store result)
@@ -134,12 +134,12 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMPXCHG instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let dst = self.get_operand_value(instruction, 1, state)?;
+        let dst = self.get_operand_value(instruction, 0, state)?;
+        let src = self.get_operand_value(instruction, 1, state)?;
         let accumulator = state.registers.rax;
 
         if accumulator == dst {
-            self.set_operand_value(instruction, 1, src, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
             state.registers.set_flag(RFlags::ZERO, true);
         } else {
             state.registers.rax = dst;
@@ -254,9 +254,9 @@ impl InstructionDecoder<'_> {
     }
 
     // Additional C instruction implementations
-    pub fn execute_clac(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clac(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Clear AC flag in EFLAGS
-        log::debug!("CLAC instruction executed");
+        state.registers.set_flag(RFlags::AUXILIARY, false);
         Ok(())
     }
 
@@ -314,8 +314,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVA instruction".to_string()));
         }
         if !state.registers.get_flag(RFlags::CARRY) && !state.registers.get_flag(RFlags::ZERO) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -325,8 +325,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVAE instruction".to_string()));
         }
         if !state.registers.get_flag(RFlags::CARRY) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -336,8 +336,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVB instruction".to_string()));
         }
         if state.registers.get_flag(RFlags::CARRY) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -347,8 +347,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVBE instruction".to_string()));
         }
         if state.registers.get_flag(RFlags::CARRY) || state.registers.get_flag(RFlags::ZERO) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -358,8 +358,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVE instruction".to_string()));
         }
         if state.registers.get_flag(RFlags::ZERO) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -370,8 +370,8 @@ impl InstructionDecoder<'_> {
         }
         if !state.registers.get_flag(RFlags::ZERO) && 
            (state.registers.get_flag(RFlags::SIGN) == state.registers.get_flag(RFlags::OVERFLOW)) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -381,8 +381,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVGE instruction".to_string()));
         }
         if state.registers.get_flag(RFlags::SIGN) == state.registers.get_flag(RFlags::OVERFLOW) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -392,8 +392,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVL instruction".to_string()));
         }
         if state.registers.get_flag(RFlags::SIGN) != state.registers.get_flag(RFlags::OVERFLOW) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -404,8 +404,8 @@ impl InstructionDecoder<'_> {
         }
         if state.registers.get_flag(RFlags::ZERO) || 
            (state.registers.get_flag(RFlags::SIGN) != state.registers.get_flag(RFlags::OVERFLOW)) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -415,8 +415,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVNE instruction".to_string()));
         }
         if !state.registers.get_flag(RFlags::ZERO) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -426,8 +426,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVNO instruction".to_string()));
         }
         if !state.registers.get_flag(RFlags::OVERFLOW) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -437,8 +437,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVNP instruction".to_string()));
         }
         if !state.registers.get_flag(RFlags::PARITY) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -448,8 +448,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVNS instruction".to_string()));
         }
         if !state.registers.get_flag(RFlags::SIGN) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -459,8 +459,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVO instruction".to_string()));
         }
         if state.registers.get_flag(RFlags::OVERFLOW) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -470,8 +470,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVP instruction".to_string()));
         }
         if state.registers.get_flag(RFlags::PARITY) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
@@ -481,8 +481,8 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid CMOVS instruction".to_string()));
         }
         if state.registers.get_flag(RFlags::SIGN) {
-            let src = self.get_operand_value(instruction, 0, state)?;
-            self.set_operand_value(instruction, 1, src, state)?;
+            let src = self.get_operand_value(instruction, 1, state)?;
+            self.set_operand_value(instruction, 0, src, state)?;
         }
         Ok(())
     }
