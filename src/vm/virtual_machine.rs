@@ -1,9 +1,8 @@
 use anyhow::{bail, Context};
 
-use crate::memory::mmio::UartDevice;
 use crate::memory::GuestMemory;
 use crate::cpu::{CpuCore, CpuState};
-use crate::devices::{ConsoleDevice, TimerDevice, InterruptController};
+use crate::devices::{SerialConsole, TimerDevice, InterruptController};
 use crate::memory::MmioManager;
 use crate::network::{NetworkDevice, NetworkManager};
 use crate::acpi::AcpiManager;
@@ -35,14 +34,11 @@ impl VirtualMachine {
         let mut mmio_manager = MmioManager::new();
         
         // Register MMIO devices
-        let uart = Box::new(UartDevice::new());
-        mmio_manager.register_device(0x3F8, uart)?; // COM1
+        let console = Box::new(SerialConsole::new());
+        mmio_manager.register_device(0x3F8, console)?; // COM1
 
         let timer = Box::new(TimerDevice::new());
         mmio_manager.register_device(0x40, timer)?; // PIT
-        
-        let console = Box::new(ConsoleDevice::new(80, 25));
-        mmio_manager.register_device(0xB8000, console)?; // VGA text buffer
         
         // Create interrupt controller
         let interrupt_controller = InterruptController::new();
