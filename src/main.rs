@@ -54,12 +54,15 @@ async fn main() -> Result<()> {
     // Create and configure the virtual machine
     let mut vm = VirtualMachine::new(cli.memory * 1024 * 1024, cli.cores)?;
 
+    log::info!("Loading kernel from {:?}", cli.kernel);
     // Load the kernel
     let kernel_data = std::fs::read(&cli.kernel)?;
     vm.load_kernel(&kernel_data)?;
+    
 
     // Load initrd if provided
     if let Some(initrd_path) = cli.initrd {
+        log::info!("Loading initrd from {:?}", initrd_path);
         let initrd_data = std::fs::read(&initrd_path)?;
         vm.load_initrd(&initrd_data)?;
     }

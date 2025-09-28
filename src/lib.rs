@@ -1,3 +1,4 @@
+pub mod acpi;
 pub mod cpu;
 pub mod devices;
 pub mod memory;
@@ -40,6 +41,9 @@ pub enum EmulatorError {
     
     #[error("Anyhow error: {0}")]
     Anyhow(#[from] anyhow::Error),
+    
+    #[error("ACPI error: {0}")]
+    Acpi(String),
 }
 
 pub type Result<T> = std::result::Result<T, EmulatorError>;

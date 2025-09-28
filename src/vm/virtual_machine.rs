@@ -6,6 +6,7 @@ use crate::cpu::{CpuCore, CpuState};
 use crate::devices::{ConsoleDevice, TimerDevice, InterruptController};
 use crate::memory::MmioManager;
 use crate::network::{NetworkDevice, NetworkManager};
+use crate::acpi::AcpiManager;
 use crate::Result;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -19,6 +20,7 @@ pub struct VirtualMachine {
     network_manager: Arc<Mutex<NetworkManager>>,
     interrupt_controller: Arc<Mutex<InterruptController>>,
     timer_manager: Arc<Mutex<TimerDevice>>,
+    acpi_manager: Arc<Mutex<AcpiManager>>,
     running: bool,
     kernel_loaded: bool,
 }
@@ -51,6 +53,11 @@ impl VirtualMachine {
         // Create network manager
         let network_manager = NetworkManager::new();
         
+        // Create ACPI manager
+        let mut acpi_manager = AcpiManager::new();
+        acpi_manager.initialize(memory.clone())?;
+        acpi_manager.create_default_devices()?;
+        
         // Create CPU cores
         let mut cpu_cores_vec = Vec::new();
         for i in 0..cpu_cores {
@@ -66,6 +73,7 @@ impl VirtualMachine {
             network_manager: Arc::new(Mutex::new(network_manager)),
             interrupt_controller: Arc::new(Mutex::new(interrupt_controller)),
             timer_manager: Arc::new(Mutex::new(timer_manager)),
+            acpi_manager: Arc::new(Mutex::new(acpi_manager)),
             running: false,
             kernel_loaded: false,
         })
@@ -185,12 +193,21 @@ impl VirtualMachine {
         while self.running {
             // Process timer interrupts
             if last_timer_tick.elapsed() >= timer_interval {
-                let mut timer = self.timer_manager.lock().unwrap();
-                timer.tick();
+                {
+                    let mut timer = self.timer_manager.lock().unwrap();
+                    timer.tick();
+                }
                 
-                let mut ic = self.interrupt_controller.lock().unwrap();
-                if let Err(e) = ic.process_interrupts() {
-                    log::error!("Error processing interrupts: {}", e);
+                {
+                    let mut ic = self.interrupt_controller.lock().unwrap();
+                    if let Err(e) = ic.process_interrupts() {
+                        log::error!("Error processing interrupts: {}", e);
+                    }
+                }
+                
+                // Process ACPI events
+                if let Err(e) = self.process_acpi_events() {
+                    log::error!("Error processing ACPI events: {}", e);
                 }
                 
                 last_timer_tick = Instant::now();
@@ -239,6 +256,10 @@ impl VirtualMachine {
         let mut network_manager = self.network_manager.lock().unwrap();
         network_manager.stop();
         
+        // Shutdown ACPI
+        let mut acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.shutdown()?;
+        
         Ok(())
     }
 
@@ -255,5 +276,63 @@ impl VirtualMachine {
     /// Get memory size
     pub fn memory_size(&self) -> u64 {
         self.memory.size()
+    }
+
+    /// Get ACPI manager
+    pub fn get_acpi_manager(&self) -> &Arc<Mutex<AcpiManager>> {
+        &self.acpi_manager
+    }
+
+    /// Handle power button press
+    pub fn handle_power_button(&mut self) -> Result<()> {
+        let mut acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.handle_power_button()?;
+        Ok(())
+    }
+
+    /// Handle sleep button press
+    pub fn handle_sleep_button(&mut self) -> Result<()> {
+        let mut acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.handle_sleep_button()?;
+        Ok(())
+    }
+
+    /// Handle lid switch
+    pub fn handle_lid_switch(&mut self, closed: bool) -> Result<()> {
+        let mut acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.handle_lid_switch(closed)?;
+        Ok(())
+    }
+
+    /// Get current ACPI power state
+    pub fn get_acpi_power_state(&self) -> crate::acpi::AcpiPowerState {
+        let acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.get_power_state()
+    }
+
+    /// Transition to new ACPI power state
+    pub fn transition_acpi_power_state(&mut self, state: crate::acpi::AcpiPowerState) -> Result<()> {
+        let mut acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.transition_power_state(state)?;
+        Ok(())
+    }
+
+    /// Process ACPI events
+    pub fn process_acpi_events(&mut self) -> Result<()> {
+        let mut acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.process_events()?;
+        Ok(())
+    }
+
+    /// Get ACPI power consumption
+    pub fn get_acpi_power_consumption(&self) -> f32 {
+        let acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.get_power_consumption()
+    }
+
+    /// Get ACPI wake sources
+    pub fn get_acpi_wake_sources(&self) -> Vec<String> {
+        let acpi_manager = self.acpi_manager.lock().unwrap();
+        acpi_manager.get_wake_sources()
     }
 }
