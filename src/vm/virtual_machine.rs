@@ -1,9 +1,8 @@
 use anyhow::{bail, Context};
 
-use crate::memory::GuestMemory;
+use crate::memory::{GuestMemory, MemoryManager, MmioManager};
 use crate::cpu::{CpuCore, CpuState};
 use crate::devices::{SerialConsole, TimerDevice, InterruptController};
-use crate::memory::MmioManager;
 use crate::network::{NetworkDevice, NetworkManager};
 use crate::acpi::AcpiManager;
 use crate::Result;
@@ -13,7 +12,7 @@ use std::time::{Duration, Instant};
 
 /// Synchronous virtual machine implementation
 pub struct VirtualMachine {
-    memory: GuestMemory,
+    memory_manager: Arc<Mutex<MemoryManager>>,
     cpu_cores: Vec<Arc<Mutex<CpuCore>>>,
     mmio_manager: Arc<Mutex<MmioManager>>,
     network_manager: Arc<Mutex<NetworkManager>>,
@@ -28,7 +27,7 @@ impl VirtualMachine {
     /// Create a new virtual machine
     pub fn new(memory_size: u64, cpu_cores: u32) -> Result<Self> {
         // Create guest memory
-        let memory = GuestMemory::new(memory_size)?;
+        let guest_memory = GuestMemory::new(memory_size)?;
         
         // Create MMIO manager
         let mut mmio_manager = MmioManager::new();
@@ -39,6 +38,15 @@ impl VirtualMachine {
 
         let timer = Box::new(TimerDevice::new());
         mmio_manager.register_device(0x40, timer)?; // PIT
+        
+        // Create shared MMIO manager reference
+        let mmio_manager_ref = Arc::new(Mutex::new(mmio_manager));
+        
+        // Define MMIO space size (first 1MB is reserved for MMIO)
+        let mmio_space_size = 0x100000; // 1MB
+        
+        // Create memory manager
+        let memory_manager = Arc::new(Mutex::new(MemoryManager::new(guest_memory, mmio_manager_ref.clone(), mmio_space_size)));
         
         // Create interrupt controller
         let interrupt_controller = InterruptController::new();
@@ -51,22 +59,22 @@ impl VirtualMachine {
         
         // Create ACPI manager
         let mut acpi_manager = AcpiManager::new();
-        acpi_manager.initialize(memory.clone())?;
+        {
+            let mem_mgr = memory_manager.lock().unwrap();
+            acpi_manager.initialize(mem_mgr.get_guest_memory().clone())?;
+        }
         acpi_manager.create_default_devices()?;
-        
-        // Create shared MMIO manager reference
-        let mmio_manager_ref = Arc::new(Mutex::new(mmio_manager));
         
         // Create CPU cores
         let mut cpu_cores_vec = Vec::new();
         for i in 0..cpu_cores {
-            let cpu_state = CpuState::new_with_mmio(memory.clone(), mmio_manager_ref.clone());
+            let cpu_state = CpuState::new(memory_manager.clone());
             let cpu_core = CpuCore::new(Arc::new(Mutex::new(cpu_state)), i);
             cpu_cores_vec.push(Arc::new(Mutex::new(cpu_core)));
         }
         
         Ok(Self {
-            memory,
+            memory_manager,
             cpu_cores: cpu_cores_vec,
             mmio_manager: mmio_manager_ref,
             network_manager: Arc::new(Mutex::new(network_manager)),
@@ -88,7 +96,10 @@ impl VirtualMachine {
         // For now, we'll do a simple kernel load at a fixed address
         // In a real implementation, this would use the linux-loader crate properly
         let kernel_start = 0x100000; // 1MB
-        self.memory.write_slice(kernel_start, &kernel_data)?;
+        {
+            let mut memory_manager = self.memory_manager.lock().unwrap();
+            memory_manager.write_slice(kernel_start, &kernel_data)?;
+        }
         
         // Set up initial CPU state
         if let Some(cpu_core) = self.cpu_cores.first() {
@@ -107,27 +118,28 @@ impl VirtualMachine {
     /// Load a kernel into memory
     pub fn load_kernel(&mut self, kernel_data: &[u8]) -> Result<()> {
         let kernel_start = 0x100000; // 1MB
-        self.memory.write_slice(kernel_start, kernel_data)?;
+        {
+            let mut memory_manager = self.memory_manager.lock().unwrap();
+            memory_manager.write_slice(kernel_start, kernel_data)?;
+        }
         self.kernel_loaded = true;
         log::info!("Kernel loaded successfully");
         Ok(())
     }
 
-    /// Get a reference to the guest memory
-    pub fn get_memory(&self) -> &GuestMemory {
-        &self.memory
-    }
-
-    /// Get a mutable reference to the guest memory
-    pub fn get_memory_mut(&mut self) -> &mut GuestMemory {
-        &mut self.memory
+    /// Get a reference to the memory manager
+    pub fn get_memory_manager(&self) -> &Arc<Mutex<MemoryManager>> {
+        &self.memory_manager
     }
 
 
     /// Load an initrd into memory
     pub fn load_initrd(&mut self, initrd_data: &[u8]) -> Result<()> {
         let initrd_start = 0x200000; // 2MB
-        self.memory.write_slice(initrd_start, initrd_data)?;
+        {
+            let mut memory_manager = self.memory_manager.lock().unwrap();
+            memory_manager.write_slice(initrd_start, initrd_data)?;
+        }
         log::info!("Initrd loaded at 0x{:x}", initrd_start);
         Ok(())
     }
@@ -274,7 +286,8 @@ impl VirtualMachine {
 
     /// Get memory size
     pub fn memory_size(&self) -> u64 {
-        self.memory.size()
+        let memory_manager = self.memory_manager.lock().unwrap();
+        memory_manager.total_address_space_size()
     }
 
     /// Get ACPI manager
@@ -348,35 +361,25 @@ impl VirtualMachine {
 
     /// Read from memory with MMIO routing
     pub fn read_memory(&self, addr: u64, size: u8) -> Result<u64> {
-        let mmio_manager = self.mmio_manager.lock().unwrap();
-        if mmio_manager.is_mmio_address(addr) {
-            mmio_manager.read(addr, size)
-        } else {
-            // Route to guest memory
-            match size {
-                1 => Ok(self.memory.read_u8(addr)? as u64),
-                2 => Ok(self.memory.read_u16(addr)? as u64),
-                4 => Ok(self.memory.read_u32(addr)? as u64),
-                8 => Ok(self.memory.read_u64(addr)?),
-                _ => Err(crate::EmulatorError::Memory(format!("Unsupported read size: {}", size))),
-            }
+        let memory_manager = self.memory_manager.lock().unwrap();
+        match size {
+            1 => Ok(memory_manager.read_u8(addr)? as u64),
+            2 => Ok(memory_manager.read_u16(addr)? as u64),
+            4 => Ok(memory_manager.read_u32(addr)? as u64),
+            8 => Ok(memory_manager.read_u64(addr)?),
+            _ => Err(crate::EmulatorError::Memory(format!("Unsupported read size: {}", size))),
         }
     }
 
     /// Write to memory with MMIO routing
     pub fn write_memory(&mut self, addr: u64, value: u64, size: u8) -> Result<()> {
-        let mut mmio_manager = self.mmio_manager.lock().unwrap();
-        if mmio_manager.is_mmio_address(addr) {
-            mmio_manager.write(addr, value, size)
-        } else {
-            // Route to guest memory
-            match size {
-                1 => self.memory.write_u8(addr, value as u8),
-                2 => self.memory.write_u16(addr, value as u16),
-                4 => self.memory.write_u32(addr, value as u32),
-                8 => self.memory.write_u64(addr, value),
-                _ => Err(crate::EmulatorError::Memory(format!("Unsupported write size: {}", size))),
-            }
+        let mut memory_manager = self.memory_manager.lock().unwrap();
+        match size {
+            1 => memory_manager.write_u8(addr, value as u8),
+            2 => memory_manager.write_u16(addr, value as u16),
+            4 => memory_manager.write_u32(addr, value as u32),
+            8 => memory_manager.write_u64(addr, value),
+            _ => Err(crate::EmulatorError::Memory(format!("Unsupported write size: {}", size))),
         }
     }
 }
