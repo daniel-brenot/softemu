@@ -1,0 +1,11 @@
+[package]
+name = "simple-kernel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+heapless = "0.8"
+
+[[bin]]
+name = "simple_kernel"
+path = "src/main.rs"

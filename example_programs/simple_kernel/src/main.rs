@@ -1,36 +1,28 @@
 #![no_std]
 #![no_main]
 
+use core::panic::PanicInfo;
+
 mod uart;
 
-const CONFIG: bootloader_api::BootloaderConfig = {
-    let mut config = bootloader_api::BootloaderConfig::new_default();
-    config.kernel_stack_size = 100 * 1024; // 100 KiB
-    config
-};
-bootloader_api::entry_point!(kernel_main, config = &CONFIG);
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+    loop {}
+}
 
-fn kernel_main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
     // Initialize UART console
     uart::init_uart();
     
     // Print bootup messages to UART
     uart::uart_println("==========================================");
-    uart::uart_println("    SoftEmu Kernel Bootup");
+    uart::uart_println("    SoftEmu Simple Kernel Bootup");
     uart::uart_println("==========================================");
     uart::uart_println("");
     uart::uart_println("Kernel loaded successfully!");
     uart::uart_println("UART console initialized at COM1 (0x3F8)");
-    uart::uart_println("Bootloader info:");
-    uart::uart_print("  - Memory map entries: ");
-    
-    // Convert number to string manually (since we don't have std)
-    let map_len = boot_info.memory_map.len();
-    uart::uart_println(&format_number(map_len));
-    
-    uart::uart_println("");
-    uart::uart_println("Kernel is running...");
-    uart::uart_println("Type 'help' for available commands");
+    uart::uart_println("Simple kernel is running...");
     uart::uart_println("");
     
     // Simple command loop

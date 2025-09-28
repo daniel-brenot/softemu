@@ -10,4 +10,4 @@ test-kernel = { path = "kernel", artifact = "bin", target = "x86_64-unknown-none
 [dependencies]
 
 [workspace]
-members = ["kernel"]
+members = ["kernel", "simple_kernel"]
