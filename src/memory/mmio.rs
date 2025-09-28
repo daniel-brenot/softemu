@@ -24,6 +24,15 @@ pub struct MmioManager {
     device_ranges: Vec<(u64, u64, String)>, // (start, end, name)
 }
 
+impl std::fmt::Debug for MmioManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MmioManager")
+            .field("device_ranges", &self.device_ranges)
+            .field("device_count", &self.devices.len())
+            .finish()
+    }
+}
+
 impl MmioManager {
     pub fn new() -> Self {
         Self {

@@ -54,10 +54,13 @@ impl VirtualMachine {
         acpi_manager.initialize(memory.clone())?;
         acpi_manager.create_default_devices()?;
         
+        // Create shared MMIO manager reference
+        let mmio_manager_ref = Arc::new(Mutex::new(mmio_manager));
+        
         // Create CPU cores
         let mut cpu_cores_vec = Vec::new();
         for i in 0..cpu_cores {
-            let cpu_state = CpuState::new(memory.clone());
+            let cpu_state = CpuState::new_with_mmio(memory.clone(), mmio_manager_ref.clone());
             let cpu_core = CpuCore::new(Arc::new(Mutex::new(cpu_state)), i);
             cpu_cores_vec.push(Arc::new(Mutex::new(cpu_core)));
         }
@@ -65,7 +68,7 @@ impl VirtualMachine {
         Ok(Self {
             memory,
             cpu_cores: cpu_cores_vec,
-            mmio_manager: Arc::new(Mutex::new(mmio_manager)),
+            mmio_manager: mmio_manager_ref,
             network_manager: Arc::new(Mutex::new(network_manager)),
             interrupt_controller: Arc::new(Mutex::new(interrupt_controller)),
             timer_manager: Arc::new(Mutex::new(timer_manager)),
@@ -330,5 +333,50 @@ impl VirtualMachine {
     pub fn get_acpi_wake_sources(&self) -> Vec<String> {
         let acpi_manager = self.acpi_manager.lock().unwrap();
         acpi_manager.get_wake_sources()
+    }
+
+    /// Register an MMIO device for testing
+    pub fn register_mmio_device(&mut self, start_addr: u64, device: Box<dyn crate::memory::MmioDevice>) -> Result<()> {
+        let mut mmio_manager = self.mmio_manager.lock().unwrap();
+        mmio_manager.register_device(start_addr, device)
+    }
+
+    /// Get a reference to the MMIO manager
+    pub fn get_mmio_manager(&self) -> &Arc<Mutex<MmioManager>> {
+        &self.mmio_manager
+    }
+
+    /// Read from memory with MMIO routing
+    pub fn read_memory(&self, addr: u64, size: u8) -> Result<u64> {
+        let mmio_manager = self.mmio_manager.lock().unwrap();
+        if mmio_manager.is_mmio_address(addr) {
+            mmio_manager.read(addr, size)
+        } else {
+            // Route to guest memory
+            match size {
+                1 => Ok(self.memory.read_u8(addr)? as u64),
+                2 => Ok(self.memory.read_u16(addr)? as u64),
+                4 => Ok(self.memory.read_u32(addr)? as u64),
+                8 => Ok(self.memory.read_u64(addr)?),
+                _ => Err(crate::EmulatorError::Memory(format!("Unsupported read size: {}", size))),
+            }
+        }
+    }
+
+    /// Write to memory with MMIO routing
+    pub fn write_memory(&mut self, addr: u64, value: u64, size: u8) -> Result<()> {
+        let mut mmio_manager = self.mmio_manager.lock().unwrap();
+        if mmio_manager.is_mmio_address(addr) {
+            mmio_manager.write(addr, value, size)
+        } else {
+            // Route to guest memory
+            match size {
+                1 => self.memory.write_u8(addr, value as u8),
+                2 => self.memory.write_u16(addr, value as u16),
+                4 => self.memory.write_u32(addr, value as u32),
+                8 => self.memory.write_u64(addr, value),
+                _ => Err(crate::EmulatorError::Memory(format!("Unsupported write size: {}", size))),
+            }
+        }
     }
 }
