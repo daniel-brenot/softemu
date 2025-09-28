@@ -1,7 +1,5 @@
 use crate::memory::mmio::MmioDevice;
 use crate::Result;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 /// Console device for text output
 pub struct ConsoleDevice {
@@ -100,7 +98,7 @@ impl ConsoleDevice {
 }
 
 impl MmioDevice for ConsoleDevice {
-    fn read(&self, offset: u64, size: u8) -> Result<u64> {
+    fn read(&self, offset: u64, _size: u8) -> Result<u64> {
         match offset {
             0 => Ok(self.cursor_pos as u64), // Cursor position
             8 => Ok(self.width as u64), // Screen width
@@ -114,16 +112,18 @@ impl MmioDevice for ConsoleDevice {
                 }
             }
             32 => {
-                // Read character at specific position (x, y)
-                let x = (offset >> 32) as usize & 0xFFFF;
-                let y = (offset >> 48) as usize & 0xFFFF;
-                Ok(self.get_char_at(x, y) as u64)
+                // Read character at cursor position
+                if self.cursor_pos < self.buffer.len() {
+                    Ok(self.buffer[self.cursor_pos] as u64)
+                } else {
+                    Ok(0)
+                }
             }
             _ => Ok(0),
         }
     }
 
-    fn write(&mut self, offset: u64, value: u64, size: u8) -> Result<()> {
+    fn write(&mut self, offset: u64, value: u64, _size: u8) -> Result<()> {
         match offset {
             0 => {
                 // Set cursor position
