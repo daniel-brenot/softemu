@@ -29,8 +29,10 @@ impl GuestMemory {
     pub fn read_u8(&self, addr: u64) -> Result<u8> {
         let memory = self.memory.read().unwrap();
         if addr >= self.size {
-            log::warn!("Memory read_u8 out of bounds: addr=0x{:x}, size=0x{:x}, returning 0", addr, self.size);
-            return Ok(0); // Return 0 for invalid memory accesses instead of crashing
+            return Err(crate::EmulatorError::Memory(format!(
+                "Memory read_u8 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                addr, self.size
+            )));
         }
         Ok(memory[addr as usize])
     }
@@ -39,8 +41,10 @@ impl GuestMemory {
     pub fn read_u16(&self, addr: u64) -> Result<u16> {
         let memory = self.memory.read().unwrap();
         if addr + 1 >= self.size {
-            log::warn!("Memory read_u16 out of bounds: addr=0x{:x}, size=0x{:x}, returning 0", addr, self.size);
-            return Ok(0); // Return 0 for invalid memory accesses instead of crashing
+            return Err(crate::EmulatorError::Memory(format!(
+                "Memory read_u16 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                addr, self.size
+            )));
         }
         let bytes = &memory[addr as usize..addr as usize + 2];
         Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
@@ -50,8 +54,10 @@ impl GuestMemory {
     pub fn read_u32(&self, addr: u64) -> Result<u32> {
         let memory = self.memory.read().unwrap();
         if addr + 3 >= self.size {
-            log::warn!("Memory read_u32 out of bounds: addr=0x{:x}, size=0x{:x}, returning 0", addr, self.size);
-            return Ok(0); // Return 0 for invalid memory accesses instead of crashing
+            return Err(crate::EmulatorError::Memory(format!(
+                "Memory read_u32 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                addr, self.size
+            )));
         }
         let bytes = &memory[addr as usize..addr as usize + 4];
         Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
@@ -61,8 +67,10 @@ impl GuestMemory {
     pub fn read_u64(&self, addr: u64) -> Result<u64> {
         let memory = self.memory.read().unwrap();
         if addr + 7 >= self.size {
-            log::warn!("Memory read_u64 out of bounds: addr=0x{:x}, size=0x{:x}, returning 0", addr, self.size);
-            return Ok(0); // Return 0 for invalid memory accesses instead of crashing
+            return Err(crate::EmulatorError::Memory(format!(
+                "Memory read_u64 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                addr, self.size
+            )));
         }
         let bytes = &memory[addr as usize..addr as usize + 8];
         Ok(u64::from_le_bytes([
