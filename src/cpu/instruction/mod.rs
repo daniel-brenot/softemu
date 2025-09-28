@@ -1987,11 +1987,17 @@ impl InstructionDecoder<'_> {
             OpKind::Immediate32 => Ok(instruction.immediate32() as u64),
             OpKind::Immediate32to64 => Ok(instruction.immediate32() as u64),
             OpKind::Immediate64 => Ok(instruction.immediate64()),
+            OpKind::NearBranch16 => Ok(instruction.near_branch16() as u64),
+            OpKind::NearBranch32 => Ok(instruction.near_branch32() as u64),
+            OpKind::NearBranch64 => Ok(instruction.near_branch64()),
             OpKind::Memory => {
                 let addr = self.calculate_memory_address(instruction, op_index, state)?;
                 state.read_u64(addr)
             }
-            _ => Err(crate::EmulatorError::Cpu("Unsupported operand kind".to_string())),
+            _ => {
+                log::error!("Unsupported operand kind: {:?} for instruction {:?}", operand, instruction.mnemonic());
+                Err(crate::EmulatorError::Cpu("Unsupported operand kind".to_string()))
+            },
         }
     }
 
@@ -2449,6 +2455,9 @@ impl InstructionDecoder<'_> {
                 Ok(imm8 as u64)
             },
             OpKind::Immediate64 => Ok(instruction.immediate64()),
+            OpKind::NearBranch16 => Ok(instruction.near_branch16() as u64),
+            OpKind::NearBranch32 => Ok(instruction.near_branch32() as u64),
+            OpKind::NearBranch64 => Ok(instruction.near_branch64()),
             OpKind::Memory => {
                 let addr = self.calculate_memory_address(instruction, op_index, state)?;
                 match size {

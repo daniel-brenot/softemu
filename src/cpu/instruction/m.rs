@@ -43,6 +43,47 @@ impl InstructionDecoder<'_> {
                 let src = self.get_operand_value(instruction, 1, state)?;
                 self.set_operand_value(instruction, 0, src, state)?;
             }
+            iced_x86::Code::Mov_AL_moffs8 => {
+                // Move byte from memory to AL register using 8-bit offset
+                // operand 0 is AL (destination), operand 1 is memory offset (source)
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            iced_x86::Code::Mov_AX_moffs16 => {
+                // Move word from memory to AX register using 16-bit offset
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            iced_x86::Code::Mov_EAX_moffs32 => {
+                // Move dword from memory to EAX register using 32-bit offset
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            iced_x86::Code::Mov_RAX_moffs64 => {
+                // Move qword from memory to RAX register using 64-bit offset
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            iced_x86::Code::Mov_moffs8_AL => {
+                // Move byte from AL register to memory using 8-bit offset
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            iced_x86::Code::Mov_moffs16_AX => {
+                // Move word from AX register to memory using 16-bit offset
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            iced_x86::Code::Mov_moffs32_EAX => {
+                // Move dword from EAX register to memory using 32-bit offset
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
+            iced_x86::Code::Mov_moffs64_RAX => {
+                // Move qword from RAX register to memory using 64-bit offset
+                let src = self.get_operand_value(instruction, 1, state)?;
+                self.set_operand_value(instruction, 0, src, state)?;
+            }
             _ => {
                 println!("Unsupported MOV instruction type: {:?}", instruction.code());
                 return Err(crate::EmulatorError::Cpu("Unsupported MOV instruction type".to_string()));

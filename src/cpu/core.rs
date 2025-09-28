@@ -62,9 +62,22 @@ impl CpuCore {
         let instruction_bytes = self.fetch_instruction(&state)?;
         
         // Decode instruction
-        let instruction = self.decoder.decode_instruction(&instruction_bytes);
+        let mut instruction = self.decoder.decode_instruction(&instruction_bytes);
         
-        // log::debug!("Executing instruction: {:?} at RIP=0x{:x}", instruction.mnemonic(), state.registers.rip);
+        // If 64-bit decoding fails, try 32-bit decoding as fallback
+        if instruction.mnemonic() == iced_x86::Mnemonic::INVALID {
+            log::debug!("64-bit decode failed, trying 32-bit decode for instruction at RIP=0x{:x}", state.registers.rip);
+            let mut decoder_32 = iced_x86::Decoder::new(32, &instruction_bytes, iced_x86::DecoderOptions::NONE);
+            instruction = decoder_32.decode();
+            
+            if instruction.mnemonic() != iced_x86::Mnemonic::INVALID {
+                log::debug!("Successfully decoded as 32-bit instruction: {:?}", instruction.mnemonic());
+            } else {
+                log::error!("Invalid instruction at RIP=0x{:x}, bytes: {:02x?}", 
+                           state.registers.rip, 
+                           &instruction_bytes[..instruction.len()]);
+            }
+        }
         
         // Execute instruction
         self.decoder.execute_instruction(&instruction, &mut state)?;
