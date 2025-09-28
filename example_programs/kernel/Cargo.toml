@@ -1,0 +1,6 @@
+[package]
+name = "test-kernel"
+version = "0.1.0"
+
+[dependencies]
+bootloader_api = { version = "0.11.12" }
