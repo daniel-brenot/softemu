@@ -2,6 +2,7 @@ pub mod cpu;
 pub mod devices;
 pub mod memory;
 pub mod network;
+#[cfg(test)]
 pub mod test;
 pub mod vm;
 

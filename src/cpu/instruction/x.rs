@@ -9,12 +9,19 @@ impl InstructionDecoder<'_> {
             return Err(crate::EmulatorError::Cpu("Invalid XOR instruction".to_string()));
         }
 
-        let src = self.get_operand_value(instruction, 0, state)?;
-        let dst = self.get_operand_value(instruction, 1, state)?;
+        // Get operand sizes
+        let dst_size = self.get_operand_size(instruction, 0);
+        let src_size = self.get_operand_size(instruction, 1);
+        let result_size = dst_size.max(src_size);
+
+        // Get operand values with proper size handling
+        let dst = self.get_operand_value_with_size(instruction, 0, dst_size, state)?;
+        let src = self.get_operand_value_with_size(instruction, 1, src_size, state)?;
+        
         let result = dst ^ src;
 
-        self.set_operand_value(instruction, 1, result, state)?;
-        self.update_logical_flags(result, state);
+        self.set_operand_value_with_size(instruction, 0, result, result_size, state)?;
+        self.update_logical_flags_with_size(result, result_size, state);
         Ok(())
     }
 
@@ -44,8 +51,28 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_xadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
-        log::debug!("XADD instruction executed");
+    pub fn execute_xadd(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
+        if instruction.op_count() != 2 {
+            return Err(crate::EmulatorError::Cpu("Invalid XADD instruction".to_string()));
+        }
+
+        // Get operand sizes
+        let dst_size = self.get_operand_size(instruction, 0);
+        let src_size = self.get_operand_size(instruction, 1);
+        let result_size = dst_size.max(src_size);
+
+        // Get operand values with proper size handling
+        let dst = self.get_operand_value_with_size(instruction, 0, dst_size, state)?;
+        let src = self.get_operand_value_with_size(instruction, 1, src_size, state)?;
+        
+        let result = dst.wrapping_add(src);
+
+        // XADD: exchange and add - store result in destination, store original destination in source
+        self.set_operand_value(instruction, 0, result, state)?;
+        self.set_operand_value(instruction, 1, dst, state)?;
+        
+        // Update arithmetic flags (XADD is addition, so is_subtraction = false)
+        self.update_arithmetic_flags(result, src, dst, false, state);
         Ok(())
     }
 
