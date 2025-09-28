@@ -25,8 +25,8 @@ pub const MADT_SIGNATURE: &[u8; 4] = b"APIC";
 pub const MCFG_SIGNATURE: &[u8; 4] = b"MCFG";
 
 /// ACPI table locations
-pub const RSDP_ADDRESS: u64 = 0xE0000;  // EBDA area
-pub const ACPI_TABLES_BASE: u64 = 0x100000;  // 1MB boundary
+pub const RSDP_ADDRESS: u64 = 0xE0000;  // EBDA area (correct per ACPI spec)
+pub const ACPI_TABLES_BASE: u64 = 0x400000;  // 4MB boundary - moved to avoid kernel conflict
 
 /// ACPI power states
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

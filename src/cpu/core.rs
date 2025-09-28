@@ -28,7 +28,7 @@ impl CpuCore {
         
         // Set up initial state
         state.registers.rip = 0x100000; // Start at kernel entry point
-        state.registers.rsp = 0x7FFFFF; // Set up stack pointer
+        state.registers.rsp = 0x1F000000; // Set up stack pointer (496MB - well within 512MB limit)
         state.registers.cs = 0x08; // Code segment
         state.registers.ds = 0x10; // Data segment
         state.registers.ss = 0x18; // Stack segment
@@ -63,6 +63,8 @@ impl CpuCore {
         
         // Decode instruction
         let instruction = self.decoder.decode_instruction(&instruction_bytes);
+        
+        // log::debug!("Executing instruction: {:?} at RIP=0x{:x}", instruction.mnemonic(), state.registers.rip);
         
         // Execute instruction
         self.decoder.execute_instruction(&instruction, &mut state)?;
@@ -101,6 +103,8 @@ impl CpuCore {
     fn fetch_instruction(&self, state: &CpuState) -> Result<Vec<u8>> {
         let mut bytes = Vec::new();
         let mut addr = state.registers.rip;
+        
+        // log::debug!("Fetching instruction at RIP=0x{:x}, memory size=0x{:x}", addr, state.memory.size());
         
         // Read up to 15 bytes (maximum x86_64 instruction length)
         for _ in 0..15 {

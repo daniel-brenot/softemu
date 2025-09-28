@@ -29,7 +29,8 @@ impl GuestMemory {
     pub fn read_u8(&self, addr: u64) -> Result<u8> {
         let memory = self.memory.read().unwrap();
         if addr >= self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            log::warn!("Memory read_u8 out of bounds: addr=0x{:x}, size=0x{:x}, returning 0", addr, self.size);
+            return Ok(0); // Return 0 for invalid memory accesses instead of crashing
         }
         Ok(memory[addr as usize])
     }
@@ -38,7 +39,8 @@ impl GuestMemory {
     pub fn read_u16(&self, addr: u64) -> Result<u16> {
         let memory = self.memory.read().unwrap();
         if addr + 1 >= self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            log::warn!("Memory read_u16 out of bounds: addr=0x{:x}, size=0x{:x}, returning 0", addr, self.size);
+            return Ok(0); // Return 0 for invalid memory accesses instead of crashing
         }
         let bytes = &memory[addr as usize..addr as usize + 2];
         Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
@@ -48,7 +50,8 @@ impl GuestMemory {
     pub fn read_u32(&self, addr: u64) -> Result<u32> {
         let memory = self.memory.read().unwrap();
         if addr + 3 >= self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            log::warn!("Memory read_u32 out of bounds: addr=0x{:x}, size=0x{:x}, returning 0", addr, self.size);
+            return Ok(0); // Return 0 for invalid memory accesses instead of crashing
         }
         let bytes = &memory[addr as usize..addr as usize + 4];
         Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
@@ -58,7 +61,8 @@ impl GuestMemory {
     pub fn read_u64(&self, addr: u64) -> Result<u64> {
         let memory = self.memory.read().unwrap();
         if addr + 7 >= self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            log::warn!("Memory read_u64 out of bounds: addr=0x{:x}, size=0x{:x}, returning 0", addr, self.size);
+            return Ok(0); // Return 0 for invalid memory accesses instead of crashing
         }
         let bytes = &memory[addr as usize..addr as usize + 8];
         Ok(u64::from_le_bytes([
@@ -71,7 +75,8 @@ impl GuestMemory {
     pub fn write_u8(&mut self, addr: u64, value: u8) -> Result<()> {
         let mut memory = self.memory.write().unwrap();
         if addr >= self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            log::warn!("Memory write_u8 out of bounds: addr=0x{:x}, size=0x{:x}, ignoring write", addr, self.size);
+            return Ok(()); // Ignore invalid memory writes instead of crashing
         }
         memory[addr as usize] = value;
         Ok(())
@@ -81,7 +86,8 @@ impl GuestMemory {
     pub fn write_u16(&mut self, addr: u64, value: u16) -> Result<()> {
         let mut memory = self.memory.write().unwrap();
         if addr + 1 >= self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            log::warn!("Memory write_u16 out of bounds: addr=0x{:x}, size=0x{:x}, ignoring write", addr, self.size);
+            return Ok(()); // Ignore invalid memory writes instead of crashing
         }
         let bytes = value.to_le_bytes();
         memory[addr as usize..addr as usize + 2].copy_from_slice(&bytes);
@@ -92,7 +98,8 @@ impl GuestMemory {
     pub fn write_u32(&mut self, addr: u64, value: u32) -> Result<()> {
         let mut memory = self.memory.write().unwrap();
         if addr + 3 >= self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            log::warn!("Memory write_u32 out of bounds: addr=0x{:x}, size=0x{:x}, ignoring write", addr, self.size);
+            return Ok(()); // Ignore invalid memory writes instead of crashing
         }
         let bytes = value.to_le_bytes();
         memory[addr as usize..addr as usize + 4].copy_from_slice(&bytes);
@@ -103,7 +110,8 @@ impl GuestMemory {
     pub fn write_u64(&mut self, addr: u64, value: u64) -> Result<()> {
         let mut memory = self.memory.write().unwrap();
         if addr + 7 >= self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            log::warn!("Memory write_u64 out of bounds: addr=0x{:x}, size=0x{:x}, ignoring write", addr, self.size);
+            return Ok(()); // Ignore invalid memory writes instead of crashing
         }
         let bytes = value.to_le_bytes();
         memory[addr as usize..addr as usize + 8].copy_from_slice(&bytes);

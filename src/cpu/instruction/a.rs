@@ -119,7 +119,6 @@ impl InstructionDecoder<'_> {
         let dst = self.get_operand_value(instruction, 0, state)?;  // Destination (first operand)
         let src = self.get_operand_value(instruction, 1, state)?;  // Source (second operand)
         let result = dst.wrapping_add(src);
-
         self.set_operand_value(instruction, 0, result, state)?;  // Set result to destination
         self.update_arithmetic_flags(result, src, dst, false, state);
         Ok(())
