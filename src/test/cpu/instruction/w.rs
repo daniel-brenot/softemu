@@ -1,5 +1,5 @@
 use crate::cpu::{CpuState, InstructionDecoder};
-use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
+use crate::test::helpers::{create_test_cpu_state, execute_instruction, read_memory, write_memory};
 use iced_x86::{Decoder, DecoderOptions};
 
 // Basic W instructions
@@ -8,17 +8,10 @@ fn test_wait_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     // WAIT instruction - wait for floating point operations
     // WAIT (0x9B)
-    let result = execute_instruction(&[0x9B], &mut state);
+    execute_instruction(&[0x9B], &mut state).unwrap();
     
     // WAIT should execute without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("WAIT instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    // Note: WAIT instruction may not be fully implemented yet
 }
 
 #[test]
@@ -26,17 +19,10 @@ fn test_wbinvd_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     // WBINVD instruction - write back and invalidate cache
     // WBINVD (0x0F 0x09)
-    let result = execute_instruction(&[0x0F, 0x09], &mut state);
+    execute_instruction(&[0x0F, 0x09], &mut state).unwrap();
     
     // WBINVD should execute without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("WBINVD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    // Note: WBINVD instruction may not be fully implemented yet
 }
 
 #[test]
@@ -49,22 +35,13 @@ fn test_wrmsr_instruction() {
     state.registers.rdx = 0x9ABCDEF0; // Upper 32 bits
     
     // WRMSR (0x0F 0x30)
-    let result = execute_instruction(&[0x0F, 0x30], &mut state);
+    execute_instruction(&[0x0F, 0x30], &mut state).unwrap();
     
     // WRMSR should execute without crashing
-    match result {
-        Ok(state) => {
-            // Registers should remain unchanged
-            assert_eq!(state.registers.rcx, 0x1B);
-            assert_eq!(state.registers.rax, 0x12345678);
-            assert_eq!(state.registers.rdx, 0x9ABCDEF0);
-        },
-        Err(e) => {
-            println!("WRMSR instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    // Registers should remain unchanged
+    assert_eq!(state.registers.rcx, 0x1B);
+    assert_eq!(state.registers.rax, 0x12345678);
+    assert_eq!(state.registers.rdx, 0x9ABCDEF0);
 }
 
 #[test]
