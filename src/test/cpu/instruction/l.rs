@@ -36,7 +36,7 @@ mod tests {
         state.registers.rip = 0x1000; // Current instruction address
         
         // LOOP rel8 instruction (E2 xx)
-        let result = execute_instruction(&[0xE2, 0x10], &mut state).unwrap(); // LOOP +16
+        let result = execute_instruction(&[0xE2, 0x10], &mut state); // LOOP +16
         
         // RCX should be decremented to 2, RIP should jump
         assert_eq!(state.registers.rcx, 2);
@@ -47,7 +47,7 @@ mod tests {
         state.registers.rcx = 1;
         state.registers.rip = 0x1000;
         
-        let result = execute_instruction(&[0xE2, 0x10], &mut state).unwrap();
+        let result = execute_instruction(&[0xE2, 0x10], &mut state);
         
         // RCX should be decremented to 0, RIP should NOT jump (RCX == 0)
         assert_eq!(state.registers.rcx, 0);
@@ -58,7 +58,7 @@ mod tests {
         state.registers.rcx = 0;
         state.registers.rip = 0x1000;
         
-        let result = execute_instruction(&[0xE2, 0x10], &mut state).unwrap();
+        let result = execute_instruction(&[0xE2, 0x10], &mut state);
         
         // RCX should be decremented to -1 (wrapping), and since it's not 0, it will jump
         assert_eq!(state.registers.rcx, 0xFFFFFFFFFFFFFFFF);
@@ -75,7 +75,7 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, true);
         
-        let result = execute_instruction(&[0xE1, 0x10], &mut state).unwrap(); // LOOPE +16
+        let result = execute_instruction(&[0xE1, 0x10], &mut state); // LOOPE +16
         
         assert_eq!(state.registers.rcx, 2);
         assert_eq!(state.registers.rip, 0x1012);
@@ -86,7 +86,7 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, false);
         
-        let result = execute_instruction(&[0xE1, 0x10], &mut state).unwrap();
+        let result = execute_instruction(&[0xE1, 0x10], &mut state);
         
         assert_eq!(state.registers.rcx, 2);
         assert_eq!(state.registers.rip, 0x1002); // No jump
@@ -97,7 +97,7 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, true);
         
-        let result = execute_instruction(&[0xE1, 0x10], &mut state).unwrap();
+        let result = execute_instruction(&[0xE1, 0x10], &mut state);
         
         assert_eq!(state.registers.rcx, 0xFFFFFFFFFFFFFFFF); // RCX wraps around
         assert_eq!(state.registers.rip, 0x1012); // Should jump because RCX != 0 and ZF = 1
@@ -113,7 +113,7 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, false);
         
-        let result = execute_instruction(&[0xE0, 0x10], &mut state).unwrap(); // LOOPNE +16
+        let result = execute_instruction(&[0xE0, 0x10], &mut state); // LOOPNE +16
         
         assert_eq!(state.registers.rcx, 2);
         assert_eq!(state.registers.rip, 0x1012);
@@ -124,7 +124,7 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, true);
         
-        let result = execute_instruction(&[0xE0, 0x10], &mut state).unwrap();
+        let result = execute_instruction(&[0xE0, 0x10], &mut state);
         
         assert_eq!(state.registers.rcx, 2);
         assert_eq!(state.registers.rip, 0x1002); // No jump
@@ -135,7 +135,7 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, false);
         
-        let result = execute_instruction(&[0xE0, 0x10], &mut state).unwrap();
+        let result = execute_instruction(&[0xE0, 0x10], &mut state);
         
         assert_eq!(state.registers.rcx, 0xFFFFFFFFFFFFFFFF); // RCX wraps around
         assert_eq!(state.registers.rip, 0x1012); // Should jump because RCX != 0 and ZF = 0
@@ -152,7 +152,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u8(0x1000, 0xAB).unwrap();
         
-        let result = execute_instruction(&[0xAC], &mut state).unwrap(); // LODSB
+        let result = execute_instruction(&[0xAC], &mut state); // LODSB
         
         assert_eq!(state.registers.rax & 0xFF, 0xAB); // AL should be 0xAB
         assert_eq!(state.registers.rsi, 0x1001); // RSI should increment
@@ -164,7 +164,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, true);
         state.write_u8(0x1000, 0xCD).unwrap();
         
-        let result = execute_instruction(&[0xAC], &mut state).unwrap(); // LODSB
+        let result = execute_instruction(&[0xAC], &mut state); // LODSB
         
         assert_eq!(state.registers.rax & 0xFF, 0xCD); // AL should be 0xCD
         assert_eq!(state.registers.rsi, 0x0FFF); // RSI should decrement
@@ -181,7 +181,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u16(0x1000, 0x1234).unwrap();
         
-        let result = execute_instruction(&[0x66, 0xAD], &mut state).unwrap(); // LODSW (16-bit prefix)
+        let result = execute_instruction(&[0x66, 0xAD], &mut state); // LODSW (16-bit prefix)
         
         assert_eq!(state.registers.rax & 0xFFFF, 0x1234); // AX should be 0x1234
         assert_eq!(state.registers.rsi, 0x1002); // RSI should increment by 2
@@ -193,7 +193,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, true);
         state.write_u16(0x1000, 0x5678).unwrap();
         
-        let result = execute_instruction(&[0x66, 0xAD], &mut state).unwrap(); // LODSW (16-bit prefix)
+        let result = execute_instruction(&[0x66, 0xAD], &mut state); // LODSW (16-bit prefix)
         
         assert_eq!(state.registers.rax & 0xFFFF, 0x5678); // AX should be 0x5678
         assert_eq!(state.registers.rsi, 0x0FFE); // RSI should decrement by 2
@@ -210,7 +210,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u32(0x1000, 0x12345678).unwrap();
         
-        let result = execute_instruction(&[0xAD], &mut state).unwrap(); // LODSD (same opcode as LODSW, distinguished by operand size)
+        let result = execute_instruction(&[0xAD], &mut state); // LODSD (same opcode as LODSW, distinguished by operand size)
         
         assert_eq!(state.registers.rax & 0xFFFFFFFF, 0x12345678); // EAX should be 0x12345678
         assert_eq!(state.registers.rsi, 0x1004); // RSI should increment by 4
@@ -222,7 +222,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, true);
         state.write_u32(0x1000, 0x9ABCDEF0).unwrap();
         
-        let result = execute_instruction(&[0xAD], &mut state).unwrap(); // LODSD
+        let result = execute_instruction(&[0xAD], &mut state); // LODSD
         
         assert_eq!(state.registers.rax & 0xFFFFFFFF, 0x9ABCDEF0); // EAX should be 0x9ABCDEF0
         assert_eq!(state.registers.rsi, 0x0FFC); // RSI should decrement by 4
@@ -239,7 +239,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u64(0x1000, 0x123456789ABCDEF0).unwrap();
         
-        let result = execute_instruction(&[0x48, 0xAD], &mut state).unwrap(); // LODSQ (REX.W prefix)
+        let result = execute_instruction(&[0x48, 0xAD], &mut state); // LODSQ (REX.W prefix)
         
         assert_eq!(state.registers.rax, 0x123456789ABCDEF0); // RAX should be loaded
         assert_eq!(state.registers.rsi, 0x1008); // RSI should increment by 8
@@ -251,7 +251,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, true);
         state.write_u64(0x1000, 0xFEDCBA9876543210).unwrap();
         
-        let result = execute_instruction(&[0x48, 0xAD], &mut state).unwrap(); // LODSQ
+        let result = execute_instruction(&[0x48, 0xAD], &mut state); // LODSQ
         
         assert_eq!(state.registers.rax, 0xFEDCBA9876543210); // RAX should be loaded
         assert_eq!(state.registers.rsi, 0x0FF8); // RSI should decrement by 8
@@ -269,7 +269,7 @@ mod tests {
         state.registers.set_flag(RFlags::ZERO, true);
         state.registers.set_flag(RFlags::SIGN, true);
         
-        let result = execute_instruction(&[0x9F], &mut state).unwrap(); // LAHF
+        let result = execute_instruction(&[0x9F], &mut state); // LAHF
         
         // AH should contain the lower 8 bits of the flags register
         let ah_value = (state.registers.rax >> 8) & 0xFF;
@@ -286,7 +286,7 @@ mod tests {
         state.registers.rcx = 0x2000;
         
         // LEA RAX, [RBX+RCX] - Load address RBX+RCX into RAX
-        let result = execute_instruction(&[0x48, 0x8D, 0x04, 0x0B], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0x8D, 0x04, 0x0B], &mut state);
         
         assert_eq!(state.registers.rax, 0x3000); // RAX should contain 0x1000 + 0x2000
         
@@ -295,7 +295,7 @@ mod tests {
         state.registers.rbx = 0x1000;
         
         // LEA RAX, [RBX+0x100] - Load address RBX+0x100 into RAX
-        let result = execute_instruction(&[0x48, 0x8D, 0x83, 0x00, 0x01, 0x00, 0x00], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0x8D, 0x83, 0x00, 0x01, 0x00, 0x00], &mut state);
         
         assert_eq!(state.registers.rax, 0x1100); // RAX should contain 0x1000 + 0x100
     }
@@ -310,7 +310,7 @@ mod tests {
         state.registers.rsp = 0x1000; // Stack pointer
         state.write_u64(0x2000, 0x3000).unwrap(); // Old RBP value on stack
         
-        let result = execute_instruction(&[0xC9], &mut state).unwrap(); // LEAVE
+        let result = execute_instruction(&[0xC9], &mut state); // LEAVE
         
         assert_eq!(state.registers.rsp, 0x2008); // RSP = old RBP + 8
         assert_eq!(state.registers.rbp, 0x3000); // RBP = popped value
@@ -324,7 +324,7 @@ mod tests {
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x123456789ABCDEF0;
         
-        let result = execute_instruction(&[0x0F, 0xAE, 0xE8], &mut state).unwrap(); // LFENCE
+        let result = execute_instruction(&[0x0F, 0xAE, 0xE8], &mut state); // LFENCE
         
         // State should be unchanged
         assert_eq!(state.registers.rax, 0x123456789ABCDEF0);
@@ -490,7 +490,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u8(0x1000, 0xAA).unwrap();
         
-        let result = execute_instruction(&[0xAC], &mut state).unwrap(); // LODSB
+        let result = execute_instruction(&[0xAC], &mut state); // LODSB
         
         assert_eq!(state.registers.rax & 0xFF, 0xAA);
         assert_eq!(state.registers.rsi, 0x1001); // Should increment by 1
@@ -501,7 +501,7 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u64(0xFFFF0, 0x123456789ABCDEF0).unwrap();
         
-        let result = execute_instruction(&[0x48, 0xAD], &mut state).unwrap(); // LODSQ
+        let result = execute_instruction(&[0x48, 0xAD], &mut state); // LODSQ
         
         assert_eq!(state.registers.rax, 0x123456789ABCDEF0);
         assert_eq!(state.registers.rsi, 0xFFFF8);

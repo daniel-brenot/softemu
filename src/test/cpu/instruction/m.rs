@@ -96,7 +96,7 @@ fn test_movsw_instruction() {
     state.write_u16(0x1000, 0x1234).unwrap();
     state.registers.set_flag(RFlags::DIRECTION, false); // Forward direction
     
-    let result = execute_instruction(&[0x66, 0xA5], &mut state).unwrap(); // MOVSW
+    let result = execute_instruction(&[0x66, 0xA5], &mut state); // MOVSW
     assert_eq!(state.read_u16(0x2000).unwrap(), 0x1234);
     assert_eq!(state.registers.rsi, 0x1002);
     assert_eq!(state.registers.rdi, 0x2002);
@@ -111,7 +111,7 @@ fn test_movsd_instruction() {
     state.write_u32(0x1000, 0x12345678).unwrap();
     state.registers.set_flag(RFlags::DIRECTION, false); // Forward direction
     
-    let result = execute_instruction(&[0xA5], &mut state).unwrap(); // MOVSD
+    let result = execute_instruction(&[0xA5], &mut state); // MOVSD
     assert_eq!(state.read_u32(0x2000).unwrap(), 0x12345678);
     assert_eq!(state.registers.rsi, 0x1004);
     assert_eq!(state.registers.rdi, 0x2004);
@@ -126,7 +126,7 @@ fn test_movsq_instruction() {
     state.write_u64(0x1000, 0x123456789ABCDEF0).unwrap();
     state.registers.set_flag(RFlags::DIRECTION, false); // Forward direction
     
-    let result = execute_instruction(&[0x48, 0xA5], &mut state).unwrap(); // MOVSQ
+    let result = execute_instruction(&[0x48, 0xA5], &mut state); // MOVSQ
     assert_eq!(state.read_u64(0x2000).unwrap(), 0x123456789ABCDEF0);
     assert_eq!(state.registers.rsi, 0x1008);
     assert_eq!(state.registers.rdi, 0x2008);
@@ -139,7 +139,7 @@ fn test_movsx_instruction() {
     state.registers.rax = 0;
     state.registers.rbx = 0x80; // Set BL to 0x80 (negative 8-bit value)
     
-    let result = execute_instruction(&[0x48, 0x0F, 0xBE, 0xC3], &mut state).unwrap(); // MOVSX RAX, BL
+    let result = execute_instruction(&[0x48, 0x0F, 0xBE, 0xC3], &mut state); // MOVSX RAX, BL
     
     assert_eq!(state.registers.rax, 0xFFFFFFFFFFFFFF80); // Sign extended
 }
@@ -151,7 +151,7 @@ fn test_movzx_instruction() {
     state.registers.rax = 0;
     state.registers.rbx = 0x80; // Set BL to 0x80
     
-    let result = execute_instruction(&[0x48, 0x0F, 0xB6, 0xC3], &mut state).unwrap(); // MOVZX RAX, BL
+    let result = execute_instruction(&[0x48, 0x0F, 0xB6, 0xC3], &mut state); // MOVZX RAX, BL
     assert_eq!(state.registers.rax, 0x80); // Zero extended
 }
 
@@ -163,7 +163,7 @@ fn test_mul_instruction() {
     state.registers.rbx = 0x2000;
     state.registers.rdx = 0;
     
-    let result = execute_instruction(&[0x48, 0xF7, 0xE3], &mut state).unwrap(); // MUL RBX
+    let result = execute_instruction(&[0x48, 0xF7, 0xE3], &mut state); // MUL RBX
     assert_eq!(state.registers.rax, 0x2000000); // 0x1000 * 0x2000
     assert_eq!(state.registers.rdx, 0); // No overflow
     assert!(!state.registers.get_flag(RFlags::CARRY));
@@ -178,7 +178,7 @@ fn test_mul_with_overflow() {
     state.registers.rbx = 0x100000000; // Large value
     state.registers.rdx = 0;
     
-    let result = execute_instruction(&[0x48, 0xF7, 0xE3], &mut state).unwrap(); // MUL RBX
+    let result = execute_instruction(&[0x48, 0xF7, 0xE3], &mut state); // MUL RBX
     // Result should be 0x100000000 * 0x100000000 = 0x10000000000000000
     // This overflows 64 bits, so RDX should be 1
     assert_eq!(state.registers.rdx, 1);
@@ -192,7 +192,7 @@ fn test_mfence_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x123456789ABCDEF0;
     
-    let result = execute_instruction(&[0x0F, 0xAE, 0xF0], &mut state).unwrap(); // MFENCE
+    let result = execute_instruction(&[0x0F, 0xAE, 0xF0], &mut state); // MFENCE
     // MFENCE should not modify registers
     assert_eq!(state.registers.rax, 0x123456789ABCDEF0);
 }
@@ -204,7 +204,7 @@ fn test_movsxd_instruction() {
     state.registers.rax = 0;
     state.registers.rbx = 0x80000000; // Set EBX to negative 32-bit value
     
-    let result = execute_instruction(&[0x48, 0x63, 0xC3], &mut state).unwrap(); // MOVSXD RAX, EBX
+    let result = execute_instruction(&[0x48, 0x63, 0xC3], &mut state); // MOVSXD RAX, EBX
     assert_eq!(state.registers.rax, 0xFFFFFFFF80000000); // Sign extended
 }
 
@@ -215,7 +215,7 @@ fn test_memory_boundary_conditions() {
     state.registers.rax = 0x123456789ABCDEF0;
     
     // Test writing to a valid address
-    let result = execute_instruction(&[0x48, 0x89, 0x04, 0x25, 0x00, 0x00, 0x0F, 0x00], &mut state).unwrap(); // MOV [0xF0000], RAX
+    let result = execute_instruction(&[0x48, 0x89, 0x04, 0x25, 0x00, 0x00, 0x0F, 0x00], &mut state); // MOV [0xF0000], RAX
     assert_eq!(state.read_u64(0xF0000).unwrap(), 0x123456789ABCDEF0);
 }
 

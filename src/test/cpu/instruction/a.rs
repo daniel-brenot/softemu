@@ -178,7 +178,7 @@ fn test_adc_instruction() {
     state.registers.set_flag(RFlags::CARRY, false);
     
     println!("Before ADC: RAX = {}, RCX = {}", state.registers.rax, state.registers.rcx);
-    let result = execute_instruction(&[0x48, 0x11, 0xC8], &mut state).unwrap(); // ADC RAX, RCX
+    let result = execute_instruction(&[0x48, 0x11, 0xC8], &mut state); // ADC RAX, RCX
     println!("After ADC: RAX = {}, RCX = {}", state.registers.rax, state.registers.rcx);
     
     // Result should be 0x30 (48), no carry
@@ -192,7 +192,7 @@ fn test_adc_instruction() {
     state.registers.rcx = 0x20; // RCX = 32
     state.registers.set_flag(RFlags::CARRY, true);
     
-    let result = execute_instruction(&[0x48, 0x11, 0xC8], &mut state).unwrap(); // ADC RAX, RCX
+    let result = execute_instruction(&[0x48, 0x11, 0xC8], &mut state); // ADC RAX, RCX
     
     // Result should be 0x31 (49), no carry
     assert_eq!(state.registers.rax, 0x31);
@@ -204,7 +204,7 @@ fn test_adc_instruction() {
     state.registers.rcx = 0x1; // RCX = 1
     state.registers.set_flag(RFlags::CARRY, false);
     
-    let result = execute_instruction(&[0x48, 0x11, 0xC8], &mut state).unwrap(); // ADC RAX, RCX
+    let result = execute_instruction(&[0x48, 0x11, 0xC8], &mut state); // ADC RAX, RCX
     
     // Result should overflow to negative, overflow flag set
     assert_eq!(state.registers.rax, 0x8000000000000000);
@@ -216,7 +216,7 @@ fn test_adc_instruction() {
     state.registers.rax = 0x10; // RAX = 16
     state.registers.set_flag(RFlags::CARRY, true);
     
-    let result = execute_instruction(&[0x15, 0x20, 0x00, 0x00, 0x00], &mut state).unwrap(); // ADC EAX, 0x20
+    let result = execute_instruction(&[0x15, 0x20, 0x00, 0x00, 0x00], &mut state); // ADC EAX, 0x20
     
     // Result should be 0x31 (16 + 32 + 1)
     assert_eq!(state.registers.rax & 0xFFFFFFFF, 0x31);
@@ -232,7 +232,7 @@ fn test_add_instruction() {
     state.registers.rax = 0x10; // RAX = 16
     state.registers.rcx = 0x20; // RCX = 32
     
-    let result = execute_instruction(&[0x48, 0x01, 0xC8], &mut state).unwrap(); // ADD RAX, RCX
+    let result = execute_instruction(&[0x48, 0x01, 0xC8], &mut state); // ADD RAX, RCX
     
     println!("ADD test: RAX = 0x{:X}, RCX = 0x{:X}, result = 0x{:X}", 0x10, 0x20, state.registers.rax);
     
@@ -248,7 +248,7 @@ fn test_add_instruction() {
     state.registers.rax = 0x10; // RAX = 16
     state.registers.rcx = 0xFFFFFFFFFFFFFFF0; // RCX = -16 (two's complement)
     
-    let result = execute_instruction(&[0x48, 0x01, 0xC8], &mut state).unwrap(); // ADD RAX, RCX
+    let result = execute_instruction(&[0x48, 0x01, 0xC8], &mut state); // ADD RAX, RCX
     
     println!("ADD test case 2: RAX = 0x{:X}, RCX = 0x{:X}, result = 0x{:X}", 0x10, 0xFFFFFFFFFFFFFFF0u64, state.registers.rax);
     
@@ -262,7 +262,7 @@ fn test_add_instruction() {
     state.registers.rax = 0x7FFFFFFFFFFFFFFF; // Max positive 64-bit value
     state.registers.rcx = 0x1; // RCX = 1
     
-    let result = execute_instruction(&[0x48, 0x01, 0xC8], &mut state).unwrap(); // ADD RAX, RCX
+    let result = execute_instruction(&[0x48, 0x01, 0xC8], &mut state); // ADD RAX, RCX
     
     // Result should overflow to negative, overflow flag set
     assert_eq!(state.registers.rax, 0x8000000000000000);
@@ -273,7 +273,7 @@ fn test_add_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x10; // RAX = 16
     
-    let result = execute_instruction(&[0x05, 0x20, 0x00, 0x00, 0x00], &mut state).unwrap(); // ADD EAX, 0x20
+    let result = execute_instruction(&[0x05, 0x20, 0x00, 0x00, 0x00], &mut state); // ADD EAX, 0x20
     
     // Result should be 0x30 (16 + 32)
     assert_eq!(state.registers.rax & 0xFFFFFFFF, 0x30);
@@ -284,7 +284,7 @@ fn test_add_instruction() {
     state.registers.rbx = 0x1000; // RBX = memory address
     state.write_u64(0x1000, 0x20).unwrap(); // Store 32 at memory address
     
-    let result = execute_instruction(&[0x48, 0x03, 0x03], &mut state).unwrap(); // ADD RAX, [RBX] (64-bit)
+    let result = execute_instruction(&[0x48, 0x03, 0x03], &mut state); // ADD RAX, [RBX] (64-bit)
     
     // Result should be 0x30 (16 + 32)
     assert_eq!(state.registers.rax, 0x30);
@@ -300,7 +300,7 @@ fn test_and_instruction() {
     state.registers.rax = 0x0F; // RAX = 0x0F (00001111)
     state.registers.rcx = 0x33; // RCX = 0x33 (00110011)
     
-    let result = execute_instruction(&[0x48, 0x21, 0xC8], &mut state).unwrap(); // AND RAX, RCX
+    let result = execute_instruction(&[0x48, 0x21, 0xC8], &mut state); // AND RAX, RCX
     
     // Result should be 0x03 (00000011)
     assert_eq!(state.registers.rax, 0x03);
@@ -314,7 +314,7 @@ fn test_and_instruction() {
     state.registers.rax = 0x0F; // RAX = 0x0F (00001111)
     state.registers.rcx = 0xF0; // RCX = 0xF0 (11110000)
     
-    let result = execute_instruction(&[0x48, 0x21, 0xC8], &mut state).unwrap(); // AND RAX, RCX
+    let result = execute_instruction(&[0x48, 0x21, 0xC8], &mut state); // AND RAX, RCX
     
     // Result should be 0x00, zero flag set
     assert_eq!(state.registers.rax, 0x00);
@@ -325,7 +325,7 @@ fn test_and_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0xFF; // RAX = 0xFF (11111111)
     
-    let result = execute_instruction(&[0x25, 0x0F, 0x00, 0x00, 0x00], &mut state).unwrap(); // AND EAX, 0x0F
+    let result = execute_instruction(&[0x25, 0x0F, 0x00, 0x00, 0x00], &mut state); // AND EAX, 0x0F
     
     // Result should be 0x0F (00001111)
     assert_eq!(state.registers.rax & 0xFFFFFFFF, 0x0F);
@@ -336,7 +336,7 @@ fn test_and_instruction() {
     state.registers.rbx = 0x1000; // RBX = memory address
     state.write_u64(0x1000, 0x33).unwrap(); // Store 0x33 at memory address
     
-    let result = execute_instruction(&[0x23, 0x03], &mut state).unwrap(); // AND RAX, [RBX]
+    let result = execute_instruction(&[0x23, 0x03], &mut state); // AND RAX, [RBX]
     
     // Result should be 0x03
     assert_eq!(state.registers.rax, 0x03);
@@ -346,7 +346,7 @@ fn test_and_instruction() {
     state.registers.rax = 0x8000000000000000; // RAX = negative value
     state.registers.rcx = 0x8000000000000000; // RCX = negative value
     
-    let result = execute_instruction(&[0x48, 0x21, 0xC8], &mut state).unwrap(); // AND RAX, RCX
+    let result = execute_instruction(&[0x48, 0x21, 0xC8], &mut state); // AND RAX, RCX
     
     // Result should have sign bit set
     assert_eq!(state.registers.rax, 0x8000000000000000);

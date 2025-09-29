@@ -1,9 +1,5 @@
-use crate::cpu::instruction::InstructionDecoder;
-use crate::cpu::state::CpuState;
 use crate::cpu::registers::RFlags;
-use crate::Result;
-use crate::test::helpers::{create_test_cpu_state, execute_instruction, read_memory, write_memory};
-use iced_x86::{Decoder, DecoderOptions, Instruction};
+use crate::test::helpers::{create_test_cpu_state, execute_instruction};
 
 #[test]
 fn test_or_instruction_register() {
@@ -12,7 +8,7 @@ fn test_or_instruction_register() {
     state.registers.rax = 0x123456789ABCDEF0;
     state.registers.rbx = 0xFEDCBA9876543210;
     
-    let result = execute_instruction(&[0x48, 0x09, 0xD8], &mut state).unwrap();
+    let result = execute_instruction(&[0x48, 0x09, 0xD8], &mut state);
     
     // OR result: 0x123456789ABCDEF0 | 0xFEDCBA9876543210 = 0xFEFCFEF8FEFCFEF0
     assert_eq!(state.registers.rax, 0xFEFCFEF8FEFCFEF0);
@@ -104,7 +100,7 @@ fn test_or_instruction_all_ones() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x123456789ABCDEF0;
     
-    let result = execute_instruction(&[0x48, 0x83, 0xC8, 0xFF], &mut state).unwrap();
+    let result = execute_instruction(&[0x48, 0x83, 0xC8, 0xFF], &mut state);
     
     // OR with -1 (0xFFFFFFFFFFFFFFFF) should result in all ones
     assert_eq!(state.registers.rax, 0xFFFFFFFFFFFFFFFF);
@@ -143,7 +139,7 @@ fn test_out_instruction() {
     state.registers.rdx = 0x123456789ABCDE80; // DX = 0xDE80
     state.registers.rax = 0x123456789ABCDE5A; // AL = 0x5A
     
-    let result = execute_instruction(&[0xEE], &mut state).unwrap();
+    let result = execute_instruction(&[0xEE], &mut state);
     
     // OUT instruction should not modify registers (just logs)
     assert_eq!(state.registers.rdx, 0x123456789ABCDE80);
@@ -156,7 +152,7 @@ fn test_out_immediate_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x123456789ABCDE5A; // AL = 0x5A
     
-    let result = execute_instruction(&[0xE6, 0x80], &mut state).unwrap();
+    let result = execute_instruction(&[0xE6, 0x80], &mut state);
     
     // OUT instruction should not modify registers (just logs)
     assert_eq!(state.registers.rax, 0x123456789ABCDE5A);
@@ -170,7 +166,7 @@ fn test_outsb_instruction() {
     state.registers.rsi = 0x1000;
     state.write_u8(0x1000, 0x5A).unwrap();
     
-    let result = execute_instruction(&[0x6E], &mut state).unwrap();
+    let result = execute_instruction(&[0x6E], &mut state);
     
     // RSI should be incremented by 1 (direction flag clear)
     assert_eq!(state.registers.rsi, 0x1001);
@@ -186,7 +182,7 @@ fn test_outsb_instruction_direction_flag() {
     state.registers.set_flag(RFlags::DIRECTION, true);
     state.write_u8(0x1000, 0x5A).unwrap();
     
-    let result = execute_instruction(&[0x6E], &mut state).unwrap();
+    let result = execute_instruction(&[0x6E], &mut state);
     
     // RSI should be decremented by 1 (direction flag set)
     assert_eq!(state.registers.rsi, 0x0FFF);
@@ -201,7 +197,7 @@ fn test_outsw_instruction() {
     state.registers.rsi = 0x1000;
     state.write_u16(0x1000, 0x5A5A).unwrap();
     
-    let result = execute_instruction(&[0x66, 0x6F], &mut state).unwrap();
+    let result = execute_instruction(&[0x66, 0x6F], &mut state);
     
     // RSI should be incremented by 2 (direction flag clear)
     assert_eq!(state.registers.rsi, 0x1002);
@@ -217,7 +213,7 @@ fn test_outsw_instruction_direction_flag() {
     state.registers.set_flag(RFlags::DIRECTION, true);
     state.write_u16(0x1000, 0x5A5A).unwrap();
     
-    let result = execute_instruction(&[0x66, 0x6F], &mut state).unwrap();
+    let result = execute_instruction(&[0x66, 0x6F], &mut state);
     
     // RSI should be decremented by 2 (direction flag set)
     assert_eq!(state.registers.rsi, 0x0FFE);
@@ -232,7 +228,7 @@ fn test_outsd_instruction() {
     state.registers.rsi = 0x1000;
     state.write_u32(0x1000, 0x5A5A5A5A).unwrap();
     
-    let result = execute_instruction(&[0x6F], &mut state).unwrap();
+    let result = execute_instruction(&[0x6F], &mut state);
     
     // RSI should be incremented by 4 (direction flag clear)
     assert_eq!(state.registers.rsi, 0x1004);
@@ -248,7 +244,7 @@ fn test_outsd_instruction_direction_flag() {
     state.registers.set_flag(RFlags::DIRECTION, true);
     state.write_u32(0x1000, 0x5A5A5A5A).unwrap();
     
-    let result = execute_instruction(&[0x6F], &mut state).unwrap();
+    let result = execute_instruction(&[0x6F], &mut state);
     
     // RSI should be decremented by 4 (direction flag set)
     assert_eq!(state.registers.rsi, 0x0FFC);
@@ -260,7 +256,7 @@ fn test_orpd_instruction() {
     // ORPD XMM0, XMM1 (0x66 0x0F 0x56 0xC1)
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x66, 0x0F, 0x56, 0xC1], &mut state).unwrap();
+    let result = execute_instruction(&[0x66, 0x0F, 0x56, 0xC1], &mut state);
     
     // ORPD is currently a placeholder, should not crash
     assert!(state.registers.rax == 0);
@@ -271,7 +267,7 @@ fn test_orps_instruction() {
     // ORPS XMM0, XMM1 (0x0F 0x56 0xC1)
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x56, 0xC1], &mut state).unwrap();
+    let result = execute_instruction(&[0x0F, 0x56, 0xC1], &mut state);
     
     // ORPS is currently a placeholder, should not crash
     assert!(state.registers.rax == 0);

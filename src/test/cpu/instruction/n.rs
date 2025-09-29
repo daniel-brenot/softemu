@@ -28,7 +28,7 @@ mod tests {
         state.registers.rax = initial_rax;
         
         // NOP instruction (0x90)
-        let result = execute_instruction(&[0x90], &mut state).unwrap();
+        let result = execute_instruction(&[0x90], &mut state);
         
         // NOP should not change any registers
         assert_eq!(state.registers.rax, initial_rax);
@@ -43,7 +43,7 @@ mod tests {
         state.registers.rbx = initial_rbx;
         
         // Multiple NOP instructions
-        let result = execute_instruction(&[0x90, 0x90, 0x90], &mut state).unwrap();
+        let result = execute_instruction(&[0x90, 0x90, 0x90], &mut state);
         
         // NOP should not change any registers
         assert_eq!(state.registers.rax, initial_rax);
@@ -56,7 +56,7 @@ mod tests {
         state.registers.rax = 5;
         
         // NEG RAX (0x48, 0xF7, 0xD8)
-        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state);
         
         // NEG 5 = -5 = 0xFFFFFFFFFFFFFFFB
         assert_eq!(state.registers.rax, 0xFFFFFFFFFFFFFFFB);
@@ -77,7 +77,7 @@ mod tests {
         state.registers.rax = 0x8000000000000000; // Most negative 64-bit value
         
         // NEG RAX (0x48, 0xF7, 0xD8)
-        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state);
         
         // NEG of most negative value should overflow and result in the same value
         assert_eq!(state.registers.rax, 0x8000000000000000);
@@ -93,7 +93,7 @@ mod tests {
         state.registers.rax = 0;
         
         // NEG RAX (0x48, 0xF7, 0xD8)
-        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state);
         
         // NEG 0 = 0
         assert_eq!(state.registers.rax, 0);
@@ -109,7 +109,7 @@ mod tests {
         state.registers.rax = 0xFFFFFFFFFFFFFFFB; // -5
         
         // NEG RAX (0x48, 0xF7, 0xD8)
-        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state);
         
         // NEG (-5) = 5
         assert_eq!(state.registers.rax, 5);
@@ -126,7 +126,7 @@ mod tests {
         write_memory(&mut state, 0x1000, 10).unwrap();
         
         // NEG QWORD PTR [RAX] (0x48, 0xF7, 0x18)
-        let result = execute_instruction(&[0x48, 0xF7, 0x18], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0x18], &mut state);
         
         // NEG 10 = -10 = 0xFFFFFFFFFFFFFFF6
         let value = read_memory(&state, 0x1000).unwrap();
@@ -143,7 +143,7 @@ mod tests {
         state.registers.rax = 0x123456789ABCDEF0;
         
         // NOT RAX (0x48, 0xF7, 0xD0)
-        let result = execute_instruction(&[0x48, 0xF7, 0xD0], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD0], &mut state);
         
         // NOT should flip all bits
         assert_eq!(state.registers.rax, 0xEDCBA9876543210F);
@@ -159,7 +159,7 @@ mod tests {
         state.registers.rax = 0;
         
         // NOT RAX (0x48, 0xF7, 0xD0)
-        let result = execute_instruction(&[0x48, 0xF7, 0xD0], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD0], &mut state);
         
         // NOT 0 = 0xFFFFFFFFFFFFFFFF
         assert_eq!(state.registers.rax, 0xFFFFFFFFFFFFFFFF);
@@ -175,7 +175,7 @@ mod tests {
         state.registers.rax = 0xFFFFFFFFFFFFFFFF;
         
         // NOT RAX (0x48, 0xF7, 0xD0)
-        let result = execute_instruction(&[0x48, 0xF7, 0xD0], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD0], &mut state);
         
         // NOT 0xFFFFFFFFFFFFFFFF = 0
         assert_eq!(state.registers.rax, 0);
@@ -192,7 +192,7 @@ mod tests {
         write_memory(&mut state, 0x1000, 0x123456789ABCDEF0).unwrap();
         
         // NOT QWORD PTR [RAX] (0x48, 0xF7, 0x10)
-        let result = execute_instruction(&[0x48, 0xF7, 0x10], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0x10], &mut state);
         
         // NOT should flip all bits
         let value = read_memory(&state, 0x1000).unwrap();
@@ -209,7 +209,7 @@ mod tests {
         state.registers.rax = 5; // Set EAX (lower 32 bits of RAX)
         
         // NEG EAX (0xF7, 0xD8)
-        let result = execute_instruction(&[0xF7, 0xD8], &mut state).unwrap();
+        let result = execute_instruction(&[0xF7, 0xD8], &mut state);
         
         // NEG 5 = -5 = 0xFFFFFFFB (32-bit result in lower 32 bits of RAX)
         assert_eq!(state.registers.rax & 0xFFFFFFFF, 0xFFFFFFFB);
@@ -225,7 +225,7 @@ mod tests {
         state.registers.rax = 0x12345678; // Set EAX (lower 32 bits of RAX)
         
         // NOT EAX (0xF7, 0xD0)
-        let result = execute_instruction(&[0xF7, 0xD0], &mut state).unwrap();
+        let result = execute_instruction(&[0xF7, 0xD0], &mut state);
         
         // NOT should flip all bits (32-bit result in lower 32 bits of RAX)
         assert_eq!(state.registers.rax & 0xFFFFFFFF, 0xEDCBA987);
@@ -241,7 +241,7 @@ mod tests {
         state.registers.rax = 5; // Set AX (lower 16 bits of RAX)
         
         // NEG AX (0x66, 0xF7, 0xD8)
-        let result = execute_instruction(&[0x66, 0xF7, 0xD8], &mut state).unwrap();
+        let result = execute_instruction(&[0x66, 0xF7, 0xD8], &mut state);
         
         // NEG 5 = -5 = 0xFFFB (16-bit result in lower 16 bits of RAX)
         assert_eq!(state.registers.rax & 0xFFFF, 0xFFFB);
@@ -257,7 +257,7 @@ mod tests {
         state.registers.rax = 0x1234; // Set AX (lower 16 bits of RAX)
         
         // NOT AX (0x66, 0xF7, 0xD0)
-        let result = execute_instruction(&[0x66, 0xF7, 0xD0], &mut state).unwrap();
+        let result = execute_instruction(&[0x66, 0xF7, 0xD0], &mut state);
         
         // NOT should flip all bits (16-bit result in lower 16 bits of RAX)
         assert_eq!(state.registers.rax & 0xFFFF, 0xEDCB);
@@ -273,7 +273,7 @@ mod tests {
         state.registers.rax = 5; // Set AL (lower 8 bits of RAX)
         
         // NEG AL (0xF6, 0xD8)
-        let result = execute_instruction(&[0xF6, 0xD8], &mut state).unwrap();
+        let result = execute_instruction(&[0xF6, 0xD8], &mut state);
         
         // NEG 5 = -5 = 0xFB (8-bit result in lower 8 bits of RAX)
         assert_eq!(state.registers.rax & 0xFF, 0xFB);
@@ -289,7 +289,7 @@ mod tests {
         state.registers.rax = 0x12; // Set AL (lower 8 bits of RAX)
         
         // NOT AL (0xF6, 0xD0)
-        let result = execute_instruction(&[0xF6, 0xD0], &mut state).unwrap();
+        let result = execute_instruction(&[0xF6, 0xD0], &mut state);
         
         // NOT should flip all bits (8-bit result in lower 8 bits of RAX)
         assert_eq!(state.registers.rax & 0xFF, 0xED);
@@ -328,7 +328,7 @@ mod tests {
         
         // Test NEG of minimum negative value
         state.registers.rax = 0x8000000000000000; // Minimum 64-bit negative value
-        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD8], &mut state);
         
         // NEG of minimum negative value should overflow
         assert_eq!(state.registers.rax, 0x8000000000000000);
@@ -342,7 +342,7 @@ mod tests {
         
         // Test NOT of alternating pattern
         state.registers.rax = 0xAAAAAAAAAAAAAAAA;
-        let result = execute_instruction(&[0x48, 0xF7, 0xD0], &mut state).unwrap();
+        let result = execute_instruction(&[0x48, 0xF7, 0xD0], &mut state);
         
         // NOT should flip all bits
         assert_eq!(state.registers.rax, 0x5555555555555555);
@@ -405,7 +405,7 @@ mod tests {
         state.registers.rbx = initial_rbx;
         
         // Sequence of NOP instructions
-        let result = execute_instruction(&[0x90, 0x90, 0x90, 0x90, 0x90], &mut state).unwrap();
+        let result = execute_instruction(&[0x90, 0x90, 0x90, 0x90, 0x90], &mut state);
         
         // All registers should remain unchanged
         assert_eq!(state.registers.rax, initial_rax);
