@@ -423,67 +423,67 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_altinst(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_altinst(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("ALTINST instruction executed");
         Ok(())
     }
 
-    pub fn execute_aesencwide128kl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aesencwide128kl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AESENCWIDE128KL instruction executed");
         Ok(())
     }
 
-    pub fn execute_aesdecwide128kl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aesdecwide128kl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AESDECWIDE128KL instruction executed");
         Ok(())
     }
 
-    pub fn execute_aesencwide256kl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aesencwide256kl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AESENCWIDE256KL instruction executed");
         Ok(())
     }
 
-    pub fn execute_aesdecwide256kl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aesdecwide256kl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AESDECWIDE256KL instruction executed");
         Ok(())
     }
 
-    pub fn execute_aesenc128kl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aesenc128kl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AESENC128KL instruction executed");
         Ok(())
     }
 
-    pub fn execute_aesdec128kl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aesdec128kl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AESDEC128KL instruction executed");
         Ok(())
     }
 
-    pub fn execute_aesenc256kl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aesenc256kl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AESENC256KL instruction executed");
         Ok(())
     }
 
-    pub fn execute_aesdec256kl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aesdec256kl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AESDEC256KL instruction executed");
         Ok(())
     }
 
-    pub fn execute_aadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_aand(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aand(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AAND instruction executed");
         Ok(())
     }
 
-    pub fn execute_aor(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_aor(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AOR instruction executed");
         Ok(())
     }
 
-    pub fn execute_axor(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_axor(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("AXOR instruction executed");
         Ok(())
     }

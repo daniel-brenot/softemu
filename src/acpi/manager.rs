@@ -192,13 +192,13 @@ impl AcpiManager {
     }
 
     /// Get current power state
-    pub fn get_power_state(&self) -> AcpiPowerState {
-        self.power_manager.get_acpi_power_state()
+    pub fn get_powerstate(&self) -> AcpiPowerState {
+        self.power_manager.get_acpi_powerstate()
     }
 
     /// Transition to new power state
-    pub fn transition_power_state(&mut self, state: AcpiPowerState) -> Result<()> {
-        self.power_manager.transition_power_state(state)?;
+    pub fn transition_powerstate(&mut self, state: AcpiPowerState) -> Result<()> {
+        self.power_manager.transition_powerstate(state)?;
         Ok(())
     }
 

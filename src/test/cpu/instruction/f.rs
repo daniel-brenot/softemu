@@ -1,32 +1,22 @@
 #[cfg(test)]
 mod tests {
     use crate::cpu::{CpuState, InstructionDecoder};
-    use crate::memory::guest_memory::GuestMemory;
-    use crate::Result;
+        use crate::Result;
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
     use iced_x86::{Decoder, DecoderOptions, Instruction};
 
-    fn create_test_cpu_state() -> Result<CpuState> {
-        let memory = GuestMemory::new(1024 * 1024)?; // 1MB of memory
-        let mut state = CpuState::new(memory);
-        // Initialize memory with some test data
-        state.write_u64(0x1000, 0x123456789ABCDEF0)?;
-        state.write_u64(0x1008, 0xFEDCBA9876543210)?;
-        state.write_u32(0x2000, 0x12345678)?;
-        state.write_u16(0x3000, 0x1234)?;
-        state.write_u8(0x4000, 0x12)?;
-        Ok(state)
-    }
+    
 
     fn decode_instruction(bytes: &[u8]) -> Instruction {
         let mut decoder = Decoder::new(64, bytes, DecoderOptions::NONE);
         decoder.decode()
     }
 
-    fn execute_instruction(bytes: &[u8], mut state: CpuState) -> Result<CpuState> {
+    fn execute_instruction(bytes: &[u8], state: &mut CpuState) -> Result<()> {
         let instruction = decode_instruction(bytes);
         let mut decoder = InstructionDecoder::new();
-        decoder.execute_instruction(&instruction, &mut state)?;
-        Ok(state)
+        decoder.execute_instruction(&instruction, state)?;
+        Ok(())
     }
 
     // F2XM1 - 2^x - 1
@@ -36,8 +26,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD9, 0xF0]); // F2XM1
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::F2xm1);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD9, 0xF0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD9, 0xF0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -48,8 +38,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD9, 0xE1]); // FABS
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fabs);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD9, 0xE1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD9, 0xE1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -60,8 +50,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD8, 0xC1]); // FADD ST(0), ST(1)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fadd);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD8, 0xC1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD8, 0xC1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -72,8 +62,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDE, 0xC1]); // FADDP ST(1), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Faddp);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDE, 0xC1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDE, 0xC1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -84,8 +74,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDF, 0x20]); // FBLD [RAX]
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fbld);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDF, 0x20], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDF, 0x20], &mut state);
         assert!(result.is_ok());
     }
 
@@ -96,8 +86,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDF, 0x30]); // FBSTP [RAX]
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fbstp);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDF, 0x30], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDF, 0x30], &mut state);
         assert!(result.is_ok());
     }
 
@@ -108,8 +98,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD9, 0xE0]); // FCHS
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fchs);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD9, 0xE0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD9, 0xE0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -120,8 +110,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDB, 0xE2]); // FCLEX
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fnclex); // In 64-bit mode, this decodes to FNCLEX
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDB, 0xE2], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDB, 0xE2], &mut state);
         assert!(result.is_ok());
     }
 
@@ -132,8 +122,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0xC0]); // FCMOVB ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcmovb);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0xC0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0xC0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -144,8 +134,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0xD0]); // FCMOVBE ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcmovbe);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0xD0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0xD0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -156,8 +146,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0xC8]); // FCMOVE ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcmove);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0xC8], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0xC8], &mut state);
         assert!(result.is_ok());
     }
 
@@ -168,8 +158,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDB, 0xC0]); // FCMOVNB ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcmovnb);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDB, 0xC0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDB, 0xC0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -180,8 +170,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDB, 0xD0]); // FCMOVNBE ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcmovnbe);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDB, 0xD0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDB, 0xD0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -192,8 +182,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDB, 0xC8]); // FCMOVNE ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcmovne);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDB, 0xC8], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDB, 0xC8], &mut state);
         assert!(result.is_ok());
     }
 
@@ -204,8 +194,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDB, 0xD8]); // FCMOVNU ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcmovnu);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDB, 0xD8], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDB, 0xD8], &mut state);
         assert!(result.is_ok());
     }
 
@@ -216,8 +206,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0xD8]); // FCMOVU ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcmovu);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0xD8], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0xD8], &mut state);
         assert!(result.is_ok());
     }
 
@@ -228,8 +218,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD8, 0xD1]); // FCOM ST(1)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcom);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD8, 0xD1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD8, 0xD1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -240,8 +230,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDB, 0xF0]); // FCOMI ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcomi);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDB, 0xF0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDB, 0xF0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -252,8 +242,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDF, 0xF0]); // FCOMIP ST(0), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcomip);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDF, 0xF0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDF, 0xF0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -264,8 +254,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD8, 0xD9]); // FCOMP ST(1)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcomp);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD8, 0xD9], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD8, 0xD9], &mut state);
         assert!(result.is_ok());
     }
 
@@ -276,8 +266,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDE, 0xD9]); // FCOMPP
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcompp);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDE, 0xD9], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDE, 0xD9], &mut state);
         assert!(result.is_ok());
     }
 
@@ -288,8 +278,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD9, 0xFF]); // FCOS
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fcos);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD9, 0xFF], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD9, 0xFF], &mut state);
         assert!(result.is_ok());
     }
 
@@ -300,8 +290,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD9, 0xF6]); // FDECSTP
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fdecstp);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD9, 0xF6], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD9, 0xF6], &mut state);
         assert!(result.is_ok());
     }
 
@@ -312,8 +302,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDB, 0xE1]); // FDISI
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fndisi); // In 64-bit mode, this decodes to FNDISI
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDB, 0xE1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDB, 0xE1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -324,8 +314,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD8, 0xF1]); // FDIV ST(0), ST(1)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fdiv);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD8, 0xF1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD8, 0xF1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -336,8 +326,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDE, 0xF1]); // FDIVP ST(1), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fdivrp); // In 64-bit mode, this decodes to FDIVRP
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDE, 0xF1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDE, 0xF1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -348,8 +338,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xD8, 0xF9]); // FDIVR ST(0), ST(1)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fdivr);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xD8, 0xF9], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xD8, 0xF9], &mut state);
         assert!(result.is_ok());
     }
 
@@ -360,8 +350,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDE, 0xF9]); // FDIVRP ST(1), ST(0)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fdivp); // In 64-bit mode, this decodes to FDIVP
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDE, 0xF9], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDE, 0xF9], &mut state);
         assert!(result.is_ok());
     }
 
@@ -372,8 +362,8 @@ mod tests {
         let _instruction = decode_instruction(&[0x0F, 0x0E]); // FEMMS
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Femms);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0x0E], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0x0F, 0x0E], &mut state);
         assert!(result.is_ok());
     }
 
@@ -384,8 +374,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDB, 0xE0]); // FENI
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fneni); // In 64-bit mode, this decodes to FNENI
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDB, 0xE0], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDB, 0xE0], &mut state);
         assert!(result.is_ok());
     }
 
@@ -396,8 +386,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDD, 0xC1]); // FFREE ST(1)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Ffree);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDD, 0xC1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDD, 0xC1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -408,8 +398,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDF, 0xC1]); // FFREEP ST(1)
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Ffreep);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDF, 0xC1], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDF, 0xC1], &mut state);
         assert!(result.is_ok());
     }
 
@@ -420,8 +410,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0x00]); // FIADD [RAX]
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fiadd);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0x00], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0x00], &mut state);
         assert!(result.is_ok());
     }
 
@@ -432,8 +422,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0x10]); // FICOM [RAX]
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Ficom);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0x10], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0x10], &mut state);
         assert!(result.is_ok());
     }
 
@@ -444,8 +434,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0x18]); // FICOMP [RAX]
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Ficomp);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0x18], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0x18], &mut state);
         assert!(result.is_ok());
     }
 
@@ -456,8 +446,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0x30]); // FIDIV [RAX]
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fidiv);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0x30], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0x30], &mut state);
         assert!(result.is_ok());
     }
 
@@ -468,8 +458,8 @@ mod tests {
         let _instruction = decode_instruction(&[0xDA, 0x38]); // FIDIVR [RAX]
         assert_eq!(_instruction.mnemonic(), iced_x86::Mnemonic::Fidivr);
         
-        let state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xDA, 0x38], state);
+        let mut state = create_test_cpu_state().unwrap();
+        let result = execute_instruction(&[0xDA, 0x38], &mut state);
         assert!(result.is_ok());
     }
 }

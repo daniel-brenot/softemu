@@ -1,20 +1,12 @@
 use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
-use crate::memory::guest_memory::GuestMemory;
 use crate::Result;
-
-fn create_test_cpu_state() -> Result<CpuState> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB of memory
-    let mut state = CpuState::new(memory);
-    // Initialize stack pointer to a safe location
-    state.registers.rsp = 0x10000;
-    Ok(state)
-}
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 
 fn execute_instruction(instruction_bytes: &[u8], state: &mut CpuState) -> Result<CpuState> {
     let mut decoder = InstructionDecoder::new();
     let instruction = decoder.decode_instruction(instruction_bytes);
     decoder.execute_instruction(&instruction, state)?;
-    Ok(state.clone())
+    Ok(create_test_cpu_state().unwrap())
 }
 
 #[cfg(test)]
@@ -31,9 +23,9 @@ mod tests {
         let result = execute_instruction(&[0x50], &mut state).unwrap();
         
         // Stack pointer should decrease by 8
-        assert_eq!(result.registers.rsp, initial_sp - 8);
+        assert_eq!(state.registers.rsp, initial_sp - 8);
         // Value should be pushed to stack
-        assert_eq!(result.read_u64(result.registers.rsp).unwrap(), 0x123456789ABCDEF0);
+        assert_eq!(result.read_u64(state.registers.rsp).unwrap(), 0x123456789ABCDEF0);
     }
 
     #[test]
@@ -45,9 +37,9 @@ mod tests {
         let result = execute_instruction(&[0x68, 0x00, 0x10, 0x00, 0x00], &mut state).unwrap();
         
         // Stack pointer should decrease by 8
-        assert_eq!(result.registers.rsp, initial_sp - 8);
+        assert_eq!(state.registers.rsp, initial_sp - 8);
         // Immediate value should be pushed to stack
-        assert_eq!(result.read_u64(result.registers.rsp).unwrap(), 0x1000);
+        assert_eq!(result.read_u64(state.registers.rsp).unwrap(), 0x1000);
     }
 
     #[test]
@@ -60,9 +52,9 @@ mod tests {
         let result = execute_instruction(&[0x5B], &mut state).unwrap();
         
         // Stack pointer should increase by 8
-        assert_eq!(result.registers.rsp, 0x10008);
+        assert_eq!(state.registers.rsp, 0x10008);
         // Value should be popped into RBX
-        assert_eq!(result.registers.rbx, 0xFEDCBA9876543210);
+        assert_eq!(state.registers.rbx, 0xFEDCBA9876543210);
     }
 
     #[test]
@@ -104,10 +96,10 @@ mod tests {
         let result = execute_instruction(&[0x60], &mut state).unwrap();
         
         // Stack pointer should decrease by 16 (8 registers * 2 bytes each)
-        assert_eq!(result.registers.rsp, 0x10000 - 16);
+        assert_eq!(state.registers.rsp, 0x10000 - 16);
         
         // Check that registers were pushed in correct order (DI, SI, BP, SP, BX, DX, CX, AX)
-        let mut sp = result.registers.rsp;
+        let mut sp = state.registers.rsp;
         assert_eq!(result.read_u16(sp).unwrap(), 0x5555); // DI
         sp += 2;
         assert_eq!(result.read_u16(sp).unwrap(), 0x4444); // SI
@@ -150,16 +142,16 @@ mod tests {
         let result = execute_instruction(&[0x61], &mut state).unwrap();
         
         // Stack pointer should increase by 16
-        assert_eq!(result.registers.rsp, 0x10010);
+        assert_eq!(state.registers.rsp, 0x10010);
         
         // Check that registers were popped correctly
-        assert_eq!(result.registers.rax & 0xFFFF, 0xAAAA);
-        assert_eq!(result.registers.rcx & 0xFFFF, 0xFFFF);
-        assert_eq!(result.registers.rdx & 0xFFFF, 0x0000);
-        assert_eq!(result.registers.rbx & 0xFFFF, 0x1111);
-        assert_eq!(result.registers.rbp & 0xFFFF, 0x3333);
-        assert_eq!(result.registers.rsi & 0xFFFF, 0x4444);
-        assert_eq!(result.registers.rdi & 0xFFFF, 0x5555);
+        assert_eq!(state.registers.rax & 0xFFFF, 0xAAAA);
+        assert_eq!(state.registers.rcx & 0xFFFF, 0xFFFF);
+        assert_eq!(state.registers.rdx & 0xFFFF, 0x0000);
+        assert_eq!(state.registers.rbx & 0xFFFF, 0x1111);
+        assert_eq!(state.registers.rbp & 0xFFFF, 0x3333);
+        assert_eq!(state.registers.rsi & 0xFFFF, 0x4444);
+        assert_eq!(state.registers.rdi & 0xFFFF, 0x5555);
     }
 
     #[test]
@@ -184,10 +176,10 @@ mod tests {
         let result = execute_instruction(&[0x60], &mut state).unwrap();
         
         // Stack pointer should decrease by 32 (8 registers * 4 bytes each)
-        assert_eq!(result.registers.rsp, 0x10000 - 32);
+        assert_eq!(state.registers.rsp, 0x10000 - 32);
         
         // Check that registers were pushed in correct order (EDI, ESI, EBP, ESP, EBX, EDX, ECX, EAX)
-        let mut sp = result.registers.rsp;
+        let mut sp = state.registers.rsp;
         assert_eq!(result.read_u32(sp).unwrap(), 0x55555555); // EDI
         sp += 4;
         assert_eq!(result.read_u32(sp).unwrap(), 0x44444444); // ESI
@@ -230,16 +222,16 @@ mod tests {
         let result = execute_instruction(&[0x61], &mut state).unwrap();
         
         // Stack pointer should increase by 32
-        assert_eq!(result.registers.rsp, 0x10020);
+        assert_eq!(state.registers.rsp, 0x10020);
         
         // Check that registers were popped correctly
-        assert_eq!(result.registers.rax & 0xFFFFFFFF, 0xAAAAAAAA);
-        assert_eq!(result.registers.rcx & 0xFFFFFFFF, 0xFFFFFFFF);
-        assert_eq!(result.registers.rdx & 0xFFFFFFFF, 0x00000000);
-        assert_eq!(result.registers.rbx & 0xFFFFFFFF, 0x11111111);
-        assert_eq!(result.registers.rbp & 0xFFFFFFFF, 0x33333333);
-        assert_eq!(result.registers.rsi & 0xFFFFFFFF, 0x44444444);
-        assert_eq!(result.registers.rdi & 0xFFFFFFFF, 0x55555555);
+        assert_eq!(state.registers.rax & 0xFFFFFFFF, 0xAAAAAAAA);
+        assert_eq!(state.registers.rcx & 0xFFFFFFFF, 0xFFFFFFFF);
+        assert_eq!(state.registers.rdx & 0xFFFFFFFF, 0x00000000);
+        assert_eq!(state.registers.rbx & 0xFFFFFFFF, 0x11111111);
+        assert_eq!(state.registers.rbp & 0xFFFFFFFF, 0x33333333);
+        assert_eq!(state.registers.rsi & 0xFFFFFFFF, 0x44444444);
+        assert_eq!(state.registers.rdi & 0xFFFFFFFF, 0x55555555);
     }
 
     #[test]
@@ -252,9 +244,9 @@ mod tests {
         let result = execute_instruction(&[0x9C], &mut state).unwrap();
         
         // Stack pointer should decrease by 8
-        assert_eq!(result.registers.rsp, initial_sp - 8);
+        assert_eq!(state.registers.rsp, initial_sp - 8);
         // Flags should be pushed to stack
-        assert_eq!(result.read_u64(result.registers.rsp).unwrap(), 0x123456789ABCDEF0);
+        assert_eq!(result.read_u64(state.registers.rsp).unwrap(), 0x123456789ABCDEF0);
     }
 
     #[test]
@@ -267,9 +259,9 @@ mod tests {
         let result = execute_instruction(&[0x9D], &mut state).unwrap();
         
         // Stack pointer should increase by 8
-        assert_eq!(result.registers.rsp, 0x10008);
+        assert_eq!(state.registers.rsp, 0x10008);
         // Flags should be popped from stack
-        assert_eq!(result.registers.rflags, 0xFEDCBA9876543210);
+        assert_eq!(state.registers.rflags, 0xFEDCBA9876543210);
     }
 
     #[test]
@@ -281,13 +273,13 @@ mod tests {
         let result = execute_instruction(&[0xF3, 0x0F, 0xB8, 0xC3], &mut state).unwrap();
         
         // RAX should contain the population count
-        assert_eq!(result.registers.rax, 32);
+        assert_eq!(state.registers.rax, 32);
         // Zero flag should be false (count != 0)
-        assert!(!result.registers.get_flag(RFlags::ZERO));
+        assert!(!state.registers.get_flag(RFlags::ZERO));
         // Carry, overflow, and sign flags should be false
-        assert!(!result.registers.get_flag(RFlags::CARRY));
-        assert!(!result.registers.get_flag(RFlags::OVERFLOW));
-        assert!(!result.registers.get_flag(RFlags::SIGN));
+        assert!(!state.registers.get_flag(RFlags::CARRY));
+        assert!(!state.registers.get_flag(RFlags::OVERFLOW));
+        assert!(!state.registers.get_flag(RFlags::SIGN));
     }
 
     #[test]
@@ -299,9 +291,9 @@ mod tests {
         let result = execute_instruction(&[0xF3, 0x0F, 0xB8, 0xC3], &mut state).unwrap();
         
         // RAX should contain 0
-        assert_eq!(result.registers.rax, 0);
+        assert_eq!(state.registers.rax, 0);
         // Zero flag should be true (count == 0)
-        assert!(result.registers.get_flag(RFlags::ZERO));
+        assert!(state.registers.get_flag(RFlags::ZERO));
     }
 
     #[test]
@@ -313,29 +305,29 @@ mod tests {
         let result = execute_instruction(&[0xF3, 0x0F, 0xB8, 0xC3], &mut state).unwrap();
         
         // RAX should contain 64
-        assert_eq!(result.registers.rax, 64);
+        assert_eq!(state.registers.rax, 64);
         // Zero flag should be false (count != 0)
-        assert!(!result.registers.get_flag(RFlags::ZERO));
+        assert!(!state.registers.get_flag(RFlags::ZERO));
     }
 
     #[test]
     fn test_pause_instruction() {
         // PAUSE (0xF3 0x90)
         let mut state = create_test_cpu_state().unwrap();
-        let initial_state = state.clone();
+        let initialstate = create_test_cpu_state().unwrap();
         
         let result = execute_instruction(&[0xF3, 0x90], &mut state).unwrap();
         
         // PAUSE should not modify any state
-        assert_eq!(result.registers.rax, initial_state.registers.rax);
-        assert_eq!(result.registers.rbx, initial_state.registers.rbx);
-        assert_eq!(result.registers.rcx, initial_state.registers.rcx);
-        assert_eq!(result.registers.rdx, initial_state.registers.rdx);
-        assert_eq!(result.registers.rsp, initial_state.registers.rsp);
-        assert_eq!(result.registers.rbp, initial_state.registers.rbp);
-        assert_eq!(result.registers.rsi, initial_state.registers.rsi);
-        assert_eq!(result.registers.rdi, initial_state.registers.rdi);
-        assert_eq!(result.registers.rflags, initial_state.registers.rflags);
+        assert_eq!(state.registers.rax, initialstate.registers.rax);
+        assert_eq!(state.registers.rbx, initialstate.registers.rbx);
+        assert_eq!(state.registers.rcx, initialstate.registers.rcx);
+        assert_eq!(state.registers.rdx, initialstate.registers.rdx);
+        assert_eq!(state.registers.rsp, initialstate.registers.rsp);
+        assert_eq!(state.registers.rbp, initialstate.registers.rbp);
+        assert_eq!(state.registers.rsi, initialstate.registers.rsi);
+        assert_eq!(state.registers.rdi, initialstate.registers.rdi);
+        assert_eq!(state.registers.rflags, initialstate.registers.rflags);
     }
 
     #[test]
@@ -347,8 +339,8 @@ mod tests {
         
         // PUSH should work
         let result = execute_instruction(&[0x50], &mut state).unwrap();
-        assert_eq!(result.registers.rsp, 0x1000 - 8);
-        assert_eq!(result.read_u64(result.registers.rsp).unwrap(), 0x123456789ABCDEF0);
+        assert_eq!(state.registers.rsp, 0x1000 - 8);
+        assert_eq!(result.read_u64(state.registers.rsp).unwrap(), 0x123456789ABCDEF0);
     }
 
     #[test]
@@ -415,11 +407,11 @@ mod tests {
             
             let result = execute_instruction(&[0xF3, 0x0F, 0xB8, 0xC3], &mut state).unwrap();
             
-            assert_eq!(result.registers.rax, expected_count);
+            assert_eq!(state.registers.rax, expected_count);
             if expected_count == 0 {
-                assert!(result.registers.get_flag(RFlags::ZERO));
+                assert!(state.registers.get_flag(RFlags::ZERO));
             } else {
-                assert!(!result.registers.get_flag(RFlags::ZERO));
+                assert!(!state.registers.get_flag(RFlags::ZERO));
             }
         }
     }

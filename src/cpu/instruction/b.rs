@@ -376,35 +376,35 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_bndldx(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_bndldx(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // BNDLDX - Load Extended Bounds Using Address Translation
         // Simplified implementation - just log for now
         log::debug!("BNDLDX instruction executed");
         Ok(())
     }
 
-    pub fn execute_bndmk(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_bndmk(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // BNDMK - Make Bounds
         // Simplified implementation - just log for now
         log::debug!("BNDMK instruction executed");
         Ok(())
     }
 
-    pub fn execute_bndmov(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_bndmov(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // BNDMOV - Move Bounds
         // Simplified implementation - just log for now
         log::debug!("BNDMOV instruction executed");
         Ok(())
     }
 
-    pub fn execute_bndstx(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_bndstx(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // BNDSTX - Store Extended Bounds Using Address Translation
         // Simplified implementation - just log for now
         log::debug!("BNDSTX instruction executed");
         Ok(())
     }
 
-    pub fn execute_bound(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_bound(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // BOUND - Check Array Index Against Bounds
         // Simplified implementation - just log for now
         log::debug!("BOUND instruction executed");
@@ -422,19 +422,19 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_bzhi(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_bzhi(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // BZHI - Zero High Bits Starting with Specified Bit Position
         // Simplified implementation - just log for now
         log::debug!("BZHI instruction executed");
         Ok(())
     }
 
-    pub fn execute_bb0_reset(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_bb0_reset(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("BB0_RESET instruction executed");
         Ok(())
     }
 
-    pub fn execute_bb1_reset(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_bb1_reset(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("BB1_RESET instruction executed");
         Ok(())
     }

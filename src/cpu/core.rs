@@ -144,7 +144,7 @@ impl CpuCore {
     }
 
     /// Get a reference to the CPU state
-    pub fn get_state(&self) -> Arc<Mutex<CpuState>> {
+    pub fn getstate(&self) -> Arc<Mutex<CpuState>> {
         self.state.clone()
     }
 }

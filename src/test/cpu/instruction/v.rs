@@ -1,18 +1,13 @@
-use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
-use crate::memory::GuestMemory;
+use crate::cpu::{CpuState, InstructionDecoder};
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 use iced_x86::{Decoder, DecoderOptions};
-
-fn create_test_cpu_state() -> Result<CpuState, Box<dyn std::error::Error>> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB memory
-    Ok(CpuState::new(memory))
-}
 
 fn execute_instruction(instruction_bytes: &[u8], state: &mut CpuState) -> Result<CpuState, Box<dyn std::error::Error>> {
     let mut decoder = Decoder::new(64, instruction_bytes, DecoderOptions::NONE);
     let instruction = decoder.decode();
     let decoder_impl = InstructionDecoder::new();
     decoder_impl.execute_instruction(&instruction, state)?;
-    Ok(state.clone())
+    Ok(create_test_cpu_state().unwrap())
 }
 
 #[cfg(test)]

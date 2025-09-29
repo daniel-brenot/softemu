@@ -1,19 +1,14 @@
 use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
-use crate::memory::guest_memory::GuestMemory;
 use crate::Result;
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 use iced_x86::{Decoder, DecoderOptions, Instruction};
-
-fn create_test_cpu_state() -> Result<CpuState> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB memory
-    Ok(CpuState::new(memory))
-}
 
 fn execute_instruction(instruction_bytes: &[u8], state: &mut CpuState) -> Result<CpuState> {
     let mut instruction_decoder = InstructionDecoder::new();
     let mut decoder = Decoder::new(64, instruction_bytes, DecoderOptions::NONE);
     let instruction = decoder.decode();
     instruction_decoder.execute_instruction(&instruction, state)?;
-    Ok(state.clone())
+    Ok(create_test_cpu_state().unwrap())
 }
 
 #[cfg(test)]
@@ -30,16 +25,16 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x85, 0xC3], &mut state).unwrap();
         
         // TEST performs bitwise AND but doesn't store result
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
-        assert_eq!(result.registers.rbx, 0xFEDCBA9876543210u64); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
+        assert_eq!(state.registers.rbx, 0xFEDCBA9876543210u64); // RBX unchanged
         
         // Check flags based on AND result: 0x123456789ABCDEF0 & 0xFEDCBA9876543210
         let and_result = 0x123456789ABCDEF0u64 & 0xFEDCBA9876543210u64;
         assert_eq!(and_result, 0x1214121812141210u64);
         
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
-        assert!(!result.registers.get_flag(RFlags::PARITY)); // Odd parity
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert!(!state.registers.get_flag(RFlags::PARITY)); // Odd parity
     }
 
     #[test]
@@ -52,13 +47,13 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x85, 0xC3], &mut state).unwrap();
         
         // TEST performs bitwise AND but doesn't store result
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
-        assert_eq!(result.registers.rbx, 0x0); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
+        assert_eq!(state.registers.rbx, 0x0); // RBX unchanged
         
         // Check flags based on AND result: 0x123456789ABCDEF0 & 0x0 = 0
-        assert!(result.registers.get_flag(RFlags::ZERO)); // Result is zero
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
-        assert!(result.registers.get_flag(RFlags::PARITY)); // Even parity (0 has even parity)
+        assert!(state.registers.get_flag(RFlags::ZERO)); // Result is zero
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert!(state.registers.get_flag(RFlags::PARITY)); // Even parity (0 has even parity)
     }
 
     #[test]
@@ -71,13 +66,13 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x85, 0xC3], &mut state).unwrap();
         
         // TEST performs bitwise AND but doesn't store result
-        assert_eq!(result.registers.rax, 0x8000000000000000u64); // RAX unchanged
-        assert_eq!(result.registers.rbx, 0xFFFFFFFFFFFFFFFFu64); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x8000000000000000u64); // RAX unchanged
+        assert_eq!(state.registers.rbx, 0xFFFFFFFFFFFFFFFFu64); // RBX unchanged
         
         // Check flags based on AND result: 0x8000000000000000 & 0xFFFFFFFFFFFFFFFF = 0x8000000000000000
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
-        assert!(result.registers.get_flag(RFlags::SIGN)); // Result is negative
-        assert!(result.registers.get_flag(RFlags::PARITY)); // Even parity
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert!(state.registers.get_flag(RFlags::SIGN)); // Result is negative
+        assert!(state.registers.get_flag(RFlags::PARITY)); // Even parity
     }
 
     #[test]
@@ -93,16 +88,16 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x85, 0x03], &mut state).unwrap();
         
         // TEST performs bitwise AND but doesn't store result
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
-        assert_eq!(result.registers.rbx, 0x1000); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
+        assert_eq!(state.registers.rbx, 0x1000); // RBX unchanged
         
         // Check flags based on AND result: 0x123456789ABCDEF0 & 0xFEDCBA9876543210
         let and_result = 0x123456789ABCDEF0u64 & 0xFEDCBA9876543210u64;
         assert_eq!(and_result, 0x1214121812141210u64);
         
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
-        assert!(!result.registers.get_flag(RFlags::PARITY)); // Odd parity
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert!(!state.registers.get_flag(RFlags::PARITY)); // Odd parity
     }
 
     #[test]
@@ -114,15 +109,15 @@ mod tests {
         let result = execute_instruction(&[0x48, 0xF7, 0xC0, 0x34, 0x12, 0x00, 0x00], &mut state).unwrap();
         
         // TEST performs bitwise AND but doesn't store result
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
         
         // Check flags based on AND result: 0x123456789ABCDEF0 & 0x1234 = 0x1230
         let and_result = 0x123456789ABCDEF0u64 & 0x1234u64;
         assert_eq!(and_result, 0x1230u64);
         
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
-        assert!(result.registers.get_flag(RFlags::PARITY)); // Even parity
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert!(state.registers.get_flag(RFlags::PARITY)); // Even parity
     }
 
     #[test]
@@ -135,16 +130,16 @@ mod tests {
         let result = execute_instruction(&[0x66, 0x85, 0xC3], &mut state).unwrap();
         
         // TEST performs bitwise AND but doesn't store result
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
-        assert_eq!(result.registers.rbx, 0x1234567898765432u64); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
+        assert_eq!(state.registers.rbx, 0x1234567898765432u64); // RBX unchanged
         
         // Check flags based on AND result: 0xDEF0 & 0x5432 = 0x5430
         let and_result = 0xDEF0u16 & 0x5432u16;
         assert_eq!(and_result, 0x5430u16);
         
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
-        assert!(result.registers.get_flag(RFlags::PARITY)); // Even parity
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert!(state.registers.get_flag(RFlags::PARITY)); // Even parity
     }
 
     #[test]
@@ -157,16 +152,16 @@ mod tests {
         let result = execute_instruction(&[0x85, 0xC3], &mut state).unwrap();
         
         // TEST performs bitwise AND but doesn't store result
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
-        assert_eq!(result.registers.rbx, 0x1234567898765432u64); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64); // RAX unchanged
+        assert_eq!(state.registers.rbx, 0x1234567898765432u64); // RBX unchanged
         
         // Check flags based on AND result: 0x9ABCDEF0 & 0x98765432 = 0x98345430
         let and_result = 0x9ABCDEF0u32 & 0x98765432u32;
         assert_eq!(and_result, 0x98345430u32);
         
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
-        assert!(result.registers.get_flag(RFlags::SIGN)); // Result is negative (bit 31 set)
-        assert!(result.registers.get_flag(RFlags::PARITY)); // Even parity
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert!(state.registers.get_flag(RFlags::SIGN)); // Result is negative (bit 31 set)
+        assert!(state.registers.get_flag(RFlags::PARITY)); // Even parity
     }
 
     #[test]
@@ -182,9 +177,9 @@ mod tests {
         let and_result = 0x123456789ABCDEF0u64 & 0x1111111111111111u64;
         assert_eq!(and_result, 0x1010101010101010u64);
         
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
-        assert!(!result.registers.get_flag(RFlags::PARITY)); // Odd parity (8 bits set)
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert!(!state.registers.get_flag(RFlags::PARITY)); // Odd parity (8 bits set)
     }
 
     #[test]
@@ -197,8 +192,8 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x85, 0xC3], &mut state).unwrap();
         
         // TEST should clear overflow and carry flags
-        assert!(!result.registers.get_flag(RFlags::OVERFLOW)); // Overflow flag cleared
-        assert!(!result.registers.get_flag(RFlags::CARRY)); // Carry flag cleared
+        assert!(!state.registers.get_flag(RFlags::OVERFLOW)); // Overflow flag cleared
+        assert!(!state.registers.get_flag(RFlags::CARRY)); // Carry flag cleared
     }
 
     #[test]
@@ -211,7 +206,7 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x85, 0xC3], &mut state).unwrap();
         
         // TEST should clear auxiliary flag
-        assert!(!result.registers.get_flag(RFlags::AUXILIARY)); // Auxiliary flag cleared
+        assert!(!state.registers.get_flag(RFlags::AUXILIARY)); // Auxiliary flag cleared
     }
 
     #[test]
@@ -243,18 +238,18 @@ mod tests {
         state.registers.rbx = 0xFFFFFFFFFFFFFFFFu64;
         
         let result = execute_instruction(&[0x48, 0x85, 0xC3], &mut state).unwrap();
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
-        assert!(result.registers.get_flag(RFlags::SIGN)); // Result is negative
-        assert!(result.registers.get_flag(RFlags::PARITY)); // Even parity (8 bits set in low byte)
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert!(state.registers.get_flag(RFlags::SIGN)); // Result is negative
+        assert!(state.registers.get_flag(RFlags::PARITY)); // Even parity (8 bits set in low byte)
         
         // Test with minimum values
         state.registers.rax = 0x0;
         state.registers.rbx = 0x0;
         
         let result = execute_instruction(&[0x48, 0x85, 0xC3], &mut state).unwrap();
-        assert!(result.registers.get_flag(RFlags::ZERO)); // Result is zero
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
-        assert!(result.registers.get_flag(RFlags::PARITY)); // Even parity (0 bits set)
+        assert!(state.registers.get_flag(RFlags::ZERO)); // Result is zero
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert!(state.registers.get_flag(RFlags::PARITY)); // Even parity (0 bits set)
     }
 
     // Tests for other T instructions (mostly stubs for now)

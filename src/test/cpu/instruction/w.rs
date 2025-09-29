@@ -1,18 +1,13 @@
-use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
-use crate::memory::GuestMemory;
+use crate::cpu::{CpuState, InstructionDecoder};
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 use iced_x86::{Decoder, DecoderOptions};
-
-fn create_test_cpu_state() -> Result<CpuState, Box<dyn std::error::Error>> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB memory
-    Ok(CpuState::new(memory))
-}
 
 fn execute_instruction(instruction_bytes: &[u8], state: &mut CpuState) -> Result<CpuState, Box<dyn std::error::Error>> {
     let mut decoder = Decoder::new(64, instruction_bytes, DecoderOptions::NONE);
     let instruction = decoder.decode();
     let decoder_impl = InstructionDecoder::new();
     decoder_impl.execute_instruction(&instruction, state)?;
-    Ok(state.clone())
+    Ok(create_test_cpu_state().unwrap())
 }
 
 #[cfg(test)]
@@ -353,10 +348,10 @@ mod tests {
         assert!(result3.is_ok());
         
         // Verify registers are still correct
-        let final_state = result3.unwrap();
-        assert_eq!(final_state.registers.rcx, 0x1B);
-        assert_eq!(final_state.registers.rax, 0x12345678);
-        assert_eq!(final_state.registers.rdx, 0x9ABCDEF0);
+        let finalstate = result3.unwrap();
+        assert_eq!(finalstate.registers.rcx, 0x1B);
+        assert_eq!(finalstate.registers.rax, 0x12345678);
+        assert_eq!(finalstate.registers.rdx, 0x9ABCDEF0);
     }
 
     #[test]

@@ -202,7 +202,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_str(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_str(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid STR instruction".to_string()));
         }
@@ -211,7 +211,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_smsw(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_smsw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid SMSW instruction".to_string()));
         }
@@ -348,13 +348,13 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_sfence(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sfence(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Store Fence (memory ordering)
         // For now, just do nothing
         Ok(())
     }
 
-    pub fn execute_sgdt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sgdt(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid SGDT instruction".to_string()));
         }
@@ -363,7 +363,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_sidt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sidt(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid SIDT instruction".to_string()));
         }
@@ -372,7 +372,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_sldt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sldt(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid SLDT instruction".to_string()));
         }
@@ -381,318 +381,318 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_swapgs(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_swapgs(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Swap GS Base (simplified - just log for now)
         log::debug!("SWAPGS instruction executed");
         Ok(())
     }
 
-    pub fn execute_sarx(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sarx(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SARX instruction executed");
         Ok(())
     }
 
-    pub fn execute_saveprevssp(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_saveprevssp(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SAVEPREVSSP instruction executed");
         Ok(())
     }
 
-    pub fn execute_seta(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_seta(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETA instruction executed");
         Ok(())
     }
 
-    pub fn execute_setae(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setae(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETAE instruction executed");
         Ok(())
     }
 
-    pub fn execute_setb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETB instruction executed");
         Ok(())
     }
 
-    pub fn execute_setbe(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setbe(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETBE instruction executed");
         Ok(())
     }
 
-    pub fn execute_sete(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sete(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETE instruction executed");
         Ok(())
     }
 
-    pub fn execute_setg(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setg(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETG instruction executed");
         Ok(())
     }
 
-    pub fn execute_setge(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setge(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETGE instruction executed");
         Ok(())
     }
 
-    pub fn execute_setl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETL instruction executed");
         Ok(())
     }
 
-    pub fn execute_setle(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setle(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETLE instruction executed");
         Ok(())
     }
 
-    pub fn execute_setne(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setne(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETNE instruction executed");
         Ok(())
     }
 
-    pub fn execute_setno(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setno(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETNO instruction executed");
         Ok(())
     }
 
-    pub fn execute_setnp(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setnp(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETNP instruction executed");
         Ok(())
     }
 
-    pub fn execute_setns(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setns(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETNS instruction executed");
         Ok(())
     }
 
-    pub fn execute_seto(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_seto(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETO instruction executed");
         Ok(())
     }
 
-    pub fn execute_setp(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setp(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETP instruction executed");
         Ok(())
     }
 
-    pub fn execute_sets(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sets(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETS instruction executed");
         Ok(())
     }
 
-    pub fn execute_setssbsy(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_setssbsy(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SETSSBSY instruction executed");
         Ok(())
     }
 
-    pub fn execute_sha1msg1(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sha1msg1(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHA1MSG1 instruction executed");
         Ok(())
     }
 
-    pub fn execute_sha1msg2(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sha1msg2(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHA1MSG2 instruction executed");
         Ok(())
     }
 
-    pub fn execute_sha1nexte(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sha1nexte(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHA1NEXTE instruction executed");
         Ok(())
     }
 
-    pub fn execute_sha1rnds4(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sha1rnds4(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHA1RNDS4 instruction executed");
         Ok(())
     }
 
-    pub fn execute_sha256msg1(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sha256msg1(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHA256MSG1 instruction executed");
         Ok(())
     }
 
-    pub fn execute_sha256msg2(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sha256msg2(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHA256MSG2 instruction executed");
         Ok(())
     }
 
-    pub fn execute_sha256rnds2(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sha256rnds2(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHA256RNDS2 instruction executed");
         Ok(())
     }
 
-    pub fn execute_shld(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_shld(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHLD instruction executed");
         Ok(())
     }
 
-    pub fn execute_shlx(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_shlx(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHLX instruction executed");
         Ok(())
     }
 
-    pub fn execute_shrd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_shrd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHRD instruction executed");
         Ok(())
     }
 
-    pub fn execute_shrx(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_shrx(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHRX instruction executed");
         Ok(())
     }
 
-    pub fn execute_shufpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_shufpd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHUFPD instruction executed");
         Ok(())
     }
 
-    pub fn execute_shufps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_shufps(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SHUFPS instruction executed");
         Ok(())
     }
 
-    pub fn execute_skinit(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_skinit(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SKINIT instruction executed");
         Ok(())
     }
 
-    pub fn execute_slwpcb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_slwpcb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SLWPCB instruction executed");
         Ok(())
     }
 
-    pub fn execute_sqrtpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sqrtpd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SQRTPD instruction executed");
         Ok(())
     }
 
-    pub fn execute_sqrtps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sqrtps(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SQRTPS instruction executed");
         Ok(())
     }
 
-    pub fn execute_sqrtsd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sqrtsd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SQRTSD instruction executed");
         Ok(())
     }
 
-    pub fn execute_sqrtss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sqrtss(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SQRTSS instruction executed");
         Ok(())
     }
 
-    pub fn execute_stac(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_stac(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("STAC instruction executed");
         Ok(())
     }
 
-    pub fn execute_stgi(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_stgi(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("STGI instruction executed");
         Ok(())
     }
 
-    pub fn execute_stmxcsr(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_stmxcsr(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("STMXCSR instruction executed");
         Ok(())
     }
 
-    pub fn execute_subpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_subpd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SUBPD instruction executed");
         Ok(())
     }
 
-    pub fn execute_subps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_subps(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SUBPS instruction executed");
         Ok(())
     }
 
-    pub fn execute_subsd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_subsd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SUBSD instruction executed");
         Ok(())
     }
 
-    pub fn execute_subss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_subss(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SUBSS instruction executed");
         Ok(())
     }
 
-    pub fn execute_sysenter(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sysenter(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SYSENTER instruction executed");
         Ok(())
     }
 
-    pub fn execute_sysexit(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sysexit(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SYSEXIT instruction executed");
         Ok(())
     }
 
-    pub fn execute_serialize(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_serialize(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SERIALIZE instruction executed");
         Ok(())
     }
 
-    pub fn execute_sysexitq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sysexitq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SYSEXITQ instruction executed");
         Ok(())
     }
 
-    pub fn execute_sttilecfg(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sttilecfg(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("STTILECFG instruction executed");
         Ok(())
     }
 
-    pub fn execute_sysretq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_sysretq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SYSRETQ instruction executed");
         Ok(())
     }
 
-    pub fn execute_smint(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_smint(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SMINT instruction executed");
         Ok(())
     }
 
-    pub fn execute_svdc(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_svdc(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SVDC instruction executed");
         Ok(())
     }
 
-    pub fn execute_svldt(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_svldt(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SVLDT instruction executed");
         Ok(())
     }
 
-    pub fn execute_svts(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_svts(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SVTS instruction executed");
         Ok(())
     }
 
-    pub fn execute_seamret(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_seamret(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SEAMRET instruction executed");
         Ok(())
     }
 
-    pub fn execute_seamops(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_seamops(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SEAMOPS instruction executed");
         Ok(())
     }
 
-    pub fn execute_seamcall(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_seamcall(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SEAMCALL instruction executed");
         Ok(())
     }
 
-    pub fn execute_stui(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_stui(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("STUI instruction executed");
         Ok(())
     }
 
-    pub fn execute_senduipi(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_senduipi(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SENDUIPI instruction executed");
         Ok(())
     }
 
-    pub fn execute_storeall(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_storeall(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("STOREALL instruction executed");
         Ok(())
     }
 
-    pub fn execute_spflt(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_spflt(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("SPFLT instruction executed");
         Ok(())
     }

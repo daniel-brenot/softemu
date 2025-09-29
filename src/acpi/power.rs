@@ -11,8 +11,8 @@ pub enum PowerState {
 
 /// Power management controller
 pub struct PowerManager {
-    system_power_state: PowerState,
-    acpi_power_state: AcpiPowerState,
+    system_powerstate: PowerState,
+    acpi_powerstate: AcpiPowerState,
     devices: Vec<Box<dyn crate::acpi::device::AcpiDeviceOps + Send + Sync>>,
     processors: Vec<Box<dyn crate::acpi::device::AcpiDeviceOps + Send + Sync>>,
     power_button_pressed: bool,
@@ -23,8 +23,8 @@ pub struct PowerManager {
 impl PowerManager {
     pub fn new() -> Self {
         Self {
-            system_power_state: PowerState::On,
-            acpi_power_state: AcpiPowerState::S0,
+            system_powerstate: PowerState::On,
+            acpi_powerstate: AcpiPowerState::S0,
             devices: Vec::new(),
             processors: Vec::new(),
             power_button_pressed: false,
@@ -33,12 +33,12 @@ impl PowerManager {
         }
     }
 
-    pub fn get_system_power_state(&self) -> PowerState {
-        self.system_power_state
+    pub fn get_system_powerstate(&self) -> PowerState {
+        self.system_powerstate
     }
 
-    pub fn get_acpi_power_state(&self) -> AcpiPowerState {
-        self.acpi_power_state
+    pub fn get_acpi_powerstate(&self) -> AcpiPowerState {
+        self.acpi_powerstate
     }
 
     pub fn add_device(&mut self, device: Box<dyn crate::acpi::device::AcpiDeviceOps + Send + Sync>) {
@@ -50,14 +50,14 @@ impl PowerManager {
     }
 
     /// Transition to a new power state
-    pub fn transition_power_state(&mut self, new_state: AcpiPowerState) -> AcpiResult<()> {
-        if self.acpi_power_state == new_state {
+    pub fn transition_powerstate(&mut self, newstate: AcpiPowerState) -> AcpiResult<()> {
+        if self.acpi_powerstate == newstate {
             return Ok(());
         }
 
-        log::info!("ACPI power state transition: {:?} -> {:?}", self.acpi_power_state, new_state);
+        log::info!("ACPI power state transition: {:?} -> {:?}", self.acpi_powerstate, newstate);
 
-        match new_state {
+        match newstate {
             AcpiPowerState::S0 => self.transition_to_s0(),
             AcpiPowerState::S1 => self.transition_to_s1(),
             AcpiPowerState::S2 => self.transition_to_s2(),
@@ -66,22 +66,22 @@ impl PowerManager {
             AcpiPowerState::S5 => self.transition_to_s5(),
         }?;
 
-        self.acpi_power_state = new_state;
+        self.acpi_powerstate = newstate;
         Ok(())
     }
 
     fn transition_to_s0(&mut self) -> AcpiResult<()> {
         log::info!("Transitioning to S0 (Working)");
-        self.system_power_state = PowerState::On;
+        self.system_powerstate = PowerState::On;
 
         // Wake up all processors
         for processor in &mut self.processors {
-            processor.set_device_state(AcpiDeviceState::D0)?;
+            processor.set_devicestate(AcpiDeviceState::D0)?;
         }
 
         // Wake up all devices
         for device in &mut self.devices {
-            device.set_device_state(AcpiDeviceState::D0)?;
+            device.set_devicestate(AcpiDeviceState::D0)?;
         }
 
         Ok(())
@@ -89,16 +89,16 @@ impl PowerManager {
 
     fn transition_to_s1(&mut self) -> AcpiResult<()> {
         log::info!("Transitioning to S1 (CPU stopped, RAM refresh)");
-        self.system_power_state = PowerState::Suspend;
+        self.system_powerstate = PowerState::Suspend;
 
         // Stop processors but keep RAM refreshed
         for processor in &mut self.processors {
-            processor.set_device_state(AcpiDeviceState::D1)?;
+            processor.set_devicestate(AcpiDeviceState::D1)?;
         }
 
         // Put devices in low power state
         for device in &mut self.devices {
-            device.set_device_state(AcpiDeviceState::D1)?;
+            device.set_devicestate(AcpiDeviceState::D1)?;
         }
 
         Ok(())
@@ -106,16 +106,16 @@ impl PowerManager {
 
     fn transition_to_s2(&mut self) -> AcpiResult<()> {
         log::info!("Transitioning to S2 (CPU off, RAM refresh)");
-        self.system_power_state = PowerState::Suspend;
+        self.system_powerstate = PowerState::Suspend;
 
         // Turn off processors but keep RAM refreshed
         for processor in &mut self.processors {
-            processor.set_device_state(AcpiDeviceState::D2)?;
+            processor.set_devicestate(AcpiDeviceState::D2)?;
         }
 
         // Put devices in lower power state
         for device in &mut self.devices {
-            device.set_device_state(AcpiDeviceState::D2)?;
+            device.set_devicestate(AcpiDeviceState::D2)?;
         }
 
         Ok(())
@@ -123,16 +123,16 @@ impl PowerManager {
 
     fn transition_to_s3(&mut self) -> AcpiResult<()> {
         log::info!("Transitioning to S3 (Suspend to RAM)");
-        self.system_power_state = PowerState::Suspend;
+        self.system_powerstate = PowerState::Suspend;
 
         // Turn off processors
         for processor in &mut self.processors {
-            processor.set_device_state(AcpiDeviceState::D3)?;
+            processor.set_devicestate(AcpiDeviceState::D3)?;
         }
 
         // Turn off most devices, keep RAM powered
         for device in &mut self.devices {
-            device.set_device_state(AcpiDeviceState::D3)?;
+            device.set_devicestate(AcpiDeviceState::D3)?;
         }
 
         Ok(())
@@ -140,16 +140,16 @@ impl PowerManager {
 
     fn transition_to_s4(&mut self) -> AcpiResult<()> {
         log::info!("Transitioning to S4 (Suspend to disk)");
-        self.system_power_state = PowerState::Hibernate;
+        self.system_powerstate = PowerState::Hibernate;
 
         // Turn off processors
         for processor in &mut self.processors {
-            processor.set_device_state(AcpiDeviceState::D3)?;
+            processor.set_devicestate(AcpiDeviceState::D3)?;
         }
 
         // Turn off all devices
         for device in &mut self.devices {
-            device.set_device_state(AcpiDeviceState::D3)?;
+            device.set_devicestate(AcpiDeviceState::D3)?;
         }
 
         Ok(())
@@ -157,16 +157,16 @@ impl PowerManager {
 
     fn transition_to_s5(&mut self) -> AcpiResult<()> {
         log::info!("Transitioning to S5 (Soft off)");
-        self.system_power_state = PowerState::Off;
+        self.system_powerstate = PowerState::Off;
 
         // Turn off processors
         for processor in &mut self.processors {
-            processor.set_device_state(AcpiDeviceState::D3)?;
+            processor.set_devicestate(AcpiDeviceState::D3)?;
         }
 
         // Turn off all devices
         for device in &mut self.devices {
-            device.set_device_state(AcpiDeviceState::D3)?;
+            device.set_devicestate(AcpiDeviceState::D3)?;
         }
 
         Ok(())
@@ -177,18 +177,18 @@ impl PowerManager {
         self.power_button_pressed = true;
         log::info!("Power button pressed");
 
-        match self.acpi_power_state {
+        match self.acpi_powerstate {
             AcpiPowerState::S0 => {
                 // If in S0, transition to S5 (soft off)
-                self.transition_power_state(AcpiPowerState::S5)
+                self.transition_powerstate(AcpiPowerState::S5)
             }
             AcpiPowerState::S1 | AcpiPowerState::S2 | AcpiPowerState::S3 | AcpiPowerState::S4 => {
                 // If in sleep state, wake up to S0
-                self.transition_power_state(AcpiPowerState::S0)
+                self.transition_powerstate(AcpiPowerState::S0)
             }
             AcpiPowerState::S5 => {
                 // If already off, power on to S0
-                self.transition_power_state(AcpiPowerState::S0)
+                self.transition_powerstate(AcpiPowerState::S0)
             }
         }
     }
@@ -198,18 +198,18 @@ impl PowerManager {
         self.sleep_button_pressed = true;
         log::info!("Sleep button pressed");
 
-        match self.acpi_power_state {
+        match self.acpi_powerstate {
             AcpiPowerState::S0 => {
                 // If in S0, transition to S3 (suspend to RAM)
-                self.transition_power_state(AcpiPowerState::S3)
+                self.transition_powerstate(AcpiPowerState::S3)
             }
             AcpiPowerState::S1 | AcpiPowerState::S2 | AcpiPowerState::S3 | AcpiPowerState::S4 => {
                 // If in sleep state, wake up to S0
-                self.transition_power_state(AcpiPowerState::S0)
+                self.transition_powerstate(AcpiPowerState::S0)
             }
             AcpiPowerState::S5 => {
                 // If off, power on to S0
-                self.transition_power_state(AcpiPowerState::S0)
+                self.transition_powerstate(AcpiPowerState::S0)
             }
         }
     }
@@ -219,12 +219,12 @@ impl PowerManager {
         self.lid_closed = closed;
         log::info!("Lid switch: {}", if closed { "closed" } else { "open" });
 
-        if closed && self.acpi_power_state == AcpiPowerState::S0 {
+        if closed && self.acpi_powerstate == AcpiPowerState::S0 {
             // If lid is closed and system is on, suspend to S3
-            self.transition_power_state(AcpiPowerState::S3)
-        } else if !closed && self.acpi_power_state != AcpiPowerState::S0 {
+            self.transition_powerstate(AcpiPowerState::S3)
+        } else if !closed && self.acpi_powerstate != AcpiPowerState::S0 {
             // If lid is opened and system is sleeping, wake up to S0
-            self.transition_power_state(AcpiPowerState::S0)
+            self.transition_powerstate(AcpiPowerState::S0)
         } else {
             Ok(())
         }
@@ -246,14 +246,14 @@ impl PowerManager {
     }
 
     /// Reset button states
-    pub fn reset_button_states(&mut self) {
+    pub fn reset_buttonstates(&mut self) {
         self.power_button_pressed = false;
         self.sleep_button_pressed = false;
     }
 
     /// Get power consumption estimate
     pub fn get_power_consumption(&self) -> f32 {
-        match self.acpi_power_state {
+        match self.acpi_powerstate {
             AcpiPowerState::S0 => 100.0, // Full power
             AcpiPowerState::S1 => 50.0,  // Half power
             AcpiPowerState::S2 => 25.0,  // Quarter power
@@ -295,7 +295,7 @@ impl PowerManager {
         }
         
         // Set initial power state
-        self.transition_power_state(AcpiPowerState::S0)?;
+        self.transition_powerstate(AcpiPowerState::S0)?;
         
         Ok(())
     }
@@ -305,7 +305,7 @@ impl PowerManager {
         log::info!("Shutting down power management");
         
         // Transition to S5 (soft off)
-        self.transition_power_state(AcpiPowerState::S5)?;
+        self.transition_powerstate(AcpiPowerState::S5)?;
         
         // Shutdown all devices
         for device in &mut self.devices {

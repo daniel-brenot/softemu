@@ -1,15 +1,11 @@
 use crate::cpu::state::CpuState;
 use crate::cpu::registers::RFlags;
-use crate::memory::guest_memory::GuestMemory;
 use crate::cpu::instruction::InstructionDecoder;
 use iced_x86::{Decoder, DecoderOptions, Instruction};
 use crate::Result;
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 
 /// Test helper to create a CPU state with initialized memory
-fn create_test_cpu_state() -> Result<CpuState> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB of memory
-    Ok(CpuState::new(memory))
-}
 
 /// Test helper to decode a single instruction from bytes
 fn decode_instruction(bytes: &[u8]) -> Instruction {
@@ -18,11 +14,11 @@ fn decode_instruction(bytes: &[u8]) -> Instruction {
 }
 
 /// Test helper to execute an instruction and return the result
-fn execute_instruction(bytes: &[u8], mut state: CpuState) -> Result<CpuState> {
+fn execute_instruction(bytes: &[u8], state: &mut CpuState) -> Result<()> {
     let instruction = decode_instruction(bytes);
     let mut decoder = InstructionDecoder::new();
-    decoder.execute_instruction(&instruction, &mut state)?;
-    Ok(state)
+    decoder.execute_instruction(&instruction, state)?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -40,33 +36,33 @@ mod tests {
         state.registers.rip = 0x1000; // Current instruction address
         
         // LOOP rel8 instruction (E2 xx)
-        let result = execute_instruction(&[0xE2, 0x10], state).unwrap(); // LOOP +16
+        let result = execute_instruction(&[0xE2, 0x10], &mut state).unwrap(); // LOOP +16
         
         // RCX should be decremented to 2, RIP should jump
-        assert_eq!(result.registers.rcx, 2);
-        assert_eq!(result.registers.rip, 0x1012); // 0x1000 + 2 + 0x10
+        assert_eq!(state.registers.rcx, 2);
+        assert_eq!(state.registers.rip, 0x1012); // 0x1000 + 2 + 0x10
         
         // Test case 2: RCX = 1, should jump and then RCX becomes 0
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rcx = 1;
         state.registers.rip = 0x1000;
         
-        let result = execute_instruction(&[0xE2, 0x10], state).unwrap();
+        let result = execute_instruction(&[0xE2, 0x10], &mut state).unwrap();
         
         // RCX should be decremented to 0, RIP should NOT jump (RCX == 0)
-        assert_eq!(result.registers.rcx, 0);
-        assert_eq!(result.registers.rip, 0x1002); // RIP advances by instruction length (2 bytes)
+        assert_eq!(state.registers.rcx, 0);
+        assert_eq!(state.registers.rip, 0x1002); // RIP advances by instruction length (2 bytes)
         
         // Test case 3: RCX = 0, should not jump (but will jump because RCX wraps to non-zero)
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rcx = 0;
         state.registers.rip = 0x1000;
         
-        let result = execute_instruction(&[0xE2, 0x10], state).unwrap();
+        let result = execute_instruction(&[0xE2, 0x10], &mut state).unwrap();
         
         // RCX should be decremented to -1 (wrapping), and since it's not 0, it will jump
-        assert_eq!(result.registers.rcx, 0xFFFFFFFFFFFFFFFF);
-        assert_eq!(result.registers.rip, 0x1012); // Will jump because RCX != 0 after wrapping
+        assert_eq!(state.registers.rcx, 0xFFFFFFFFFFFFFFFF);
+        assert_eq!(state.registers.rip, 0x1012); // Will jump because RCX != 0 after wrapping
     }
 
     #[test]
@@ -79,10 +75,10 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, true);
         
-        let result = execute_instruction(&[0xE1, 0x10], state).unwrap(); // LOOPE +16
+        let result = execute_instruction(&[0xE1, 0x10], &mut state).unwrap(); // LOOPE +16
         
-        assert_eq!(result.registers.rcx, 2);
-        assert_eq!(result.registers.rip, 0x1012);
+        assert_eq!(state.registers.rcx, 2);
+        assert_eq!(state.registers.rip, 0x1012);
         
         // Test case 2: RCX = 3, ZF = 0, should not jump
         let mut state = create_test_cpu_state().unwrap();
@@ -90,10 +86,10 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, false);
         
-        let result = execute_instruction(&[0xE1, 0x10], state).unwrap();
+        let result = execute_instruction(&[0xE1, 0x10], &mut state).unwrap();
         
-        assert_eq!(result.registers.rcx, 2);
-        assert_eq!(result.registers.rip, 0x1002); // No jump
+        assert_eq!(state.registers.rcx, 2);
+        assert_eq!(state.registers.rip, 0x1002); // No jump
         
         // Test case 3: RCX = 0, ZF = 1, should jump (RCX wraps around to non-zero)
         let mut state = create_test_cpu_state().unwrap();
@@ -101,10 +97,10 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, true);
         
-        let result = execute_instruction(&[0xE1, 0x10], state).unwrap();
+        let result = execute_instruction(&[0xE1, 0x10], &mut state).unwrap();
         
-        assert_eq!(result.registers.rcx, 0xFFFFFFFFFFFFFFFF); // RCX wraps around
-        assert_eq!(result.registers.rip, 0x1012); // Should jump because RCX != 0 and ZF = 1
+        assert_eq!(state.registers.rcx, 0xFFFFFFFFFFFFFFFF); // RCX wraps around
+        assert_eq!(state.registers.rip, 0x1012); // Should jump because RCX != 0 and ZF = 1
     }
 
     #[test]
@@ -117,10 +113,10 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, false);
         
-        let result = execute_instruction(&[0xE0, 0x10], state).unwrap(); // LOOPNE +16
+        let result = execute_instruction(&[0xE0, 0x10], &mut state).unwrap(); // LOOPNE +16
         
-        assert_eq!(result.registers.rcx, 2);
-        assert_eq!(result.registers.rip, 0x1012);
+        assert_eq!(state.registers.rcx, 2);
+        assert_eq!(state.registers.rip, 0x1012);
         
         // Test case 2: RCX = 3, ZF = 1, should not jump
         let mut state = create_test_cpu_state().unwrap();
@@ -128,10 +124,10 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, true);
         
-        let result = execute_instruction(&[0xE0, 0x10], state).unwrap();
+        let result = execute_instruction(&[0xE0, 0x10], &mut state).unwrap();
         
-        assert_eq!(result.registers.rcx, 2);
-        assert_eq!(result.registers.rip, 0x1002); // No jump
+        assert_eq!(state.registers.rcx, 2);
+        assert_eq!(state.registers.rip, 0x1002); // No jump
         
         // Test case 3: RCX = 0, ZF = 0, should jump (RCX wraps around to non-zero)
         let mut state = create_test_cpu_state().unwrap();
@@ -139,10 +135,10 @@ mod tests {
         state.registers.rip = 0x1000;
         state.registers.set_flag(RFlags::ZERO, false);
         
-        let result = execute_instruction(&[0xE0, 0x10], state).unwrap();
+        let result = execute_instruction(&[0xE0, 0x10], &mut state).unwrap();
         
-        assert_eq!(result.registers.rcx, 0xFFFFFFFFFFFFFFFF); // RCX wraps around
-        assert_eq!(result.registers.rip, 0x1012); // Should jump because RCX != 0 and ZF = 0
+        assert_eq!(state.registers.rcx, 0xFFFFFFFFFFFFFFFF); // RCX wraps around
+        assert_eq!(state.registers.rip, 0x1012); // Should jump because RCX != 0 and ZF = 0
     }
 
     #[test]
@@ -156,10 +152,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u8(0x1000, 0xAB).unwrap();
         
-        let result = execute_instruction(&[0xAC], state).unwrap(); // LODSB
+        let result = execute_instruction(&[0xAC], &mut state).unwrap(); // LODSB
         
-        assert_eq!(result.registers.rax & 0xFF, 0xAB); // AL should be 0xAB
-        assert_eq!(result.registers.rsi, 0x1001); // RSI should increment
+        assert_eq!(state.registers.rax & 0xFF, 0xAB); // AL should be 0xAB
+        assert_eq!(state.registers.rsi, 0x1001); // RSI should increment
         
         // Test case 2: Backward direction (DF = 1)
         let mut state = create_test_cpu_state().unwrap();
@@ -168,10 +164,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, true);
         state.write_u8(0x1000, 0xCD).unwrap();
         
-        let result = execute_instruction(&[0xAC], state).unwrap(); // LODSB
+        let result = execute_instruction(&[0xAC], &mut state).unwrap(); // LODSB
         
-        assert_eq!(result.registers.rax & 0xFF, 0xCD); // AL should be 0xCD
-        assert_eq!(result.registers.rsi, 0x0FFF); // RSI should decrement
+        assert_eq!(state.registers.rax & 0xFF, 0xCD); // AL should be 0xCD
+        assert_eq!(state.registers.rsi, 0x0FFF); // RSI should decrement
     }
 
     #[test]
@@ -185,10 +181,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u16(0x1000, 0x1234).unwrap();
         
-        let result = execute_instruction(&[0x66, 0xAD], state).unwrap(); // LODSW (16-bit prefix)
+        let result = execute_instruction(&[0x66, 0xAD], &mut state).unwrap(); // LODSW (16-bit prefix)
         
-        assert_eq!(result.registers.rax & 0xFFFF, 0x1234); // AX should be 0x1234
-        assert_eq!(result.registers.rsi, 0x1002); // RSI should increment by 2
+        assert_eq!(state.registers.rax & 0xFFFF, 0x1234); // AX should be 0x1234
+        assert_eq!(state.registers.rsi, 0x1002); // RSI should increment by 2
         
         // Test case 2: Backward direction (DF = 1)
         let mut state = create_test_cpu_state().unwrap();
@@ -197,10 +193,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, true);
         state.write_u16(0x1000, 0x5678).unwrap();
         
-        let result = execute_instruction(&[0x66, 0xAD], state).unwrap(); // LODSW (16-bit prefix)
+        let result = execute_instruction(&[0x66, 0xAD], &mut state).unwrap(); // LODSW (16-bit prefix)
         
-        assert_eq!(result.registers.rax & 0xFFFF, 0x5678); // AX should be 0x5678
-        assert_eq!(result.registers.rsi, 0x0FFE); // RSI should decrement by 2
+        assert_eq!(state.registers.rax & 0xFFFF, 0x5678); // AX should be 0x5678
+        assert_eq!(state.registers.rsi, 0x0FFE); // RSI should decrement by 2
     }
 
     #[test]
@@ -214,10 +210,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u32(0x1000, 0x12345678).unwrap();
         
-        let result = execute_instruction(&[0xAD], state).unwrap(); // LODSD (same opcode as LODSW, distinguished by operand size)
+        let result = execute_instruction(&[0xAD], &mut state).unwrap(); // LODSD (same opcode as LODSW, distinguished by operand size)
         
-        assert_eq!(result.registers.rax & 0xFFFFFFFF, 0x12345678); // EAX should be 0x12345678
-        assert_eq!(result.registers.rsi, 0x1004); // RSI should increment by 4
+        assert_eq!(state.registers.rax & 0xFFFFFFFF, 0x12345678); // EAX should be 0x12345678
+        assert_eq!(state.registers.rsi, 0x1004); // RSI should increment by 4
         
         // Test case 2: Backward direction (DF = 1)
         let mut state = create_test_cpu_state().unwrap();
@@ -226,10 +222,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, true);
         state.write_u32(0x1000, 0x9ABCDEF0).unwrap();
         
-        let result = execute_instruction(&[0xAD], state).unwrap(); // LODSD
+        let result = execute_instruction(&[0xAD], &mut state).unwrap(); // LODSD
         
-        assert_eq!(result.registers.rax & 0xFFFFFFFF, 0x9ABCDEF0); // EAX should be 0x9ABCDEF0
-        assert_eq!(result.registers.rsi, 0x0FFC); // RSI should decrement by 4
+        assert_eq!(state.registers.rax & 0xFFFFFFFF, 0x9ABCDEF0); // EAX should be 0x9ABCDEF0
+        assert_eq!(state.registers.rsi, 0x0FFC); // RSI should decrement by 4
     }
 
     #[test]
@@ -243,10 +239,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u64(0x1000, 0x123456789ABCDEF0).unwrap();
         
-        let result = execute_instruction(&[0x48, 0xAD], state).unwrap(); // LODSQ (REX.W prefix)
+        let result = execute_instruction(&[0x48, 0xAD], &mut state).unwrap(); // LODSQ (REX.W prefix)
         
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0); // RAX should be loaded
-        assert_eq!(result.registers.rsi, 0x1008); // RSI should increment by 8
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0); // RAX should be loaded
+        assert_eq!(state.registers.rsi, 0x1008); // RSI should increment by 8
         
         // Test case 2: Backward direction (DF = 1)
         let mut state = create_test_cpu_state().unwrap();
@@ -255,10 +251,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, true);
         state.write_u64(0x1000, 0xFEDCBA9876543210).unwrap();
         
-        let result = execute_instruction(&[0x48, 0xAD], state).unwrap(); // LODSQ
+        let result = execute_instruction(&[0x48, 0xAD], &mut state).unwrap(); // LODSQ
         
-        assert_eq!(result.registers.rax, 0xFEDCBA9876543210); // RAX should be loaded
-        assert_eq!(result.registers.rsi, 0x0FF8); // RSI should decrement by 8
+        assert_eq!(state.registers.rax, 0xFEDCBA9876543210); // RAX should be loaded
+        assert_eq!(state.registers.rsi, 0x0FF8); // RSI should decrement by 8
     }
 
     #[test]
@@ -273,10 +269,10 @@ mod tests {
         state.registers.set_flag(RFlags::ZERO, true);
         state.registers.set_flag(RFlags::SIGN, true);
         
-        let result = execute_instruction(&[0x9F], state).unwrap(); // LAHF
+        let result = execute_instruction(&[0x9F], &mut state).unwrap(); // LAHF
         
         // AH should contain the lower 8 bits of the flags register
-        let ah_value = (result.registers.rax >> 8) & 0xFF;
+        let ah_value = (state.registers.rax >> 8) & 0xFF;
         assert_eq!(ah_value, 0xD5); // SF=1, ZF=1, AF=1, PF=1, CF=1 = 0xD5
     }
 
@@ -290,18 +286,18 @@ mod tests {
         state.registers.rcx = 0x2000;
         
         // LEA RAX, [RBX+RCX] - Load address RBX+RCX into RAX
-        let result = execute_instruction(&[0x48, 0x8D, 0x04, 0x0B], state).unwrap();
+        let result = execute_instruction(&[0x48, 0x8D, 0x04, 0x0B], &mut state).unwrap();
         
-        assert_eq!(result.registers.rax, 0x3000); // RAX should contain 0x1000 + 0x2000
+        assert_eq!(state.registers.rax, 0x3000); // RAX should contain 0x1000 + 0x2000
         
         // Test case 2: LEA with immediate displacement
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rbx = 0x1000;
         
         // LEA RAX, [RBX+0x100] - Load address RBX+0x100 into RAX
-        let result = execute_instruction(&[0x48, 0x8D, 0x83, 0x00, 0x01, 0x00, 0x00], state).unwrap();
+        let result = execute_instruction(&[0x48, 0x8D, 0x83, 0x00, 0x01, 0x00, 0x00], &mut state).unwrap();
         
-        assert_eq!(result.registers.rax, 0x1100); // RAX should contain 0x1000 + 0x100
+        assert_eq!(state.registers.rax, 0x1100); // RAX should contain 0x1000 + 0x100
     }
 
     #[test]
@@ -314,10 +310,10 @@ mod tests {
         state.registers.rsp = 0x1000; // Stack pointer
         state.write_u64(0x2000, 0x3000).unwrap(); // Old RBP value on stack
         
-        let result = execute_instruction(&[0xC9], state).unwrap(); // LEAVE
+        let result = execute_instruction(&[0xC9], &mut state).unwrap(); // LEAVE
         
-        assert_eq!(result.registers.rsp, 0x2008); // RSP = old RBP + 8
-        assert_eq!(result.registers.rbp, 0x3000); // RBP = popped value
+        assert_eq!(state.registers.rsp, 0x2008); // RSP = old RBP + 8
+        assert_eq!(state.registers.rbp, 0x3000); // RBP = popped value
     }
 
     #[test]
@@ -328,10 +324,10 @@ mod tests {
         let mut state = create_test_cpu_state().unwrap();
         state.registers.rax = 0x123456789ABCDEF0;
         
-        let result = execute_instruction(&[0x0F, 0xAE, 0xE8], state).unwrap(); // LFENCE
+        let result = execute_instruction(&[0x0F, 0xAE, 0xE8], &mut state).unwrap(); // LFENCE
         
         // State should be unchanged
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0);
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0);
     }
 
     #[test]
@@ -340,37 +336,37 @@ mod tests {
         
         // Test LGDT
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0x01, 0x10], state); // LGDT [RAX]
+        let result = execute_instruction(&[0x0F, 0x01, 0x10], &mut state); // LGDT [RAX]
         assert!(result.is_ok());
         
         // Test LIDT
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0x01, 0x18], state); // LIDT [RAX]
+        let result = execute_instruction(&[0x0F, 0x01, 0x18], &mut state); // LIDT [RAX]
         assert!(result.is_ok());
         
         // Test LTR
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0x00, 0xD8], state); // LTR AX
+        let result = execute_instruction(&[0x0F, 0x00, 0xD8], &mut state); // LTR AX
         assert!(result.is_ok());
         
         // Test LMSW
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0x01, 0xF0], state); // LMSW AX
+        let result = execute_instruction(&[0x0F, 0x01, 0xF0], &mut state); // LMSW AX
         assert!(result.is_ok());
         
         // Test LLDT
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0x00, 0xD0], state); // LLDT AX
+        let result = execute_instruction(&[0x0F, 0x00, 0xD0], &mut state); // LLDT AX
         assert!(result.is_ok());
         
         // Test LAR
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0x02, 0xC0], state); // LAR AX, AX
+        let result = execute_instruction(&[0x0F, 0x02, 0xC0], &mut state); // LAR AX, AX
         assert!(result.is_ok());
         
         // Test LSL
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0x03, 0xC0], state); // LSL AX, AX
+        let result = execute_instruction(&[0x0F, 0x03, 0xC0], &mut state); // LSL AX, AX
         assert!(result.is_ok());
     }
 
@@ -384,27 +380,27 @@ mod tests {
         // Test LDS - Load DS segment and offset
         let mut state = create_test_cpu_state().unwrap();
         // Use a simple instruction that we know works
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LES - Load ES segment and offset  
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LFS - Load FS segment and offset
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LGS - Load GS segment and offset
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LSS - Load SS segment and offset
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
     }
 
@@ -414,12 +410,12 @@ mod tests {
         
         // Test LDDQU
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0xF2, 0x0F, 0xF0, 0x00], state); // LDDQU XMM0, [RAX]
+        let result = execute_instruction(&[0xF2, 0x0F, 0xF0, 0x00], &mut state); // LDDQU XMM0, [RAX]
         assert!(result.is_ok());
         
         // Test LDMXCSR
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x0F, 0xAE, 0x10], state); // LDMXCSR [RAX]
+        let result = execute_instruction(&[0x0F, 0xAE, 0x10], &mut state); // LDMXCSR [RAX]
         assert!(result.is_ok());
     }
 
@@ -431,42 +427,42 @@ mod tests {
         
         // Test LLWPCB
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LOADALL
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LWPINS
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LWPVAL
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LZCNT
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LDTILECFG
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LOADIWKEY
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
         
         // Test LKGS
         let mut state = create_test_cpu_state().unwrap();
-        let result = execute_instruction(&[0x90], state); // NOP
+        let result = execute_instruction(&[0x90], &mut state); // NOP
         assert!(result.is_ok());
     }
 
@@ -480,7 +476,7 @@ mod tests {
         
         // This should fail if we try to execute with wrong operand count
         // (The actual instruction decoder should handle this)
-        let result = execute_instruction(&[0xE2, 0x10], state);
+        let result = execute_instruction(&[0xE2, 0x10], &mut state);
         assert!(result.is_ok()); // LOOP should work with correct operands
     }
 
@@ -494,10 +490,10 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u8(0x1000, 0xAA).unwrap();
         
-        let result = execute_instruction(&[0xAC], state).unwrap(); // LODSB
+        let result = execute_instruction(&[0xAC], &mut state).unwrap(); // LODSB
         
-        assert_eq!(result.registers.rax & 0xFF, 0xAA);
-        assert_eq!(result.registers.rsi, 0x1001); // Should increment by 1
+        assert_eq!(state.registers.rax & 0xFF, 0xAA);
+        assert_eq!(state.registers.rsi, 0x1001); // Should increment by 1
         
         // Test LODSQ with large address
         let mut state = create_test_cpu_state().unwrap();
@@ -505,9 +501,9 @@ mod tests {
         state.registers.set_flag(RFlags::DIRECTION, false);
         state.write_u64(0xFFFF0, 0x123456789ABCDEF0).unwrap();
         
-        let result = execute_instruction(&[0x48, 0xAD], state).unwrap(); // LODSQ
+        let result = execute_instruction(&[0x48, 0xAD], &mut state).unwrap(); // LODSQ
         
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0);
-        assert_eq!(result.registers.rsi, 0xFFFF8);
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0);
+        assert_eq!(state.registers.rsi, 0xFFFF8);
     }
 }

@@ -193,9 +193,8 @@ mod tests {
         vm.register_mmio_device(mmio_addr, test_device)?;
         
         // Create a CPU state with MMIO manager
-        let memory = vm.get_memory().clone();
-        let mmio_manager = vm.get_mmio_manager().clone();
-        let mut cpu_state = crate::cpu::state::CpuState::new_with_mmio(memory, mmio_manager);
+        let memory_manager = vm.get_memory_manager().clone();
+        let mut cpu_state = crate::cpu::state::CpuState::new(memory_manager);
         
         // Test regular memory access
         let test_addr = 0x6000; // Use a smaller address within 1MB memory

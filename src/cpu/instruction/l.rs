@@ -167,7 +167,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lgdt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lgdt(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid LGDT instruction".to_string()));
         }
@@ -176,7 +176,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lidt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lidt(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid LIDT instruction".to_string()));
         }
@@ -185,7 +185,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_ltr(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_ltr(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid LTR instruction".to_string()));
         }
@@ -194,7 +194,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lmsw(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lmsw(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid LMSW instruction".to_string()));
         }
@@ -218,7 +218,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lds(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lds(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid LDS instruction".to_string()));
         }
@@ -227,7 +227,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_les(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_les(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid LES instruction".to_string()));
         }
@@ -236,7 +236,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lfs(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lfs(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid LFS instruction".to_string()));
         }
@@ -245,7 +245,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lgs(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lgs(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid LGS instruction".to_string()));
         }
@@ -254,7 +254,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lss(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lss(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid LSS instruction".to_string()));
         }
@@ -283,13 +283,13 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lfence(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lfence(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Load Fence (memory ordering)
         // For now, just do nothing
         Ok(())
     }
 
-    pub fn execute_lldt(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lldt(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 1 {
             return Err(crate::EmulatorError::Cpu("Invalid LLDT instruction".to_string()));
         }
@@ -298,7 +298,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lar(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lar(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid LAR instruction".to_string()));
         }
@@ -307,7 +307,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lsl(&self, instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lsl(&self, instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         if instruction.op_count() != 2 {
             return Err(crate::EmulatorError::Cpu("Invalid LSL instruction".to_string()));
         }
@@ -316,52 +316,52 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_lddqu(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lddqu(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LDDQU instruction executed");
         Ok(())
     }
 
-    pub fn execute_ldmxcsr(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_ldmxcsr(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LDMXCSR instruction executed");
         Ok(())
     }
 
-    pub fn execute_llwpcb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_llwpcb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LLWPCB instruction executed");
         Ok(())
     }
 
-    pub fn execute_loadall(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_loadall(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LOADALL instruction executed");
         Ok(())
     }
 
-    pub fn execute_lwpins(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lwpins(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LWPINS instruction executed");
         Ok(())
     }
 
-    pub fn execute_lwpval(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lwpval(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LWPVAL instruction executed");
         Ok(())
     }
 
-    pub fn execute_lzcnt(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lzcnt(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LZCNT instruction executed");
         Ok(())
     }
 
-    pub fn execute_ldtilecfg(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_ldtilecfg(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LDTILECFG instruction executed");
         Ok(())
     }
 
-    pub fn execute_loadiwkey(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_loadiwkey(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LOADIWKEY instruction executed");
         Ok(())
     }
 
-    pub fn execute_lkgs(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_lkgs(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("LKGS instruction executed");
         Ok(())
     }

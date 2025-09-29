@@ -225,7 +225,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_jmpe(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_jmpe(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("JMPE instruction executed");
         Ok(())
     }
@@ -246,12 +246,12 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_jknzd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_jknzd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("JKNZD instruction executed");
         Ok(())
     }
 
-    pub fn execute_jkzd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_jkzd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("JKZD instruction executed");
         Ok(())
     }

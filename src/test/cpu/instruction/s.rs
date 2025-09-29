@@ -1,19 +1,14 @@
 use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
-use crate::memory::guest_memory::GuestMemory;
 use crate::Result;
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 use iced_x86::{Decoder, DecoderOptions};
-
-fn create_test_cpu_state() -> Result<CpuState> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB memory
-    Ok(CpuState::new(memory))
-}
 
 fn execute_instruction(instruction_bytes: &[u8], state: &mut CpuState) -> Result<CpuState> {
     let mut instruction_decoder = InstructionDecoder::new();
     let mut decoder = Decoder::new(64, instruction_bytes, DecoderOptions::NONE);
     let instruction = decoder.decode();
     instruction_decoder.execute_instruction(&instruction, state)?;
-    Ok(state.clone())
+    Ok(create_test_cpu_state().unwrap())
 }
 
 #[cfg(test)]
@@ -28,7 +23,7 @@ mod tests {
         
         // SUB RAX, RBX (0x48 0x29 0xC3)
         let result = execute_instruction(&[0x48, 0x29, 0xC3], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0xD00); // 0x1000 - 0x300 = 0xD00
+        assert_eq!(state.registers.rax, 0xD00); // 0x1000 - 0x300 = 0xD00
     }
 
     #[test]
@@ -39,8 +34,8 @@ mod tests {
         
         // SUB RAX, RBX (0x48 0x29 0xC3)
         let result = execute_instruction(&[0x48, 0x29, 0xC3], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0xFFFFFFFFFFFFFF00); // 0x100 - 0x200 = -0x100
-        assert!(result.registers.get_flag(RFlags::CARRY)); // Borrow occurred
+        assert_eq!(state.registers.rax, 0xFFFFFFFFFFFFFF00); // 0x100 - 0x200 = -0x100
+        assert!(state.registers.get_flag(RFlags::CARRY)); // Borrow occurred
     }
 
     #[test]
@@ -50,7 +45,7 @@ mod tests {
         
         // SHL RAX, 2 (0x48 0xC1 0xE0 0x02)
         let result = execute_instruction(&[0x48, 0xC1, 0xE0, 0x02], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x40); // 0x10 << 2 = 0x40
+        assert_eq!(state.registers.rax, 0x40); // 0x10 << 2 = 0x40
     }
 
     #[test]
@@ -60,8 +55,8 @@ mod tests {
         
         // SHL RAX, 1 (0x48 0xD1 0xE0)
         let result = execute_instruction(&[0x48, 0xD1, 0xE0], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x0); // 0x8000000000000000 << 1 = 0x0
-        assert!(result.registers.get_flag(RFlags::CARRY)); // MSB was shifted out
+        assert_eq!(state.registers.rax, 0x0); // 0x8000000000000000 << 1 = 0x0
+        assert!(state.registers.get_flag(RFlags::CARRY)); // MSB was shifted out
     }
 
     #[test]
@@ -71,7 +66,7 @@ mod tests {
         
         // SHR RAX, 2 (0x48 0xC1 0xE8 0x02)
         let result = execute_instruction(&[0x48, 0xC1, 0xE8, 0x02], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x10); // 0x40 >> 2 = 0x10
+        assert_eq!(state.registers.rax, 0x10); // 0x40 >> 2 = 0x10
     }
 
     #[test]
@@ -81,8 +76,8 @@ mod tests {
         
         // SHR RAX, 1 (0x48 0xD1 0xE8)
         let result = execute_instruction(&[0x48, 0xD1, 0xE8], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x0); // 0x1 >> 1 = 0x0
-        assert!(result.registers.get_flag(RFlags::CARRY)); // LSB was shifted out
+        assert_eq!(state.registers.rax, 0x0); // 0x1 >> 1 = 0x0
+        assert!(state.registers.get_flag(RFlags::CARRY)); // LSB was shifted out
     }
 
     #[test]
@@ -92,7 +87,7 @@ mod tests {
         
         // SAR RAX, 1 (0x48 0xD1 0xF8)
         let result = execute_instruction(&[0x48, 0xD1, 0xF8], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0xFFFFFFFFFFFFFFC0); // -64 in two's complement
+        assert_eq!(state.registers.rax, 0xFFFFFFFFFFFFFFC0); // -64 in two's complement
     }
 
     #[test]
@@ -102,7 +97,7 @@ mod tests {
         
         // SAR RAX, 1 (0x48 0xD1 0xF8)
         let result = execute_instruction(&[0x48, 0xD1, 0xF8], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x40); // 64
+        assert_eq!(state.registers.rax, 0x40); // 64
     }
 
     #[test]
@@ -112,7 +107,7 @@ mod tests {
         
         // STC (0xF9)
         let result = execute_instruction(&[0xF9], &mut state).unwrap();
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        assert!(state.registers.get_flag(RFlags::CARRY));
     }
 
     #[test]
@@ -122,7 +117,7 @@ mod tests {
         
         // STD (0xFD)
         let result = execute_instruction(&[0xFD], &mut state).unwrap();
-        assert!(result.registers.get_flag(RFlags::DIRECTION));
+        assert!(state.registers.get_flag(RFlags::DIRECTION));
     }
 
     #[test]
@@ -134,7 +129,7 @@ mod tests {
         
         // STI (0xFB)
         let result = execute_instruction(&[0xFB], &mut state).unwrap();
-        assert!(result.registers.get_flag(RFlags::INTERRUPT));
+        assert!(state.registers.get_flag(RFlags::INTERRUPT));
     }
 
     #[test]
@@ -150,7 +145,7 @@ mod tests {
         }
         
         let result = execute_instruction(&[0xD6], &mut state).unwrap();
-        assert_eq!(result.registers.rax & 0xFF, 0xFF); // AL should be 0xFF when carry is set
+        assert_eq!(state.registers.rax & 0xFF, 0xFF); // AL should be 0xFF when carry is set
     }
 
     #[test]
@@ -166,7 +161,7 @@ mod tests {
         }
         
         let result = execute_instruction(&[0xD6], &mut state).unwrap();
-        assert_eq!(result.registers.rax & 0xFF, 0x00); // AL should be 0x00 when carry is not set
+        assert_eq!(state.registers.rax & 0xFF, 0x00); // AL should be 0x00 when carry is not set
     }
 
     #[test]
@@ -178,7 +173,7 @@ mod tests {
         
         // SBB RAX, RBX (0x48 0x19 0xC3) - Fixed encoding
         let result = execute_instruction(&[0x48, 0x19, 0xC3], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0xCFF); // 0x1000 - 0x300 - 1 = 0xCFF
+        assert_eq!(state.registers.rax, 0xCFF); // 0x1000 - 0x300 - 1 = 0xCFF
     }
 
     #[test]
@@ -190,7 +185,7 @@ mod tests {
         
         // SBB RAX, RBX (0x48 0x19 0xC3) - Fixed encoding
         let result = execute_instruction(&[0x48, 0x19, 0xC3], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0xD00); // 0x1000 - 0x300 - 0 = 0xD00
+        assert_eq!(state.registers.rax, 0xD00); // 0x1000 - 0x300 - 0 = 0xD00
     }
 
     #[test]
@@ -201,7 +196,7 @@ mod tests {
         
         // STOSB (0xAA)
         let result = execute_instruction(&[0xAA], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1001); // RDI incremented by 1
+        assert_eq!(state.registers.rdi, 0x1001); // RDI incremented by 1
         assert_eq!(result.read_u8(0x1000).unwrap(), 0xF0); // AL (0xF0) stored at [RDI]
     }
 
@@ -214,7 +209,7 @@ mod tests {
         
         // STOSB (0xAA)
         let result = execute_instruction(&[0xAA], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0xFFF); // RDI decremented by 1
+        assert_eq!(state.registers.rdi, 0xFFF); // RDI decremented by 1
         assert_eq!(result.read_u8(0x1000).unwrap(), 0xF0); // AL (0xF0) stored at [RDI]
     }
 
@@ -226,7 +221,7 @@ mod tests {
         
         // STOSW (0x66 0xAB)
         let result = execute_instruction(&[0x66, 0xAB], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1002); // RDI incremented by 2
+        assert_eq!(state.registers.rdi, 0x1002); // RDI incremented by 2
         assert_eq!(result.read_u16(0x1000).unwrap(), 0xDEF0); // AX (0xDEF0) stored at [RDI]
     }
 
@@ -238,7 +233,7 @@ mod tests {
         
         // STOSD (0xAB)
         let result = execute_instruction(&[0xAB], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1004); // RDI incremented by 4
+        assert_eq!(state.registers.rdi, 0x1004); // RDI incremented by 4
         assert_eq!(result.read_u32(0x1000).unwrap(), 0x9ABCDEF0); // EAX (0x9ABCDEF0) stored at [RDI]
     }
 
@@ -250,7 +245,7 @@ mod tests {
         
         // STOSQ (0x48 0xAB)
         let result = execute_instruction(&[0x48, 0xAB], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1008); // RDI incremented by 8
+        assert_eq!(state.registers.rdi, 0x1008); // RDI incremented by 8
         assert_eq!(result.read_u64(0x1000).unwrap(), 0x123456789ABCDEF0); // RAX stored at [RDI]
     }
 
@@ -263,8 +258,8 @@ mod tests {
         
         // SCASB (0xAE)
         let result = execute_instruction(&[0xAE], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1001); // RDI incremented by 1
-        assert!(result.registers.get_flag(RFlags::ZERO)); // AL == [RDI], so zero flag set
+        assert_eq!(state.registers.rdi, 0x1001); // RDI incremented by 1
+        assert!(state.registers.get_flag(RFlags::ZERO)); // AL == [RDI], so zero flag set
     }
 
     #[test]
@@ -276,8 +271,8 @@ mod tests {
         
         // SCASB (0xAE)
         let result = execute_instruction(&[0xAE], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1001); // RDI incremented by 1
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // AL != [RDI], so zero flag not set
+        assert_eq!(state.registers.rdi, 0x1001); // RDI incremented by 1
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // AL != [RDI], so zero flag not set
     }
 
     #[test]
@@ -289,8 +284,8 @@ mod tests {
         
         // SCASW (0x66 0xAF)
         let result = execute_instruction(&[0x66, 0xAF], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1002); // RDI incremented by 2
-        assert!(result.registers.get_flag(RFlags::ZERO)); // AX == [RDI], so zero flag set
+        assert_eq!(state.registers.rdi, 0x1002); // RDI incremented by 2
+        assert!(state.registers.get_flag(RFlags::ZERO)); // AX == [RDI], so zero flag set
     }
 
     #[test]
@@ -302,8 +297,8 @@ mod tests {
         
         // SCASD (0xAF)
         let result = execute_instruction(&[0xAF], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1004); // RDI incremented by 4
-        assert!(result.registers.get_flag(RFlags::ZERO)); // EAX == [RDI], so zero flag set
+        assert_eq!(state.registers.rdi, 0x1004); // RDI incremented by 4
+        assert!(state.registers.get_flag(RFlags::ZERO)); // EAX == [RDI], so zero flag set
     }
 
     #[test]
@@ -315,8 +310,8 @@ mod tests {
         
         // SCASQ (0x48 0xAF)
         let result = execute_instruction(&[0x48, 0xAF], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0x1008); // RDI incremented by 8
-        assert!(result.registers.get_flag(RFlags::ZERO)); // RAX == [RDI], so zero flag set
+        assert_eq!(state.registers.rdi, 0x1008); // RDI incremented by 8
+        assert!(state.registers.get_flag(RFlags::ZERO)); // RAX == [RDI], so zero flag set
     }
 
     #[test]
@@ -328,7 +323,7 @@ mod tests {
         let result = execute_instruction(&[0x9E], &mut state).unwrap();
         // Check that flags were set based on AH value (0xDE masked to 0xD4)
         // SAHF only affects bits 0, 2, 4, 6, 7 (mask 0xD5), so 0xDE becomes 0xD4
-        assert_eq!(result.registers.get_flags().bits() & 0xFF, 0xD4);
+        assert_eq!(state.registers.get_flags().bits() & 0xFF, 0xD4);
     }
 
     #[test]
@@ -342,10 +337,10 @@ mod tests {
         
         // SYSCALL (0x0F 0x05)
         let result = execute_instruction(&[0x0F, 0x05], &mut state).unwrap();
-        assert_eq!(result.registers.rip, 0x3000); // RIP set to MSR_LSTAR
-        assert_eq!(result.registers.rsp, 0x1FF0); // RSP decremented by 16 (2 * 8 bytes)
-        assert!(!result.registers.get_flag(RFlags::DIRECTION)); // Direction flag cleared
-        assert!(!result.registers.get_flag(RFlags::INTERRUPT)); // Interrupt flag cleared
+        assert_eq!(state.registers.rip, 0x3000); // RIP set to MSR_LSTAR
+        assert_eq!(state.registers.rsp, 0x1FF0); // RSP decremented by 16 (2 * 8 bytes)
+        assert!(!state.registers.get_flag(RFlags::DIRECTION)); // Direction flag cleared
+        assert!(!state.registers.get_flag(RFlags::INTERRUPT)); // Interrupt flag cleared
     }
 
     #[test]
@@ -357,9 +352,9 @@ mod tests {
         
         // SYSRET (0x0F 0x07)
         let result = execute_instruction(&[0x0F, 0x07], &mut state).unwrap();
-        assert_eq!(result.registers.rip, 0x4000); // RIP restored
-        assert_eq!(result.registers.rflags, 0x100); // RFLAGS restored
-        assert_eq!(result.registers.rsp, 0x2010); // RSP incremented by 16
+        assert_eq!(state.registers.rip, 0x4000); // RIP restored
+        assert_eq!(state.registers.rflags, 0x100); // RFLAGS restored
+        assert_eq!(state.registers.rsp, 0x2010); // RSP incremented by 16
     }
 
     #[test]
@@ -369,10 +364,10 @@ mod tests {
         
         // SHL RAX, 1 (0x48 0xD1 0xE0)
         let result = execute_instruction(&[0x48, 0xD1, 0xE0], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x0);
-        assert!(result.registers.get_flag(RFlags::CARRY)); // MSB shifted out
-        assert!(result.registers.get_flag(RFlags::ZERO)); // Result is zero
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is not negative
+        assert_eq!(state.registers.rax, 0x0);
+        assert!(state.registers.get_flag(RFlags::CARRY)); // MSB shifted out
+        assert!(state.registers.get_flag(RFlags::ZERO)); // Result is zero
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is not negative
     }
 
     #[test]
@@ -382,7 +377,7 @@ mod tests {
         
         // SHL RAX, 65 (should be masked to 1) (0x48 0xC1 0xE0 0x41)
         let result = execute_instruction(&[0x48, 0xC1, 0xE0, 0x41], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x2); // 0x1 << 1 = 0x2 (65 & 0x3F = 1)
+        assert_eq!(state.registers.rax, 0x2); // 0x1 << 1 = 0x2 (65 & 0x3F = 1)
     }
 
     #[test]
@@ -394,7 +389,7 @@ mod tests {
         
         // STOSB (0xAA)
         let result = execute_instruction(&[0xAA], &mut state).unwrap();
-        assert_eq!(result.registers.rdi, 0xFFF); // RDI decremented by 1
+        assert_eq!(state.registers.rdi, 0xFFF); // RDI decremented by 1
         assert_eq!(result.read_u8(0x1000).unwrap(), 0xF0); // AL stored at original RDI
     }
 
@@ -406,10 +401,10 @@ mod tests {
         
         // SUB RAX, RBX (0x48 0x29 0xC3)
         let result = execute_instruction(&[0x48, 0x29, 0xC3], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x7FFFFFFFFFFFFFFE);
-        assert!(!result.registers.get_flag(RFlags::OVERFLOW)); // No overflow
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
-        assert!(!result.registers.get_flag(RFlags::ZERO)); // Result is not zero
+        assert_eq!(state.registers.rax, 0x7FFFFFFFFFFFFFFE);
+        assert!(!state.registers.get_flag(RFlags::OVERFLOW)); // No overflow
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert!(!state.registers.get_flag(RFlags::ZERO)); // Result is not zero
     }
 
     #[test]
@@ -420,8 +415,8 @@ mod tests {
         
         // SUB RAX, RBX (0x48 0x29 0xC3)
         let result = execute_instruction(&[0x48, 0x29, 0xC3], &mut state).unwrap();
-        assert_eq!(result.registers.rax, 0x7FFFFFFFFFFFFFFF);
-        assert!(result.registers.get_flag(RFlags::OVERFLOW)); // Overflow occurred
-        assert!(!result.registers.get_flag(RFlags::SIGN)); // Result is positive
+        assert_eq!(state.registers.rax, 0x7FFFFFFFFFFFFFFF);
+        assert!(state.registers.get_flag(RFlags::OVERFLOW)); // Overflow occurred
+        assert!(!state.registers.get_flag(RFlags::SIGN)); // Result is positive
     }
 }

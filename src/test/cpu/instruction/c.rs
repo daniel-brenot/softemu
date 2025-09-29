@@ -1,30 +1,5 @@
-use crate::cpu::state::CpuState;
 use crate::cpu::registers::RFlags;
-use crate::memory::guest_memory::GuestMemory;
-use crate::cpu::instruction::InstructionDecoder;
-use iced_x86::{Decoder, DecoderOptions, Instruction};
-use crate::Result;
-
-fn create_test_cpu_state() -> Result<CpuState> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB of memory
-    Ok(CpuState::new(memory))
-}
-
-fn decode_instruction(bytes: &[u8]) -> Instruction {
-    let mut decoder = Decoder::new(64, bytes, DecoderOptions::NONE);
-    decoder.decode()
-}
-
-fn execute_instruction(bytes: &[u8], mut state: CpuState) -> Result<CpuState> {
-    let instruction = decode_instruction(bytes);
-    let mut decoder = InstructionDecoder::new();
-    decoder.execute_instruction(&instruction, &mut state)?;
-    Ok(state)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
+use crate::test::helpers::{create_test_cpu_state, decode_instruction, execute_instruction, read_memory, write_memory};
 
 // Basic C instruction tests
 #[test]
@@ -37,7 +12,7 @@ fn test_call_instruction() {
     state.registers.rsp = 0x1000;
     state.registers.rip = 0x100;
     
-    let result = execute_instruction(&[0xE8, 0x00, 0x00, 0x00, 0x00], state);
+    let result = execute_instruction(&[0xE8, 0x00, 0x00, 0x00, 0x00], &mut state);
     // CALL may fail due to memory access issues, that's acceptable for this test
     if result.is_err() {
         assert!(true); // Expected for this test
@@ -56,18 +31,16 @@ fn test_cbw_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x7F; // AL = 0x7F (positive)
     
-    let result = execute_instruction(&[0x98], state);
+    let result = execute_instruction(&[0x98], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax & 0xFFFF, 0x007F); // AX should be 0x007F
     
     // Test case 2: Negative value
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x8000; // AX = 0x8000 (negative)
     
-    let result = execute_instruction(&[0x98], state);
+    let result = execute_instruction(&[0x98], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax & 0xFFFFFFFF, 0xFFFF8000); // EAX should be 0xFFFF8000 (CWDE behavior)
 }
 
@@ -82,9 +55,8 @@ fn test_cdq_instruction() {
     state.registers.rax = 0x7FFFFFFF; // EAX = 0x7FFFFFFF (positive)
     state.registers.rdx = 0x12345678; // Clear RDX first
     
-    let result = execute_instruction(&[0x99], state);
+    let result = execute_instruction(&[0x99], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rdx & 0xFFFFFFFF, 0x00000000); // EDX should be 0x00000000
     
     // Test case 2: Negative value
@@ -92,9 +64,8 @@ fn test_cdq_instruction() {
     state.registers.rax = 0x80000000; // EAX = 0x80000000 (negative)
     state.registers.rdx = 0x12345678; // Clear RDX first
     
-    let result = execute_instruction(&[0x99], state);
+    let result = execute_instruction(&[0x99], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rdx & 0xFFFFFFFF, 0xFFFFFFFF); // EDX should be 0xFFFFFFFF
 }
 
@@ -108,18 +79,16 @@ fn test_cdqe_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x7FFFFFFF; // EAX = 0x7FFFFFFF (positive)
     
-    let result = execute_instruction(&[0x48, 0x98], state);
+    let result = execute_instruction(&[0x48, 0x98], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x000000007FFFFFFF); // RAX should be 0x000000007FFFFFFF
     
     // Test case 2: Negative value
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x80000000; // EAX = 0x80000000 (negative)
     
-    let result = execute_instruction(&[0x48, 0x98], state);
+    let result = execute_instruction(&[0x48, 0x98], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0xFFFFFFFF80000000); // RAX should be 0xFFFFFFFF80000000
 }
 
@@ -132,9 +101,8 @@ fn test_clc_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.set_flag(RFlags::CARRY, true); // Set carry flag
     
-    let result = execute_instruction(&[0xF8], state);
+    let result = execute_instruction(&[0xF8], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert!(!state.registers.get_flag(RFlags::CARRY)); // Carry flag should be cleared
 }
 
@@ -147,9 +115,8 @@ fn test_cld_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.set_flag(RFlags::DIRECTION, true); // Set direction flag
     
-    let result = execute_instruction(&[0xFC], state);
+    let result = execute_instruction(&[0xFC], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert!(!state.registers.get_flag(RFlags::DIRECTION)); // Direction flag should be cleared
 }
 
@@ -162,9 +129,8 @@ fn test_cli_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.set_flag(RFlags::INTERRUPT, true); // Set interrupt flag
     
-    let result = execute_instruction(&[0xFA], state);
+    let result = execute_instruction(&[0xFA], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert!(!state.registers.get_flag(RFlags::INTERRUPT)); // Interrupt flag should be cleared
 }
 
@@ -178,18 +144,16 @@ fn test_cmc_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.set_flag(RFlags::CARRY, false);
     
-    let result = execute_instruction(&[0xF5], state);
+    let result = execute_instruction(&[0xF5], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert!(state.registers.get_flag(RFlags::CARRY)); // Carry flag should be set
     
     // Test case 2: Set carry flag
     let mut state = create_test_cpu_state().unwrap();
     state.registers.set_flag(RFlags::CARRY, true);
     
-    let result = execute_instruction(&[0xF5], state);
+    let result = execute_instruction(&[0xF5], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert!(!state.registers.get_flag(RFlags::CARRY)); // Carry flag should be cleared
 }
 
@@ -203,9 +167,8 @@ fn test_clac_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.set_flag(RFlags::AUXILIARY, true); // Set AC flag
     
-    let result = execute_instruction(&[0x0F, 0x01, 0xCA], state);
+    let result = execute_instruction(&[0x0F, 0x01, 0xCA], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert!(!state.registers.get_flag(RFlags::AUXILIARY)); // AC flag should be cleared
 }
 
@@ -218,7 +181,7 @@ fn test_cldemote_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x1000;
     
-    let result = execute_instruction(&[0x0F, 0x1C, 0x00], state);
+    let result = execute_instruction(&[0x0F, 0x1C, 0x00], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -231,7 +194,7 @@ fn test_clflush_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x1000;
     
-    let result = execute_instruction(&[0x0F, 0xAE, 0x38], state);
+    let result = execute_instruction(&[0x0F, 0xAE, 0x38], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -244,7 +207,7 @@ fn test_clflushopt_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x1000;
     
-    let result = execute_instruction(&[0x66, 0x0F, 0xAE, 0x38], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0xAE, 0x38], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -256,7 +219,7 @@ fn test_clgi_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x01, 0xDD], state);
+    let result = execute_instruction(&[0x0F, 0x01, 0xDD], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -269,7 +232,7 @@ fn test_clrssbsy_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x1000;
     
-    let result = execute_instruction(&[0xF3, 0x0F, 0x01, 0xE8], state);
+    let result = execute_instruction(&[0xF3, 0x0F, 0x01, 0xE8], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -281,7 +244,7 @@ fn test_clts_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x06], state);
+    let result = execute_instruction(&[0x0F, 0x06], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -294,7 +257,7 @@ fn test_clwb_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x1000;
     
-    let result = execute_instruction(&[0x66, 0x0F, 0xAE, 0x30], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0xAE, 0x30], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -306,7 +269,7 @@ fn test_clzero_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x01, 0xFC], state);
+    let result = execute_instruction(&[0x0F, 0x01, 0xFC], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -324,9 +287,8 @@ fn test_cmova_instruction() {
     state.registers.set_flag(RFlags::CARRY, false);
     state.registers.set_flag(RFlags::ZERO, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x47, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x47, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (CF=1)
@@ -336,9 +298,8 @@ fn test_cmova_instruction() {
     state.registers.set_flag(RFlags::CARRY, true);
     state.registers.set_flag(RFlags::ZERO, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x47, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x47, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -354,9 +315,8 @@ fn test_cmovae_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::CARRY, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x43, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x43, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (CF=1)
@@ -365,9 +325,8 @@ fn test_cmovae_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::CARRY, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x43, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x43, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -383,9 +342,8 @@ fn test_cmovb_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::CARRY, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x42, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x42, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (CF=0)
@@ -394,9 +352,8 @@ fn test_cmovb_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::CARRY, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x42, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x42, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -413,9 +370,8 @@ fn test_cmovbe_instruction() {
     state.registers.set_flag(RFlags::CARRY, true);
     state.registers.set_flag(RFlags::ZERO, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x46, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x46, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition met (ZF=1)
@@ -425,9 +381,8 @@ fn test_cmovbe_instruction() {
     state.registers.set_flag(RFlags::CARRY, false);
     state.registers.set_flag(RFlags::ZERO, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x46, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x46, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
 }
 
@@ -443,9 +398,8 @@ fn test_cmove_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::ZERO, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x44, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x44, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (ZF=0)
@@ -454,9 +408,8 @@ fn test_cmove_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::ZERO, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x44, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x44, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -474,9 +427,8 @@ fn test_cmovg_instruction() {
     state.registers.set_flag(RFlags::SIGN, true);
     state.registers.set_flag(RFlags::OVERFLOW, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4F, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4F, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (ZF=1)
@@ -487,9 +439,8 @@ fn test_cmovg_instruction() {
     state.registers.set_flag(RFlags::SIGN, true);
     state.registers.set_flag(RFlags::OVERFLOW, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4F, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4F, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -506,9 +457,8 @@ fn test_cmovge_instruction() {
     state.registers.set_flag(RFlags::SIGN, true);
     state.registers.set_flag(RFlags::OVERFLOW, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4D, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4D, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (SF≠OF)
@@ -518,9 +468,8 @@ fn test_cmovge_instruction() {
     state.registers.set_flag(RFlags::SIGN, true);
     state.registers.set_flag(RFlags::OVERFLOW, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4D, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4D, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -537,9 +486,8 @@ fn test_cmovl_instruction() {
     state.registers.set_flag(RFlags::SIGN, true);
     state.registers.set_flag(RFlags::OVERFLOW, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4C, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4C, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (SF=OF)
@@ -549,9 +497,8 @@ fn test_cmovl_instruction() {
     state.registers.set_flag(RFlags::SIGN, true);
     state.registers.set_flag(RFlags::OVERFLOW, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4C, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4C, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -569,9 +516,9 @@ fn test_cmovle_instruction() {
     state.registers.set_flag(RFlags::SIGN, true);
     state.registers.set_flag(RFlags::OVERFLOW, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4E, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4E, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition met (SF≠OF)
@@ -582,9 +529,9 @@ fn test_cmovle_instruction() {
     state.registers.set_flag(RFlags::SIGN, true);
     state.registers.set_flag(RFlags::OVERFLOW, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4E, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4E, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
 }
 
@@ -600,9 +547,9 @@ fn test_cmovne_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::ZERO, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x45, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x45, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (ZF=1)
@@ -611,9 +558,9 @@ fn test_cmovne_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::ZERO, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x45, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x45, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -629,9 +576,9 @@ fn test_cmovno_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::OVERFLOW, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x41, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x41, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (OF=1)
@@ -640,9 +587,9 @@ fn test_cmovno_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::OVERFLOW, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x41, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x41, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -658,9 +605,9 @@ fn test_cmovnp_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::PARITY, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4B, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4B, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (PF=1)
@@ -669,9 +616,9 @@ fn test_cmovnp_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::PARITY, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4B, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4B, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -687,9 +634,9 @@ fn test_cmovns_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::SIGN, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x49, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x49, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (SF=1)
@@ -698,9 +645,9 @@ fn test_cmovns_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::SIGN, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x49, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x49, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -716,9 +663,9 @@ fn test_cmovo_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::OVERFLOW, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x40, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x40, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (OF=0)
@@ -727,9 +674,9 @@ fn test_cmovo_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::OVERFLOW, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x40, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x40, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -745,9 +692,9 @@ fn test_cmovp_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::PARITY, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4A, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4A, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (PF=0)
@@ -756,9 +703,9 @@ fn test_cmovp_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::PARITY, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x4A, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x4A, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -774,9 +721,9 @@ fn test_cmovs_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::SIGN, true);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x48, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x48, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x2000); // Should move RCX to RAX
     
     // Test case 2: Condition not met (SF=0)
@@ -785,9 +732,9 @@ fn test_cmovs_instruction() {
     state.registers.rcx = 0x2000;
     state.registers.set_flag(RFlags::SIGN, false);
     
-    let result = execute_instruction(&[0x48, 0x0F, 0x48, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0x48, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax, 0x1000); // Should not move
 }
 
@@ -803,9 +750,9 @@ fn test_cmp_instruction() {
     state.registers.rax = 0x1000;
     state.registers.rcx = 0x1000;
     
-    let result = execute_instruction(&[0x48, 0x3B, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x3B, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert!(state.registers.get_flag(RFlags::ZERO)); // Should set zero flag
     assert!(!state.registers.get_flag(RFlags::CARRY)); // Should clear carry flag
     
@@ -814,9 +761,9 @@ fn test_cmp_instruction() {
     state.registers.rax = 0x2000;
     state.registers.rcx = 0x1000;
     
-    let result = execute_instruction(&[0x48, 0x3B, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x3B, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert!(!state.registers.get_flag(RFlags::ZERO)); // Should clear zero flag
     assert!(!state.registers.get_flag(RFlags::CARRY)); // Should clear carry flag
     
@@ -825,9 +772,9 @@ fn test_cmp_instruction() {
     state.registers.rax = 0x1000;
     state.registers.rcx = 0x2000;
     
-    let result = execute_instruction(&[0x48, 0x3B, 0xC1], state);
+    let result = execute_instruction(&[0x48, 0x3B, 0xC1], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert!(!state.registers.get_flag(RFlags::ZERO)); // Should clear zero flag
     assert!(state.registers.get_flag(RFlags::CARRY)); // Should set carry flag
 }
@@ -845,9 +792,9 @@ fn test_cmpxchg_instruction() {
     state.registers.rdx = 0x2000; // New value to store
     state.write_u64(0x1000, 0x1000).unwrap(); // Memory contains expected value
     
-    let result = execute_instruction(&[0x48, 0x0F, 0xB0, 0x01], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0xB0, 0x01], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert!(state.registers.get_flag(RFlags::ZERO)); // Should set zero flag (values matched)
     
     // Test case 2: Values don't match (should not exchange)
@@ -857,9 +804,9 @@ fn test_cmpxchg_instruction() {
     state.registers.rdx = 0x2000; // New value to store
     state.write_u64(0x1000, 0x3000).unwrap(); // Memory contains different value
     
-    let result = execute_instruction(&[0x48, 0x0F, 0xB0, 0x01], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0xB0, 0x01], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert!(!state.registers.get_flag(RFlags::ZERO)); // Should clear zero flag (values didn't match)
     assert_eq!(state.registers.rax, 0x3000); // RAX should contain the actual memory value
 }
@@ -873,7 +820,7 @@ fn test_cmpxchg8b_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rcx = 0x1000; // Memory address
     
-    let result = execute_instruction(&[0x0F, 0xC7, 0x01], state);
+    let result = execute_instruction(&[0x0F, 0xC7, 0x01], &mut state);
     // This may fail due to invalid opcode, that's acceptable
     if result.is_err() {
         assert!(true); // Expected for invalid opcode
@@ -891,7 +838,7 @@ fn test_cmpxchg16b_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rcx = 0x1000; // Memory address
     
-    let result = execute_instruction(&[0x48, 0x0F, 0xC7, 0x01], state);
+    let result = execute_instruction(&[0x48, 0x0F, 0xC7, 0x01], &mut state);
     // This may fail due to invalid opcode, that's acceptable
     if result.is_err() {
         assert!(true); // Expected for invalid opcode
@@ -909,7 +856,7 @@ fn test_cpuid_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x0; // EAX = 0 (get vendor string)
     
-    let result = execute_instruction(&[0x0F, 0xA2], state);
+    let result = execute_instruction(&[0x0F, 0xA2], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -924,9 +871,9 @@ fn test_cqo_instruction() {
     state.registers.rax = 0x7FFFFFFFFFFFFFFF; // RAX = positive
     state.registers.rdx = 0x123456789ABCDEF0; // Clear RDX first
     
-    let result = execute_instruction(&[0x48, 0x99], state);
+    let result = execute_instruction(&[0x48, 0x99], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rdx, 0x0000000000000000); // RDX should be 0x0000000000000000
     
     // Test case 2: Negative value
@@ -934,9 +881,9 @@ fn test_cqo_instruction() {
     state.registers.rax = 0x8000000000000000; // RAX = negative
     state.registers.rdx = 0x123456789ABCDEF0; // Clear RDX first
     
-    let result = execute_instruction(&[0x48, 0x99], state);
+    let result = execute_instruction(&[0x48, 0x99], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rdx, 0xFFFFFFFFFFFFFFFF); // RDX should be 0xFFFFFFFFFFFFFFFF
 }
 
@@ -951,9 +898,9 @@ fn test_cwd_instruction() {
     state.registers.rax = 0x7FFF; // AX = 0x7FFF (positive)
     state.registers.rdx = 0x123456789ABCDEF0; // Clear RDX first
     
-    let result = execute_instruction(&[0x99], state);
+    let result = execute_instruction(&[0x99], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rdx & 0xFFFF, 0x0000); // DX should be 0x0000
     
     // Test case 2: Negative value
@@ -961,9 +908,9 @@ fn test_cwd_instruction() {
     state.registers.rax = 0x80000000; // EAX = 0x80000000 (negative)
     state.registers.rdx = 0x123456789ABCDEF0; // Clear RDX first
     
-    let result = execute_instruction(&[0x99], state);
+    let result = execute_instruction(&[0x99], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rdx & 0xFFFFFFFF, 0xFFFFFFFF); // EDX should be 0xFFFFFFFF (CDQ behavior)
 }
 
@@ -977,18 +924,18 @@ fn test_cwde_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x7FFF; // AX = 0x7FFF (positive)
     
-    let result = execute_instruction(&[0x98], state);
+    let result = execute_instruction(&[0x98], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax & 0xFFFFFFFF, 0x00007FFF); // EAX should be 0x00007FFF
     
     // Test case 2: Negative value
     let mut state = create_test_cpu_state().unwrap();
     state.registers.rax = 0x8000; // AX = 0x8000 (negative)
     
-    let result = execute_instruction(&[0x98], state);
+    let result = execute_instruction(&[0x98], &mut state);
     assert!(result.is_ok());
-    let state = result.unwrap();
+
     assert_eq!(state.registers.rax & 0xFFFFFFFF, 0xFFFF8000); // EAX should be 0xFFFF8000
 }
 
@@ -1001,7 +948,7 @@ fn test_cvtdq2pd_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x66, 0x0F, 0xE6, 0xC1], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0xE6, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1013,7 +960,7 @@ fn test_cvtdq2ps_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x5B, 0xC1], state);
+    let result = execute_instruction(&[0x0F, 0x5B, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1025,7 +972,7 @@ fn test_cvtpd2dq_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF2, 0x0F, 0xE6, 0xC1], state);
+    let result = execute_instruction(&[0xF2, 0x0F, 0xE6, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1037,7 +984,7 @@ fn test_cvtpd2pi_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x66, 0x0F, 0x2D, 0xC1], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0x2D, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1049,7 +996,7 @@ fn test_cvtpd2ps_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x66, 0x0F, 0x5A, 0xC1], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0x5A, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1061,7 +1008,7 @@ fn test_cvtpi2pd_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x66, 0x0F, 0x2A, 0xC1], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0x2A, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1073,7 +1020,7 @@ fn test_cvtpi2ps_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x2A, 0xC1], state);
+    let result = execute_instruction(&[0x0F, 0x2A, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1085,7 +1032,7 @@ fn test_cvtps2dq_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x66, 0x0F, 0x5B, 0xC1], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0x5B, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1097,7 +1044,7 @@ fn test_cvtps2pd_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x5A, 0xC1], state);
+    let result = execute_instruction(&[0x0F, 0x5A, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1109,7 +1056,7 @@ fn test_cvtps2pi_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x2D, 0xC1], state);
+    let result = execute_instruction(&[0x0F, 0x2D, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1121,7 +1068,7 @@ fn test_cvtsd2si_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF2, 0x0F, 0x2D, 0xC1], state);
+    let result = execute_instruction(&[0xF2, 0x0F, 0x2D, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1133,7 +1080,7 @@ fn test_cvtsd2ss_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF2, 0x0F, 0x5A, 0xC1], state);
+    let result = execute_instruction(&[0xF2, 0x0F, 0x5A, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1145,7 +1092,7 @@ fn test_cvtsi2sd_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF2, 0x0F, 0x2A, 0xC1], state);
+    let result = execute_instruction(&[0xF2, 0x0F, 0x2A, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1157,7 +1104,7 @@ fn test_cvtsi2ss_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF3, 0x0F, 0x2A, 0xC1], state);
+    let result = execute_instruction(&[0xF3, 0x0F, 0x2A, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1169,7 +1116,7 @@ fn test_cvtss2sd_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF3, 0x0F, 0x5A, 0xC1], state);
+    let result = execute_instruction(&[0xF3, 0x0F, 0x5A, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1181,7 +1128,7 @@ fn test_cvtss2si_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF3, 0x0F, 0x2D, 0xC1], state);
+    let result = execute_instruction(&[0xF3, 0x0F, 0x2D, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1193,7 +1140,7 @@ fn test_cvttpd2dq_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x66, 0x0F, 0xE6, 0xC1], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0xE6, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1205,7 +1152,7 @@ fn test_cvttpd2pi_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x66, 0x0F, 0x2C, 0xC1], state);
+    let result = execute_instruction(&[0x66, 0x0F, 0x2C, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1217,7 +1164,7 @@ fn test_cvttps2dq_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF3, 0x0F, 0x5B, 0xC1], state);
+    let result = execute_instruction(&[0xF3, 0x0F, 0x5B, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1229,7 +1176,7 @@ fn test_cvttps2pi_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0x0F, 0x2C, 0xC1], state);
+    let result = execute_instruction(&[0x0F, 0x2C, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1241,7 +1188,7 @@ fn test_cvttsd2si_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF2, 0x0F, 0x2C, 0xC1], state);
+    let result = execute_instruction(&[0xF2, 0x0F, 0x2C, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
 
@@ -1253,8 +1200,6 @@ fn test_cvttss2si_instruction() {
     
     let mut state = create_test_cpu_state().unwrap();
     
-    let result = execute_instruction(&[0xF3, 0x0F, 0x2C, 0xC1], state);
+    let result = execute_instruction(&[0xF3, 0x0F, 0x2C, 0xC1], &mut state);
     assert!(result.is_ok()); // Should succeed as placeholder
 }
-
-} // End of tests module

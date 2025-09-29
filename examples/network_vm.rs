@@ -16,7 +16,10 @@ fn main() -> Result<()> {
 
     // Load a test kernel
     let test_kernel = create_network_test_kernel();
-    vm.get_memory_mut().write_slice(0x100000, &test_kernel)?;
+    {
+        let mut memory_manager = vm.get_memory_manager().lock().unwrap();
+        memory_manager.write_slice(0x100000, &test_kernel)?;
+    }
     println!("Loaded network test kernel at 0x100000");
 
     // Enable network support

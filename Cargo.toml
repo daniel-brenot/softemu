@@ -68,10 +68,6 @@ path = "examples/simple_vm.rs"
 name = "standalone_memory"
 path = "examples/standalone_memory.rs"
 
-[[bench]]
-name = "cpu_bench"
-harness = false
-
 [profile.release]
 opt-level = 3
 lto = true

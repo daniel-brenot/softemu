@@ -91,12 +91,12 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_orpd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_orpd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("ORPD instruction executed");
         Ok(())
     }
 
-    pub fn execute_orps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_orps(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("ORPS instruction executed");
         Ok(())
     }

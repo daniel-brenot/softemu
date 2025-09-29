@@ -1,18 +1,13 @@
-use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
-use crate::memory::GuestMemory;
+use crate::cpu::{CpuState, InstructionDecoder};
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 use iced_x86::{Decoder, DecoderOptions};
-
-fn create_test_cpu_state() -> Result<CpuState, Box<dyn std::error::Error>> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB memory
-    Ok(CpuState::new(memory))
-}
 
 fn execute_instruction(instruction_bytes: &[u8], state: &mut CpuState) -> Result<CpuState, Box<dyn std::error::Error>> {
     let mut decoder = Decoder::new(64, instruction_bytes, DecoderOptions::NONE);
     let instruction = decoder.decode();
     let decoder_impl = InstructionDecoder::new();
     decoder_impl.execute_instruction(&instruction, state)?;
-    Ok(state.clone())
+    Ok(create_test_cpu_state().unwrap())
 }
 
 #[cfg(test)]
@@ -27,7 +22,7 @@ mod tests {
         let result = execute_instruction(&[0x66, 0x0F, 0x2E, 0xC1], &mut state).unwrap();
         
         // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-        assert_eq!(result.registers.rax, 0u64);
+        assert_eq!(state.registers.rax, 0u64);
     }
 
     #[test]
@@ -38,7 +33,7 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x2E, 0xC1], &mut state).unwrap();
         
         // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-        assert_eq!(result.registers.rax, 0u64);
+        assert_eq!(state.registers.rax, 0u64);
     }
 
     #[test]
@@ -52,8 +47,8 @@ mod tests {
         
         // UD0 is an undefined instruction, should generate an exception
         // For now, we'll just verify it doesn't crash
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64);
-        assert_eq!(result.registers.rbx, 0xFEDCBA9876543210u64);
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64);
+        assert_eq!(state.registers.rbx, 0xFEDCBA9876543210u64);
     }
 
     #[test]
@@ -67,8 +62,8 @@ mod tests {
         
         // UD1 is an undefined instruction, should generate an exception
         // For now, we'll just verify it doesn't crash
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64);
-        assert_eq!(result.registers.rbx, 0xFEDCBA9876543210u64);
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64);
+        assert_eq!(state.registers.rbx, 0xFEDCBA9876543210u64);
     }
 
     #[test]
@@ -81,7 +76,7 @@ mod tests {
         
         // UD2 is an undefined instruction, should generate an exception
         // For now, we'll just verify it doesn't crash
-        assert_eq!(result.registers.rax, 0x123456789ABCDEF0u64);
+        assert_eq!(state.registers.rax, 0x123456789ABCDEF0u64);
     }
 
     #[test]
@@ -136,7 +131,7 @@ mod tests {
         let result = execute_instruction(&[0x66, 0x0F, 0x15, 0xC1], &mut state).unwrap();
         
         // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-        assert_eq!(result.registers.rax, 0u64);
+        assert_eq!(state.registers.rax, 0u64);
     }
 
     #[test]
@@ -147,7 +142,7 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x15, 0xC1], &mut state).unwrap();
         
         // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-        assert_eq!(result.registers.rax, 0u64);
+        assert_eq!(state.registers.rax, 0u64);
     }
 
     #[test]
@@ -158,7 +153,7 @@ mod tests {
         let result = execute_instruction(&[0x66, 0x0F, 0x14, 0xC1], &mut state).unwrap();
         
         // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-        assert_eq!(result.registers.rax, 0u64);
+        assert_eq!(state.registers.rax, 0u64);
     }
 
     #[test]
@@ -169,7 +164,7 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x14, 0xC1], &mut state).unwrap();
         
         // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-        assert_eq!(result.registers.rax, 0u64);
+        assert_eq!(state.registers.rax, 0u64);
     }
 
     #[test]
@@ -177,15 +172,15 @@ mod tests {
         let mut state = create_test_cpu_state().unwrap();
         // Set up stack with return address and flags
         state.registers.rsp = 0x1000u64;
-        state.memory.write_u64(0x1000, 0x123456789ABCDEF0u64).unwrap(); // Return address
-        state.memory.write_u64(0x1008, 0x246u64).unwrap(); // Flags
+        write_memory(&mut state, 0x1000, 0x123456789ABCDEF0u64).unwrap(); // Return address
+        write_memory(&mut state, 0x1008, 0x246u64).unwrap(); // Flags
         
         // UIRET (0xCF)
         let result = execute_instruction(&[0xCF], &mut state).unwrap();
         
         // UIRET should pop RIP and RFLAGS from stack
         // For now, we'll just verify it doesn't crash
-        assert_eq!(result.registers.rsp, 0x1000u64);
+        assert_eq!(state.registers.rsp, 0x1000u64);
     }
 
     #[test]
@@ -196,7 +191,7 @@ mod tests {
         let result = execute_instruction(&[0x66, 0x0F, 0x2E, 0xC1], &mut state).unwrap();
         
         // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-        assert_eq!(result.registers.rax, 0u64);
+        assert_eq!(state.registers.rax, 0u64);
     }
 
     #[test]
@@ -207,7 +202,7 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x2E, 0xC1], &mut state).unwrap();
         
         // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-        assert_eq!(result.registers.rax, 0u64);
+        assert_eq!(state.registers.rax, 0u64);
     }
 
     #[test]
@@ -221,8 +216,8 @@ mod tests {
         
         // UD0 is an undefined instruction, should generate an exception
         // For now, we'll just verify it doesn't crash
-        assert_eq!(result.registers.rcx, 0x1111111111111111u64);
-        assert_eq!(result.registers.rdx, 0x2222222222222222u64);
+        assert_eq!(state.registers.rcx, 0x1111111111111111u64);
+        assert_eq!(state.registers.rdx, 0x2222222222222222u64);
     }
 
     #[test]

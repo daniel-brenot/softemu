@@ -1,19 +1,14 @@
 use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
-use crate::memory::guest_memory::GuestMemory;
 use crate::Result;
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 use iced_x86::{Decoder, DecoderOptions, Instruction};
-
-fn create_test_cpu_state() -> Result<CpuState> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB of memory
-    Ok(CpuState::new(memory))
-}
 
 fn execute_instruction(instruction_bytes: &[u8], state: &mut CpuState) -> Result<CpuState> {
     let mut decoder = Decoder::new(64, instruction_bytes, DecoderOptions::NONE);
     let instruction = decoder.decode();
     let mut instruction_decoder = InstructionDecoder::new();
     instruction_decoder.execute_instruction(&instruction, state)?;
-    Ok(state.clone())
+    Ok(create_test_cpu_state().unwrap())
 }
 
 #[cfg(test)]
@@ -32,9 +27,9 @@ mod tests {
         let result = execute_instruction(&[0xC3], &mut state).unwrap();
         
         // Check that RIP was set to the return address
-        assert_eq!(result.registers.rip, 0x123456789ABCDEF0);
+        assert_eq!(state.registers.rip, 0x123456789ABCDEF0);
         // Check that RSP was incremented by 8
-        assert_eq!(result.registers.rsp, 0x1008);
+        assert_eq!(state.registers.rsp, 0x1008);
     }
 
     #[test]
@@ -49,9 +44,9 @@ mod tests {
         let result = execute_instruction(&[0xC2, 0x00, 0x10], &mut state).unwrap();
         
         // Check that RIP was set to the return address
-        assert_eq!(result.registers.rip, 0x123456789ABCDEF0);
+        assert_eq!(state.registers.rip, 0x123456789ABCDEF0);
         // Check that RSP was incremented by 8 + immediate (0x1000)
-        assert_eq!(result.registers.rsp, 0x2008);
+        assert_eq!(state.registers.rsp, 0x2008);
     }
 
     #[test]
@@ -66,7 +61,7 @@ mod tests {
         
         // Check that RAX was rotated left by 4 bits
         // 0x123456789ABCDEF0 << 4 = 0x23456789ABCDEF01
-        assert_eq!(result.registers.rax, 0x23456789ABCDEF01);
+        assert_eq!(state.registers.rax, 0x23456789ABCDEF01);
     }
 
     #[test]
@@ -81,7 +76,7 @@ mod tests {
         
         // Check that RAX was rotated right by 4 bits
         // 0x123456789ABCDEF0 >> 4 = 0x0123456789ABCDEF
-        assert_eq!(result.registers.rax, 0x0123456789ABCDEF);
+        assert_eq!(state.registers.rax, 0x0123456789ABCDEF);
     }
 
     #[test]
@@ -97,9 +92,9 @@ mod tests {
         
         // Check that RAX was rotated left through carry
         // 0x8000000000000000 << 1 with carry = 0x0000000000000001
-        assert_eq!(result.registers.rax, 0x0000000000000001);
+        assert_eq!(state.registers.rax, 0x0000000000000001);
         // Check that carry flag was set (MSB was 1)
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        assert!(state.registers.get_flag(RFlags::CARRY));
     }
 
     #[test]
@@ -115,9 +110,9 @@ mod tests {
         
         // Check that RAX was rotated right through carry
         // 0x0000000000000001 >> 1 with carry = 0x8000000000000000
-        assert_eq!(result.registers.rax, 0x8000000000000000);
+        assert_eq!(state.registers.rax, 0x8000000000000000);
         // Check that carry flag was set (LSB was 1)
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        assert!(state.registers.get_flag(RFlags::CARRY));
     }
 
     #[test]
@@ -131,9 +126,9 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x32], &mut state).unwrap();
         
         // Check that RAX contains the MSR value
-        assert_eq!(result.registers.rax, 0xFEE00000);
+        assert_eq!(state.registers.rax, 0xFEE00000);
         // Check that RDX is zero
-        assert_eq!(result.registers.rdx, 0);
+        assert_eq!(state.registers.rdx, 0);
     }
 
     #[test]
@@ -147,8 +142,8 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x32], &mut state).unwrap();
         
         // Check that RAX and RDX are zero for unsupported MSR
-        assert_eq!(result.registers.rax, 0);
-        assert_eq!(result.registers.rdx, 0);
+        assert_eq!(state.registers.rax, 0);
+        assert_eq!(state.registers.rdx, 0);
     }
 
     #[test]
@@ -162,9 +157,9 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x33], &mut state).unwrap();
         
         // Check that RAX contains the counter value (ECX value)
-        assert_eq!(result.registers.rax, 0x123);
+        assert_eq!(state.registers.rax, 0x123);
         // Check that RDX is zero
-        assert_eq!(result.registers.rdx, 0);
+        assert_eq!(state.registers.rdx, 0);
     }
 
     #[test]
@@ -181,9 +176,9 @@ mod tests {
         
         // Check that RAX contains a pseudo-random value
         let expected_random = 0x123456789ABCDEF0 ^ 0xFEDCBA9876543210 ^ 0x1111111111111111;
-        assert_eq!(result.registers.rax, expected_random);
+        assert_eq!(state.registers.rax, expected_random);
         // Check that carry flag was set (indicating success)
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        assert!(state.registers.get_flag(RFlags::CARRY));
     }
 
     #[test]
@@ -200,9 +195,9 @@ mod tests {
         
         // Check that RAX contains a pseudo-random value
         let expected_random = 0xAAAAAAAAAAAAAAAA ^ 0x5555555555555555 ^ 0xFFFFFFFFFFFFFFFF;
-        assert_eq!(result.registers.rax, expected_random);
+        assert_eq!(state.registers.rax, expected_random);
         // Check that carry flag was set (indicating success)
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        assert!(state.registers.get_flag(RFlags::CARRY));
     }
 
     #[test]
@@ -213,8 +208,8 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x31], &mut state).unwrap();
         
         // Check that RAX and RDX contain the dummy timestamp values
-        assert_eq!(result.registers.rax, 0x12345678);
-        assert_eq!(result.registers.rdx, 0x9ABCDEF0);
+        assert_eq!(state.registers.rax, 0x12345678);
+        assert_eq!(state.registers.rdx, 0x9ABCDEF0);
     }
 
     #[test]
@@ -225,10 +220,10 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x01, 0xF9], &mut state).unwrap();
         
         // Check that RAX and RDX contain the dummy timestamp values
-        assert_eq!(result.registers.rax, 0x12345678);
-        assert_eq!(result.registers.rdx, 0x9ABCDEF0);
+        assert_eq!(state.registers.rax, 0x12345678);
+        assert_eq!(state.registers.rdx, 0x9ABCDEF0);
         // Check that RCX contains the processor ID (0)
-        assert_eq!(result.registers.rcx, 0);
+        assert_eq!(state.registers.rcx, 0);
     }
 
     #[test]
@@ -243,7 +238,7 @@ mod tests {
         
         // RSM should execute without error (it just logs)
         // No specific register changes expected, RIP should remain unchanged
-        assert_eq!(result.registers.rip, 0x1000);
+        assert_eq!(state.registers.rip, 0x1000);
     }
 
     #[test]
@@ -257,9 +252,9 @@ mod tests {
         let result = execute_instruction(&[0x48, 0xD1, 0xC0], &mut state).unwrap();
         
         // Check that RAX was rotated left by 1 bit
-        assert_eq!(result.registers.rax, 0x0000000000000001);
+        assert_eq!(state.registers.rax, 0x0000000000000001);
         // Check that carry flag was set (MSB was 1)
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        assert!(state.registers.get_flag(RFlags::CARRY));
     }
 
     #[test]
@@ -273,9 +268,9 @@ mod tests {
         let result = execute_instruction(&[0x48, 0xD1, 0xC8], &mut state).unwrap();
         
         // Check that RAX was rotated right by 1 bit
-        assert_eq!(result.registers.rax, 0x8000000000000000);
+        assert_eq!(state.registers.rax, 0x8000000000000000);
         // Check that carry flag was set (LSB was 1)
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        assert!(state.registers.get_flag(RFlags::CARRY));
     }
 
     #[test]
@@ -290,7 +285,7 @@ mod tests {
         
         // Check that EAX was rotated left by 4 bits (only lower 32 bits)
         // 0x9ABCDEF0 << 4 = 0xABCDEF00
-        assert_eq!(result.registers.rax & 0xFFFFFFFF, 0xABCDEF00);
+        assert_eq!(state.registers.rax & 0xFFFFFFFF, 0xABCDEF00);
     }
 
     #[test]
@@ -305,7 +300,7 @@ mod tests {
         
         // Check that AX was rotated right by 4 bits (only lower 16 bits)
         // 0xDEF0 >> 4 = 0x0DEF
-        assert_eq!(result.registers.rax & 0xFFFF, 0x0DEF);
+        assert_eq!(state.registers.rax & 0xFFFF, 0x0DEF);
     }
 
     #[test]
@@ -336,9 +331,9 @@ mod tests {
         
         // Check that RBX contains a pseudo-random value
         let expected_random = 0x1111111111111111 ^ 0x2222222222222222 ^ 0x3333333333333333;
-        assert_eq!(result.registers.rbx, expected_random);
+        assert_eq!(state.registers.rbx, expected_random);
         // Check that carry flag was set (indicating success)
-        assert!(result.registers.get_flag(RFlags::CARRY));
+        assert!(state.registers.get_flag(RFlags::CARRY));
     }
 
     #[test]
@@ -352,8 +347,8 @@ mod tests {
         let result = execute_instruction(&[0x0F, 0x32], &mut state).unwrap();
         
         // Check that RAX contains the MSR value (ECX was 0x1B)
-        assert_eq!(result.registers.rax, 0xFEE00000);
+        assert_eq!(state.registers.rax, 0xFEE00000);
         // Check that RDX is zero
-        assert_eq!(result.registers.rdx, 0);
+        assert_eq!(state.registers.rdx, 0);
     }
 }

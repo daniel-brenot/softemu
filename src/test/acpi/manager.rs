@@ -22,19 +22,19 @@ mod tests {
     }
 
     #[test]
-    fn test_acpi_power_states() {
+    fn test_acpi_powerstates() {
         let mut manager = AcpiManager::new();
         let memory = GuestMemory::new(16 * 1024 * 1024).unwrap(); // 16MB to accommodate ACPI tables
         manager.initialize(memory).unwrap();
         
         // Test initial power state
-        let initial_state = manager.get_power_state();
-        assert_eq!(initial_state, crate::acpi::AcpiPowerState::S0);
+        let initialstate = manager.get_powerstate();
+        assert_eq!(initialstate, crate::acpi::AcpiPowerState::S0);
         
         // Test power state transition
-        let result = manager.transition_power_state(crate::acpi::AcpiPowerState::S3);
+        let result = manager.transition_powerstate(crate::acpi::AcpiPowerState::S3);
         assert!(result.is_ok());
-        assert_eq!(manager.get_power_state(), crate::acpi::AcpiPowerState::S3);
+        assert_eq!(manager.get_powerstate(), crate::acpi::AcpiPowerState::S3);
     }
 
     #[test]
@@ -48,7 +48,7 @@ mod tests {
         assert!(result.is_ok());
         
         // Should transition to S5 (soft off)
-        assert_eq!(manager.get_power_state(), crate::acpi::AcpiPowerState::S5);
+        assert_eq!(manager.get_powerstate(), crate::acpi::AcpiPowerState::S5);
     }
 
     #[test]
@@ -62,7 +62,7 @@ mod tests {
         assert!(result.is_ok());
         
         // Should transition to S3 (suspend to RAM)
-        assert_eq!(manager.get_power_state(), crate::acpi::AcpiPowerState::S3);
+        assert_eq!(manager.get_powerstate(), crate::acpi::AcpiPowerState::S3);
     }
 
     #[test]
@@ -76,14 +76,14 @@ mod tests {
         assert!(result.is_ok());
         
         // Should transition to S3 (suspend to RAM)
-        assert_eq!(manager.get_power_state(), crate::acpi::AcpiPowerState::S3);
+        assert_eq!(manager.get_powerstate(), crate::acpi::AcpiPowerState::S3);
         
         // Test lid open
         let result = manager.handle_lid_switch(false);
         assert!(result.is_ok());
         
         // Should transition back to S0 (working)
-        assert_eq!(manager.get_power_state(), crate::acpi::AcpiPowerState::S0);
+        assert_eq!(manager.get_powerstate(), crate::acpi::AcpiPowerState::S0);
     }
 
     #[test]
@@ -97,7 +97,7 @@ mod tests {
         assert_eq!(consumption, 100.0); // Full power
         
         // Transition to S3 and test power consumption
-        manager.transition_power_state(crate::acpi::AcpiPowerState::S3).unwrap();
+        manager.transition_powerstate(crate::acpi::AcpiPowerState::S3).unwrap();
         let consumption = manager.get_power_consumption();
         assert_eq!(consumption, 5.0); // Minimal power
     }

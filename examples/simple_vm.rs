@@ -15,11 +15,17 @@ fn main() -> Result<()> {
 
     // Load a simple test kernel
     let test_kernel = create_test_kernel();
-    vm.get_memory_mut().write_slice(0x100000, &test_kernel)?;
+    {
+        let mut memory_manager = vm.get_memory_manager().lock().unwrap();
+        memory_manager.write_slice(0x100000, &test_kernel)?;
+    }
     println!("Loaded test kernel at 0x100000");
 
     // Verify the kernel was loaded correctly
-    let loaded_kernel = vm.get_memory().read_slice(0x100000, test_kernel.len())?;
+    let loaded_kernel = {
+        let memory_manager = vm.get_memory_manager().lock().unwrap();
+        memory_manager.read_slice(0x100000, test_kernel.len())?
+    };
     if loaded_kernel == test_kernel {
         println!("✓ Kernel verification successful");
     } else {

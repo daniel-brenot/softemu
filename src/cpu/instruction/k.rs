@@ -811,72 +811,72 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_kand(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kand(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KAND instruction executed");
         Ok(())
     }
 
-    pub fn execute_kandn(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kandn(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KANDN instruction executed");
         Ok(())
     }
 
-    pub fn execute_kandnr(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kandnr(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KANDNR instruction executed");
         Ok(())
     }
 
-    pub fn execute_kconcath(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kconcath(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KCONCATH instruction executed");
         Ok(())
     }
 
-    pub fn execute_kconcatl(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kconcatl(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KCONCATL instruction executed");
         Ok(())
     }
 
-    pub fn execute_kextract(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kextract(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KEXTRACT instruction executed");
         Ok(())
     }
 
-    pub fn execute_kmerge2l1h(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kmerge2l1h(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KMERGE2L1H instruction executed");
         Ok(())
     }
 
-    pub fn execute_kmerge2l1l(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kmerge2l1l(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KMERGE2L1L instruction executed");
         Ok(())
     }
 
-    pub fn execute_kmov(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kmov(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KMOV instruction executed");
         Ok(())
     }
 
-    pub fn execute_knot(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_knot(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KNOT instruction executed");
         Ok(())
     }
 
-    pub fn execute_kor(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kor(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KOR instruction executed");
         Ok(())
     }
 
-    pub fn execute_kortest(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kortest(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KORTEST instruction executed");
         Ok(())
     }
 
-    pub fn execute_kxnor(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kxnor(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KXNOR instruction executed");
         Ok(())
     }
 
-    pub fn execute_kxor(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_kxor(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("KXOR instruction executed");
         Ok(())
     }

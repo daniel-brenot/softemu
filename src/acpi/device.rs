@@ -24,8 +24,8 @@ pub struct AcpiDeviceInfo {
     pub cid: Vec<String>,   // Compatible IDs
     pub uid: String,        // Unique ID
     pub path: String,       // ACPI path
-    pub power_state: AcpiPowerState,
-    pub device_state: AcpiDeviceState,
+    pub powerstate: AcpiPowerState,
+    pub devicestate: AcpiDeviceState,
 }
 
 /// ACPI device operations
@@ -34,16 +34,16 @@ pub trait AcpiDeviceOps {
     fn get_info(&self) -> &AcpiDeviceInfo;
     
     /// Set power state
-    fn set_power_state(&mut self, state: AcpiPowerState) -> AcpiResult<()>;
+    fn set_powerstate(&mut self, state: AcpiPowerState) -> AcpiResult<()>;
     
     /// Get power state
-    fn get_power_state(&self) -> AcpiPowerState;
+    fn get_powerstate(&self) -> AcpiPowerState;
     
     /// Set device state
-    fn set_device_state(&mut self, state: AcpiDeviceState) -> AcpiResult<()>;
+    fn set_devicestate(&mut self, state: AcpiDeviceState) -> AcpiResult<()>;
     
     /// Get device state
-    fn get_device_state(&self) -> AcpiDeviceState;
+    fn get_devicestate(&self) -> AcpiDeviceState;
     
     /// Handle ACPI event
     fn handle_event(&mut self, event: AcpiEvent) -> AcpiResult<()>;
@@ -83,8 +83,8 @@ impl AcpiDevice {
                 cid: Vec::new(),
                 uid: format!("{:x}", 0x12345678), // Fixed UID for now
                 path,
-                power_state: AcpiPowerState::S0,
-                device_state: AcpiDeviceState::D0,
+                powerstate: AcpiPowerState::S0,
+                devicestate: AcpiDeviceState::D0,
             },
             data: vec![0; 1024], // 1KB device data
             event_handlers: Vec::new(),
@@ -108,22 +108,22 @@ impl AcpiDeviceOps for AcpiDevice {
         &self.info
     }
 
-    fn set_power_state(&mut self, state: AcpiPowerState) -> AcpiResult<()> {
-        self.info.power_state = state;
+    fn set_powerstate(&mut self, state: AcpiPowerState) -> AcpiResult<()> {
+        self.info.powerstate = state;
         Ok(())
     }
 
-    fn get_power_state(&self) -> AcpiPowerState {
-        self.info.power_state
+    fn get_powerstate(&self) -> AcpiPowerState {
+        self.info.powerstate
     }
 
-    fn set_device_state(&mut self, state: AcpiDeviceState) -> AcpiResult<()> {
-        self.info.device_state = state;
+    fn set_devicestate(&mut self, state: AcpiDeviceState) -> AcpiResult<()> {
+        self.info.devicestate = state;
         Ok(())
     }
 
-    fn get_device_state(&self) -> AcpiDeviceState {
-        self.info.device_state
+    fn get_devicestate(&self) -> AcpiDeviceState {
+        self.info.devicestate
     }
 
     fn handle_event(&mut self, event: AcpiEvent) -> AcpiResult<()> {
@@ -223,20 +223,20 @@ impl AcpiDeviceOps for AcpiProcessor {
         self.device.get_info()
     }
 
-    fn set_power_state(&mut self, state: AcpiPowerState) -> AcpiResult<()> {
-        self.device.set_power_state(state)
+    fn set_powerstate(&mut self, state: AcpiPowerState) -> AcpiResult<()> {
+        self.device.set_powerstate(state)
     }
 
-    fn get_power_state(&self) -> AcpiPowerState {
-        self.device.get_power_state()
+    fn get_powerstate(&self) -> AcpiPowerState {
+        self.device.get_powerstate()
     }
 
-    fn set_device_state(&mut self, state: AcpiDeviceState) -> AcpiResult<()> {
-        self.device.set_device_state(state)
+    fn set_devicestate(&mut self, state: AcpiDeviceState) -> AcpiResult<()> {
+        self.device.set_devicestate(state)
     }
 
-    fn get_device_state(&self) -> AcpiDeviceState {
-        self.device.get_device_state()
+    fn get_devicestate(&self) -> AcpiDeviceState {
+        self.device.get_devicestate()
     }
 
     fn handle_event(&mut self, event: AcpiEvent) -> AcpiResult<()> {
@@ -320,20 +320,20 @@ impl AcpiDeviceOps for AcpiThermal {
         self.device.get_info()
     }
 
-    fn set_power_state(&mut self, state: AcpiPowerState) -> AcpiResult<()> {
-        self.device.set_power_state(state)
+    fn set_powerstate(&mut self, state: AcpiPowerState) -> AcpiResult<()> {
+        self.device.set_powerstate(state)
     }
 
-    fn get_power_state(&self) -> AcpiPowerState {
-        self.device.get_power_state()
+    fn get_powerstate(&self) -> AcpiPowerState {
+        self.device.get_powerstate()
     }
 
-    fn set_device_state(&mut self, state: AcpiDeviceState) -> AcpiResult<()> {
-        self.device.set_device_state(state)
+    fn set_devicestate(&mut self, state: AcpiDeviceState) -> AcpiResult<()> {
+        self.device.set_devicestate(state)
     }
 
-    fn get_device_state(&self) -> AcpiDeviceState {
-        self.device.get_device_state()
+    fn get_devicestate(&self) -> AcpiDeviceState {
+        self.device.get_devicestate()
     }
 
     fn handle_event(&mut self, event: AcpiEvent) -> AcpiResult<()> {
@@ -453,20 +453,20 @@ impl AcpiDeviceOps for AcpiButton {
         self.device.get_info()
     }
 
-    fn set_power_state(&mut self, state: AcpiPowerState) -> AcpiResult<()> {
-        self.device.set_power_state(state)
+    fn set_powerstate(&mut self, state: AcpiPowerState) -> AcpiResult<()> {
+        self.device.set_powerstate(state)
     }
 
-    fn get_power_state(&self) -> AcpiPowerState {
-        self.device.get_power_state()
+    fn get_powerstate(&self) -> AcpiPowerState {
+        self.device.get_powerstate()
     }
 
-    fn set_device_state(&mut self, state: AcpiDeviceState) -> AcpiResult<()> {
-        self.device.set_device_state(state)
+    fn set_devicestate(&mut self, state: AcpiDeviceState) -> AcpiResult<()> {
+        self.device.set_devicestate(state)
     }
 
-    fn get_device_state(&self) -> AcpiDeviceState {
-        self.device.get_device_state()
+    fn get_devicestate(&self) -> AcpiDeviceState {
+        self.device.get_devicestate()
     }
 
     fn handle_event(&mut self, event: AcpiEvent) -> AcpiResult<()> {

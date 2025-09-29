@@ -232,7 +232,7 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_clts(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clts(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Clear Task-Switched Flag (simplified - just log for now)
         log::debug!("CLTS instruction executed");
         Ok(())
@@ -260,49 +260,49 @@ impl InstructionDecoder<'_> {
         Ok(())
     }
 
-    pub fn execute_cldemote(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cldemote(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Cache line demote
         log::debug!("CLDEMOTE instruction executed");
         Ok(())
     }
 
-    pub fn execute_clflush(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clflush(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Flush cache line
         log::debug!("CLFLUSH instruction executed");
         Ok(())
     }
 
-    pub fn execute_clflushopt(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clflushopt(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Flush cache line (optimized)
         log::debug!("CLFLUSHOPT instruction executed");
         Ok(())
     }
 
-    pub fn execute_clgi(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clgi(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Clear global interrupt flag
         log::debug!("CLGI instruction executed");
         Ok(())
     }
 
-    pub fn execute_clrssbsy(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clrssbsy(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Clear busy flag in a supervisor shadow stack token
         log::debug!("CLRSSBSY instruction executed");
         Ok(())
     }
 
-    pub fn execute_clui(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clui(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Clear user interrupt flag
         log::debug!("CLUI instruction executed");
         Ok(())
     }
 
-    pub fn execute_clwb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clwb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Cache line write back
         log::debug!("CLWB instruction executed");
         Ok(())
     }
 
-    pub fn execute_clzero(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clzero(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // Cache line zero
         log::debug!("CLZERO instruction executed");
         Ok(())
@@ -488,271 +488,271 @@ impl InstructionDecoder<'_> {
     }
 
     // CMPXADD instructions (compare and exchange add)
-    pub fn execute_cmpbexadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpbexadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPBEXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpbxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpbxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPBXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmplexadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmplexadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPLEXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmplxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmplxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPLXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpnbexadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpnbexadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPNBEXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpnbxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpnbxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPNBXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpnlexadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpnlexadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPNLEXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpnlxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpnlxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPNLXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpnoxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpnoxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPNOXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpnpxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpnpxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPNPXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpnsxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpnsxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPNSXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpnzxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpnzxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPNZXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpoxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpoxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPOXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmppxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmppxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPPXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpsxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpsxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPSXADD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpzxadd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpzxadd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPZXADD instruction executed");
         Ok(())
     }
 
     // SIMD compare instructions
-    pub fn execute_cmppd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmppd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPPD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpps(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPPS instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpss(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPSS instruction executed");
         Ok(())
     }
 
     // Compare scalar double/single precision
-    pub fn execute_comisd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_comisd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("COMISD instruction executed");
         Ok(())
     }
 
-    pub fn execute_comiss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_comiss(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("COMISS instruction executed");
         Ok(())
     }
 
     // Missing C instructions
-    pub fn execute_cl1invmb(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cl1invmb(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CL1INVMB instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpxchg16b(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpxchg16b(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPXCHG16B instruction executed");
         Ok(())
     }
 
-    pub fn execute_cmpxchg8b(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cmpxchg8b(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CMPXCHG8B instruction executed");
         Ok(())
     }
 
-    pub fn execute_crc32(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_crc32(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CRC32 instruction executed");
         Ok(())
     }
 
     // SIMD conversion instructions (simplified implementations)
-    pub fn execute_cvtdq2pd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtdq2pd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTDQ2PD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtdq2ps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtdq2ps(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTDQ2PS instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtpd2dq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtpd2dq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTPD2DQ instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtpd2pi(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtpd2pi(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTPD2PI instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtpd2ps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtpd2ps(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTPD2PS instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtpi2pd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtpi2pd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTPI2PD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtpi2ps(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtpi2ps(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTPI2PS instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtps2dq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtps2dq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTPS2DQ instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtps2pd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtps2pd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTPS2PD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtps2pi(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtps2pi(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTPS2PI instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtsd2si(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtsd2si(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTSD2SI instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtsd2ss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtsd2ss(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTSD2SS instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtsi2sd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtsi2sd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTSI2SD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtsi2ss(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtsi2ss(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTSI2SS instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtss2sd(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtss2sd(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTSS2SD instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvtss2si(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvtss2si(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTSS2SI instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvttpd2dq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvttpd2dq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTTPD2DQ instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvttpd2pi(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvttpd2pi(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTTPD2PI instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvttps2dq(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvttps2dq(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTTPS2DQ instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvttps2pi(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvttps2pi(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTTPS2PI instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvttsd2si(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvttsd2si(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTTSD2SI instruction executed");
         Ok(())
     }
 
-    pub fn execute_cvttss2si(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cvttss2si(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CVTTSS2SI instruction executed");
         Ok(())
     }
 
-    pub fn execute_cpu_write(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cpu_write(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CPU_WRITE instruction executed");
         Ok(())
     }
 
-    pub fn execute_cpu_read(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_cpu_read(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CPU_READ instruction executed");
         Ok(())
     }
 
-    pub fn execute_ccs_hash(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_ccs_hash(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CCS_HASH instruction executed");
         Ok(())
     }
 
-    pub fn execute_ccs_encrypt(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_ccs_encrypt(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CCS_ENCRYPT instruction executed");
         Ok(())
     }
 
-    pub fn execute_clevict0(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clevict0(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CLEVICT0 instruction executed");
         Ok(())
     }
 
-    pub fn execute_clevict1(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_clevict1(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         log::debug!("CLEVICT1 instruction executed");
         Ok(())
     }

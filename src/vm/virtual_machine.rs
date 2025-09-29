@@ -317,15 +317,15 @@ impl VirtualMachine {
     }
 
     /// Get current ACPI power state
-    pub fn get_acpi_power_state(&self) -> crate::acpi::AcpiPowerState {
+    pub fn get_acpi_powerstate(&self) -> crate::acpi::AcpiPowerState {
         let acpi_manager = self.acpi_manager.lock().unwrap();
-        acpi_manager.get_power_state()
+        acpi_manager.get_powerstate()
     }
 
     /// Transition to new ACPI power state
-    pub fn transition_acpi_power_state(&mut self, state: crate::acpi::AcpiPowerState) -> Result<()> {
+    pub fn transition_acpi_powerstate(&mut self, state: crate::acpi::AcpiPowerState) -> Result<()> {
         let mut acpi_manager = self.acpi_manager.lock().unwrap();
-        acpi_manager.transition_power_state(state)?;
+        acpi_manager.transition_powerstate(state)?;
         Ok(())
     }
 

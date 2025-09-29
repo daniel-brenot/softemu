@@ -1,18 +1,13 @@
-use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
-use crate::memory::GuestMemory;
+use crate::cpu::{CpuState, InstructionDecoder, registers::RFlags};
+use crate::test::helpers::{create_test_cpu_state, write_memory, read_memory};
 use iced_x86::{Decoder, DecoderOptions};
-
-fn create_test_cpu_state() -> Result<CpuState, Box<dyn std::error::Error>> {
-    let memory = GuestMemory::new(1024 * 1024)?; // 1MB memory
-    Ok(CpuState::new(memory))
-}
 
 fn execute_instruction(instruction_bytes: &[u8], state: &mut CpuState) -> Result<CpuState, Box<dyn std::error::Error>> {
     let mut decoder = Decoder::new(64, instruction_bytes, DecoderOptions::NONE);
     let instruction = decoder.decode();
     let decoder_impl = InstructionDecoder::new();
     decoder_impl.execute_instruction(&instruction, state)?;
-    Ok(state.clone())
+    Ok(create_test_cpu_state().unwrap())
 }
 
 #[cfg(test)]
@@ -30,8 +25,8 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x31, 0xD8], &mut state).unwrap();
         
         // XOR result: 0x123456789ABCDEF0 ^ 0xFEDCBA9876543210 = 0xECE8ECE0ECE8ECE0
-        assert_eq!(result.registers.rax, 0xECE8ECE0ECE8ECE0);
-        assert_eq!(result.registers.rbx, 0xFEDCBA9876543210); // RBX unchanged
+        assert_eq!(state.registers.rax, 0xECE8ECE0ECE8ECE0);
+        assert_eq!(state.registers.rbx, 0xFEDCBA9876543210); // RBX unchanged
     }
 
     #[test]
@@ -44,8 +39,8 @@ mod tests {
         let result = execute_instruction(&[0x66, 0x31, 0xD8], &mut state).unwrap();
         
         // XOR result: 0xDEF0 ^ 0x3210 = 0xECE0
-        assert_eq!(result.registers.rax, 0x123456789ABCECE0);
-        assert_eq!(result.registers.rbx, 0xFEDCBA9876543210); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x123456789ABCECE0);
+        assert_eq!(state.registers.rbx, 0xFEDCBA9876543210); // RBX unchanged
     }
 
     #[test]
@@ -58,8 +53,8 @@ mod tests {
         let result = execute_instruction(&[0x31, 0xD8], &mut state).unwrap();
         
         // XOR result: 0x9ABCDEF0 ^ 0x76543210 = 0xECE8ECE0 (32-bit operation zero-extends upper bits)
-        assert_eq!(result.registers.rax, 0x00000000ECE8ECE0);
-        assert_eq!(result.registers.rbx, 0xFEDCBA9876543210); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x00000000ECE8ECE0);
+        assert_eq!(state.registers.rbx, 0xFEDCBA9876543210); // RBX unchanged
     }
 
     #[test]
@@ -73,7 +68,7 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x33, 0x03], &mut state).unwrap();
         
         // XOR result: 0x123456789ABCDEF0 ^ 0xFEDCBA9876543210 = 0xECE8ECE0ECE8ECE0
-        assert_eq!(result.registers.rax, 0xECE8ECE0ECE8ECE0);
+        assert_eq!(state.registers.rax, 0xECE8ECE0ECE8ECE0);
     }
 
     #[test]
@@ -85,7 +80,7 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x35, 0x78, 0x56, 0x34, 0x12], &mut state).unwrap();
         
         // XOR result: 0x76543210 ^ 0x12345678 = 0x64606468 (32-bit operation with zero-extension)
-        assert_eq!(result.registers.rax, 0xFEDCBA9864606468);
+        assert_eq!(state.registers.rax, 0xFEDCBA9864606468);
     }
 
     #[test]
@@ -97,10 +92,10 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x31, 0xC0], &mut state).unwrap();
         
         // XOR result: 0x123456789ABCDEF0 ^ 0x123456789ABCDEF0 = 0x0
-        assert_eq!(result.registers.rax, 0x0);
-        assert!(result.registers.get_flag(RFlags::ZERO));
-        assert!(!result.registers.get_flag(RFlags::SIGN));
-        assert!(result.registers.get_flag(RFlags::PARITY)); // 0 has even parity
+        assert_eq!(state.registers.rax, 0x0);
+        assert!(state.registers.get_flag(RFlags::ZERO));
+        assert!(!state.registers.get_flag(RFlags::SIGN));
+        assert!(state.registers.get_flag(RFlags::PARITY)); // 0 has even parity
     }
 
     #[test]
@@ -113,8 +108,8 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x87, 0xD8], &mut state).unwrap();
         
         // Values should be swapped
-        assert_eq!(result.registers.rax, 0xFEDCBA9876543210);
-        assert_eq!(result.registers.rbx, 0x123456789ABCDEF0);
+        assert_eq!(state.registers.rax, 0xFEDCBA9876543210);
+        assert_eq!(state.registers.rbx, 0x123456789ABCDEF0);
     }
 
     #[test]
@@ -127,8 +122,8 @@ mod tests {
         let result = execute_instruction(&[0x66, 0x87, 0xD8], &mut state).unwrap();
         
         // Only lower 16 bits should be swapped
-        assert_eq!(result.registers.rax, 0x123456789ABC3210);
-        assert_eq!(result.registers.rbx, 0xFEDCBA987654DEF0);
+        assert_eq!(state.registers.rax, 0x123456789ABC3210);
+        assert_eq!(state.registers.rbx, 0xFEDCBA987654DEF0);
     }
 
     #[test]
@@ -142,7 +137,7 @@ mod tests {
         let result = execute_instruction(&[0x48, 0x87, 0x03], &mut state).unwrap();
         
         // Values should be swapped
-        assert_eq!(result.registers.rax, 0xFEDCBA9876543210);
+        assert_eq!(state.registers.rax, 0xFEDCBA9876543210);
         assert_eq!(result.read_u64(0x1000).unwrap(), 0x123456789ABCDEF0);
     }
 
@@ -159,8 +154,8 @@ mod tests {
         let result = execute_instruction(&[0xD7], &mut state).unwrap();
         
         // AL should be replaced with table lookup result
-        assert_eq!(result.registers.rax, 0x123456789ABCDEAB);
-        assert_eq!(result.registers.rbx, 0x1000); // RBX unchanged
+        assert_eq!(state.registers.rax, 0x123456789ABCDEAB);
+        assert_eq!(state.registers.rbx, 0x1000); // RBX unchanged
     }
 
     // X transactional memory instructions
@@ -466,9 +461,9 @@ mod tests {
         assert!(result2.is_ok());
         
         // Verify final state
-        let final_state = result2.unwrap();
-        assert_eq!(final_state.registers.rax, 0xFEDCBA9876543210);
-        assert_eq!(final_state.registers.rbx, 0xECE8ECE0ECE8ECE0); // XOR result from first instruction
+        let finalstate = result2.unwrap();
+        assert_eq!(finalstate.registers.rax, 0xFEDCBA9876543210);
+        assert_eq!(finalstate.registers.rbx, 0xECE8ECE0ECE8ECE0); // XOR result from first instruction
     }
 
     #[test]
@@ -510,6 +505,6 @@ mod tests {
         let result = execute_instruction(&[0xD7], &mut state).unwrap();
         
         // AL should be replaced with table lookup result
-        assert_eq!(result.registers.rax, 0x123456789ABCDE42);
+        assert_eq!(state.registers.rax, 0x123456789ABCDE42);
     }
 }

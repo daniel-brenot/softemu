@@ -4,7 +4,7 @@ use iced_x86::Instruction;
 use crate::cpu::{registers::RFlags, CpuState, InstructionDecoder};
 
 impl InstructionDecoder<'_> {
-    pub fn execute_nop(&self, _instruction: &Instruction, _state: &mut CpuState) -> Result<()> {
+    pub fn execute_nop(&self, _instruction: &Instruction, state: &mut CpuState) -> Result<()> {
         // NOP - No Operation
         // Do nothing
         Ok(())
