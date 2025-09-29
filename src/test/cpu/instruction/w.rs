@@ -57,7 +57,7 @@ fn test_wrmsr_unsupported_msr() {
     
     // WRMSR should execute without crashing even with unsupported MSR
     match result {
-        Ok(state) => {
+        Ok(_) => {
             // Registers should remain unchanged
             assert_eq!(state.registers.rcx, 0x12345678);
             assert_eq!(state.registers.rax, 0x11111111);
@@ -81,7 +81,7 @@ fn test_wbnoinvd_instruction() {
     
     // WBNOINVD should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WBNOINVD instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -100,7 +100,7 @@ fn test_wrfsbase_instruction() {
     
     // WRFSBASE should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRFSBASE instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -118,7 +118,7 @@ fn test_wrgsbase_instruction() {
     
     // WRGSBASE should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRGSBASE instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -137,7 +137,7 @@ fn test_wrpkru_instruction() {
     
     // WRPKRU should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRPKRU instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -155,7 +155,7 @@ fn test_wrssd_instruction() {
     
     // WRSSD should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRSSD instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -173,7 +173,7 @@ fn test_wrssq_instruction() {
     
     // WRSSQ should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRSSQ instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -191,7 +191,7 @@ fn test_wrussd_instruction() {
     
     // WRUSSD should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRUSSD instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -209,7 +209,7 @@ fn test_wrussq_instruction() {
     
     // WRUSSQ should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRUSSQ instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -228,7 +228,7 @@ fn test_wrshr_instruction() {
     
     // WRSHR should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRSHR instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -246,7 +246,7 @@ fn test_wrudbg_instruction() {
     
     // WRUDBG should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRUDBG instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -264,7 +264,7 @@ fn test_wrmsrlist_instruction() {
     
     // WRMSRLIST should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRMSRLIST instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -282,7 +282,7 @@ fn test_wrmsrns_instruction() {
     
     // WRMSRNS should execute without crashing
     match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
+        Ok(_) => assert_eq!(state.registers.rax, 0u64),
         Err(e) => {
             println!("WRMSRNS instruction failed: {}", e);
             // Skip this test if the instruction is not supported
@@ -313,10 +313,9 @@ fn test_w_instructions_combination() {
     assert!(result3.is_ok());
     
     // Verify registers are still correct
-    let finalstate = result3.unwrap();
-    assert_eq!(finalstate.registers.rcx, 0x1B);
-    assert_eq!(finalstate.registers.rax, 0x12345678);
-    assert_eq!(finalstate.registers.rdx, 0x9ABCDEF0);
+    assert_eq!(state.registers.rcx, 0x1B);
+    assert_eq!(state.registers.rax, 0x12345678);
+    assert_eq!(state.registers.rdx, 0x9ABCDEF0);
 }
 
 #[test]
@@ -332,7 +331,7 @@ fn test_w_instructions_edge_cases() {
     
     // Should execute without crashing
     match result {
-        Ok(state) => {
+        Ok(_) => {
             assert_eq!(state.registers.rcx, 0xFFFFFFFF);
             assert_eq!(state.registers.rax, 0xFFFFFFFF);
             assert_eq!(state.registers.rdx, 0xFFFFFFFF);

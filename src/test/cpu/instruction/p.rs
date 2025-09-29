@@ -53,7 +53,7 @@ fn test_push_pop_combination() {
     let initial_sp = state.registers.rsp;
     
     // PUSH RAX
-    let mut result1 = execute_instruction(&[0x50], &mut state);
+    let result1 = execute_instruction(&[0x50], &mut state);
     assert_eq!(state.registers.rsp, initial_sp - 8);
     
     // POP RBX
@@ -341,7 +341,7 @@ fn test_multiple_push_pop_sequence() {
     let initial_sp = state.registers.rsp;
     
     // PUSH RAX, RBX, RCX
-    let mut result1 = execute_instruction(&[0x50], &mut state); // PUSH RAX
+    let result1 = execute_instruction(&[0x50], &mut state); // PUSH RAX
     let mut result2 = execute_instruction(&[0x53], &mut state); // PUSH RBX
     let mut result3 = execute_instruction(&[0x51], &mut state); // PUSH RCX
     
@@ -366,7 +366,7 @@ fn test_flags_preservation() {
     state.registers.rax = 0x1111111111111111;
     
     // PUSH RAX
-    let mut result1 = execute_instruction(&[0x50], &mut state);
+    let result1 = execute_instruction(&[0x50], &mut state);
     assert_eq!(state.registers.rflags, 0x123456789ABCDEF0);
     
     // POP RBX

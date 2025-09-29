@@ -12,7 +12,7 @@ pub fn decode_instruction(bytes: &[u8]) -> Instruction {
 
 pub fn execute_instruction(bytes: &[u8], state: &mut CpuState) -> Result<()> {
     let instruction = decode_instruction(bytes);
-    let mut decoder = InstructionDecoder::new();
+    let decoder = InstructionDecoder::new();
     decoder.execute_instruction(&instruction, state)?;
     Ok(())
 }

@@ -1,6 +1,4 @@
-use crate::cpu::{CpuState, InstructionDecoder};
-use crate::test::helpers::{create_test_cpu_state, execute_instruction, read_memory, write_memory};
-use iced_x86::{Decoder, DecoderOptions};
+use crate::test::helpers::{create_test_cpu_state, execute_instruction};
 
 // Basic V arithmetic instructions
 #[test]
@@ -8,17 +6,10 @@ fn test_vaddpd_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     // VADDPD requires YMM registers which we don't have, so we'll just test that it doesn't crash
     // VADDPD YMM0, YMM1, YMM2 (0xC5 0xFD 0x58 0xC2)
-    let result = execute_instruction(&[0xC5, 0xFD, 0x58, 0xC2], &mut state);
+    execute_instruction(&[0xC5, 0xFD, 0x58, 0xC2], &mut state).unwrap();
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VADDPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -26,17 +17,10 @@ fn test_vaddps_instruction() {
     let mut state = create_test_cpu_state().unwrap();
     // VADDPS requires YMM registers which we don't have, so we'll just test that it doesn't crash
     // VADDPS YMM0, YMM1, YMM2 (0xC5 0xFC 0x58 0xC2)
-    let result = execute_instruction(&[0xC5, 0xFC, 0x58, 0xC2], &mut state);
+    execute_instruction(&[0xC5, 0xFC, 0x58, 0xC2], &mut state).unwrap();
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VADDPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -47,14 +31,8 @@ fn test_vaddsd_instruction() {
     let result = execute_instruction(&[0xC5, 0xF3, 0x58, 0xC2], &mut state);
     
     // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VADDSD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -65,14 +43,8 @@ fn test_vaddss_instruction() {
     let result = execute_instruction(&[0xC5, 0xF2, 0x58, 0xC2], &mut state);
     
     // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VADDSS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V comparison instructions
@@ -84,14 +56,8 @@ fn test_vcmppd_instruction() {
     let result = execute_instruction(&[0xC5, 0xFD, 0xC2, 0xC2, 0x00], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VCMPPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -102,14 +68,8 @@ fn test_vcmpps_instruction() {
     let result = execute_instruction(&[0xC5, 0xFC, 0xC2, 0xC2, 0x00], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VCMPPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -120,14 +80,8 @@ fn test_vcomisd_instruction() {
     let result = execute_instruction(&[0xC5, 0xF9, 0x2F, 0xC1], &mut state);
     
     // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VCOMISD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -138,14 +92,8 @@ fn test_vcomiss_instruction() {
     let result = execute_instruction(&[0xC5, 0xF8, 0x2F, 0xC1], &mut state);
     
     // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VCOMISS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V logical instructions
@@ -157,14 +105,8 @@ fn test_vandpd_instruction() {
     let result = execute_instruction(&[0xC5, 0xFD, 0x54, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VANDPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -175,14 +117,8 @@ fn test_vandps_instruction() {
     let result = execute_instruction(&[0xC5, 0xFC, 0x54, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VANDPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -193,14 +129,8 @@ fn test_vorpd_instruction() {
     let result = execute_instruction(&[0xC5, 0xFD, 0x56, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VORPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -211,14 +141,8 @@ fn test_vorps_instruction() {
     let result = execute_instruction(&[0xC5, 0xFC, 0x56, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VORPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -229,14 +153,8 @@ fn test_vxorpd_instruction() {
     let result = execute_instruction(&[0xC5, 0xFD, 0x57, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VXORPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -247,14 +165,8 @@ fn test_vxorps_instruction() {
     let result = execute_instruction(&[0xC5, 0xFC, 0x57, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VXORPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V conversion instructions
@@ -266,14 +178,8 @@ fn test_vcvtsd2si_instruction() {
     let result = execute_instruction(&[0xC5, 0xFB, 0x2D, 0xC0], &mut state);
     
     // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VCVTSD2SI instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -284,14 +190,8 @@ fn test_vcvtsi2sd_instruction() {
     let result = execute_instruction(&[0xC5, 0xF3, 0x2A, 0xC0], &mut state);
     
     // Since we don't have XMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VCVTSI2SD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V move instructions
@@ -303,14 +203,8 @@ fn test_vmovapd_instruction() {
     let result = execute_instruction(&[0xC5, 0xFD, 0x28, 0xC1], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VMOVAPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -321,14 +215,8 @@ fn test_vmovaps_instruction() {
     let result = execute_instruction(&[0xC5, 0xFC, 0x28, 0xC1], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VMOVAPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V division instructions
@@ -340,14 +228,8 @@ fn test_vdivpd_instruction() {
     let result = execute_instruction(&[0xC5, 0xFD, 0x5E, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VDIVPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -358,14 +240,8 @@ fn test_vdivps_instruction() {
     let result = execute_instruction(&[0xC5, 0xFC, 0x5E, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VDIVPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V multiplication instructions
@@ -377,14 +253,8 @@ fn test_vmulpd_instruction() {
     let result = execute_instruction(&[0xC5, 0xFD, 0x59, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VMULPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -395,14 +265,8 @@ fn test_vmulps_instruction() {
     let result = execute_instruction(&[0xC5, 0xFC, 0x59, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VMULPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V subtraction instructions
@@ -414,14 +278,8 @@ fn test_vsubpd_instruction() {
     let result = execute_instruction(&[0xC5, 0xFD, 0x5C, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VSUBPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -432,14 +290,8 @@ fn test_vsubps_instruction() {
     let result = execute_instruction(&[0xC5, 0xFC, 0x5C, 0xC2], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VSUBPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V broadcast instructions
@@ -451,14 +303,8 @@ fn test_vbroadcastsd_instruction() {
     let result = execute_instruction(&[0xC4, 0xE2, 0x7D, 0x19, 0xC1], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VBROADCASTSD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -469,14 +315,8 @@ fn test_vbroadcastss_instruction() {
     let result = execute_instruction(&[0xC4, 0xE2, 0x7D, 0x18, 0xC1], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VBROADCASTSS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 // V blend instructions
@@ -488,14 +328,8 @@ fn test_vblendpd_instruction() {
     let result = execute_instruction(&[0xC4, 0xE3, 0x75, 0x0D, 0xC2, 0x00], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VBLENDPD instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
 
 #[test]
@@ -506,12 +340,6 @@ fn test_vblendps_instruction() {
     let result = execute_instruction(&[0xC4, 0xE3, 0x75, 0x0C, 0xC2, 0x00], &mut state);
     
     // Since we don't have YMM registers, we'll just verify the instruction executes without crashing
-    match result {
-        Ok(state) => assert_eq!(state.registers.rax, 0u64),
-        Err(e) => {
-            println!("VBLENDPS instruction failed: {}", e);
-            // Skip this test if the instruction is not supported
-            return;
-        }
-    }
+    result.unwrap();
+    assert_eq!(state.registers.rax, 0u64);
 }
