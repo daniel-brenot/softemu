@@ -1,3 +1,5 @@
+use crate::{cpu::CpuState, VirtualMachine};
+
 #[cfg(feature = "x16_real_mode")]
 pub mod x16_real_mode;
 #[cfg(feature = "x16_protected_mode")]
@@ -8,3 +10,8 @@ pub mod x32_mode;
 pub mod x64_mode;
 #[cfg(feature = "virtual8086_mode")]
 pub mod virtual8086_mode;
+
+
+pub fn execute_instruction(state: &mut CpuState, vm: &mut VirtualMachine) {
+    
+}

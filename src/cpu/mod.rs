@@ -1,5 +1,6 @@
-pub mod core;
 pub mod instruction;
+pub mod core;
+pub mod prefix;
 pub mod registers;
 pub mod state;
 

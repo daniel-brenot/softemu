@@ -1,10 +1,10 @@
 use crate::Result;
-use std::sync::{Arc, RwLock};
+use std::{cell::UnsafeCell, sync::{Arc, RwLock}};
 
 /// Guest memory management - simplified implementation
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct GuestMemory {
-    memory: Arc<RwLock<Vec<u8>>>,
+    raw_memory: UnsafeCell<Vec<u8>>,
     size: u64,
 }
 
@@ -12,10 +12,8 @@ impl GuestMemory {
     /// Create a new guest memory instance
     pub fn new(size: u64) -> Result<Self> {
         // Create a simple memory mapping using a Vec as backing storage
-        let memory = vec![0u8; size as usize];
-
         Ok(Self {
-            memory: Arc::new(RwLock::new(memory)),
+            raw_memory: UnsafeCell::new(vec![0u8; size as usize]),
             size,
         })
     }
@@ -77,53 +75,6 @@ impl GuestMemory {
             bytes[0], bytes[1], bytes[2], bytes[3],
             bytes[4], bytes[5], bytes[6], bytes[7]
         ]))
-    }
-
-    /// Write a byte to guest memory
-    pub fn write_u8(&mut self, addr: u64, value: u8) -> Result<()> {
-        let mut memory = self.memory.write().unwrap();
-        if addr >= self.size {
-            log::warn!("Memory write_u8 out of bounds: addr=0x{:x}, size=0x{:x}, ignoring write", addr, self.size);
-            return Ok(()); // Ignore invalid memory writes instead of crashing
-        }
-        memory[addr as usize] = value;
-        Ok(())
-    }
-
-    /// Write a 16-bit value to guest memory
-    pub fn write_u16(&mut self, addr: u64, value: u16) -> Result<()> {
-        let mut memory = self.memory.write().unwrap();
-        if addr + 1 >= self.size {
-            log::warn!("Memory write_u16 out of bounds: addr=0x{:x}, size=0x{:x}, ignoring write", addr, self.size);
-            return Ok(()); // Ignore invalid memory writes instead of crashing
-        }
-        let bytes = value.to_le_bytes();
-        memory[addr as usize..addr as usize + 2].copy_from_slice(&bytes);
-        Ok(())
-    }
-
-    /// Write a 32-bit value to guest memory
-    pub fn write_u32(&mut self, addr: u64, value: u32) -> Result<()> {
-        let mut memory = self.memory.write().unwrap();
-        if addr + 3 >= self.size {
-            log::warn!("Memory write_u32 out of bounds: addr=0x{:x}, size=0x{:x}, ignoring write", addr, self.size);
-            return Ok(()); // Ignore invalid memory writes instead of crashing
-        }
-        let bytes = value.to_le_bytes();
-        memory[addr as usize..addr as usize + 4].copy_from_slice(&bytes);
-        Ok(())
-    }
-
-    /// Write a 64-bit value to guest memory
-    pub fn write_u64(&mut self, addr: u64, value: u64) -> Result<()> {
-        let mut memory = self.memory.write().unwrap();
-        if addr + 7 >= self.size {
-            log::warn!("Memory write_u64 out of bounds: addr=0x{:x}, size=0x{:x}, ignoring write", addr, self.size);
-            return Ok(()); // Ignore invalid memory writes instead of crashing
-        }
-        let bytes = value.to_le_bytes();
-        memory[addr as usize..addr as usize + 8].copy_from_slice(&bytes);
-        Ok(())
     }
 
     /// Read a slice of bytes from guest memory

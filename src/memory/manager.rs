@@ -7,13 +7,13 @@ use std::sync::{Arc, Mutex};
 #[derive(Debug)]
 pub struct MemoryManager {
     guest_memory: GuestMemory,
-    mmio_manager: Arc<Mutex<MmioManager>>,
+    mmio_manager: MmioManager,
     mmio_space_size: u64,
 }
 
 impl MemoryManager {
     /// Create a new memory manager
-    pub fn new(guest_memory: GuestMemory, mmio_manager: Arc<Mutex<MmioManager>>, mmio_space_size: u64) -> Self {
+    pub fn new(guest_memory: GuestMemory, mmio_manager: MmioManager, mmio_space_size: u64) -> Self {
         Self {
             guest_memory,
             mmio_manager,
@@ -55,8 +55,7 @@ impl MemoryManager {
     /// Read a byte from memory (routes to MMIO or guest memory)
     pub fn read_u8(&self, addr: u64) -> Result<u8> {
         if self.is_mmio_address(addr) {
-            let mmio_manager = self.mmio_manager.lock().unwrap();
-            Ok(mmio_manager.read(addr, 1)? as u8)
+            Ok(self.mmio_manager.read(addr, 1)? as u8)
         } else if self.is_guest_memory_address(addr) {
             let guest_addr = self.guest_memory_offset(addr);
             self.guest_memory.read_u8(guest_addr)
@@ -71,8 +70,7 @@ impl MemoryManager {
     /// Read a word (16-bit) from memory
     pub fn read_u16(&self, addr: u64) -> Result<u16> {
         if self.is_mmio_address(addr) {
-            let mmio_manager = self.mmio_manager.lock().unwrap();
-            Ok(mmio_manager.read(addr, 2)? as u16)
+            Ok(self.mmio_manager.read(addr, 2)? as u16)
         } else if self.is_guest_memory_address(addr) {
             let guest_addr = self.guest_memory_offset(addr);
             self.guest_memory.read_u16(guest_addr)
@@ -87,8 +85,7 @@ impl MemoryManager {
     /// Read a double word (32-bit) from memory
     pub fn read_u32(&self, addr: u64) -> Result<u32> {
         if self.is_mmio_address(addr) {
-            let mmio_manager = self.mmio_manager.lock().unwrap();
-            Ok(mmio_manager.read(addr, 4)? as u32)
+            Ok(self.mmio_manager.read(addr, 4)? as u32)
         } else if self.is_guest_memory_address(addr) {
             let guest_addr = self.guest_memory_offset(addr);
             self.guest_memory.read_u32(guest_addr)
@@ -103,8 +100,7 @@ impl MemoryManager {
     /// Read a quad word (64-bit) from memory
     pub fn read_u64(&self, addr: u64) -> Result<u64> {
         if self.is_mmio_address(addr) {
-            let mmio_manager = self.mmio_manager.lock().unwrap();
-            mmio_manager.read(addr, 8)
+            self.mmio_manager.read(addr, 8)
         } else if self.is_guest_memory_address(addr) {
             let guest_addr = self.guest_memory_offset(addr);
             self.guest_memory.read_u64(guest_addr)
@@ -119,8 +115,7 @@ impl MemoryManager {
     /// Write a byte to memory
     pub fn write_u8(&mut self, addr: u64, value: u8) -> Result<()> {
         if self.is_mmio_address(addr) {
-            let mut mmio_manager = self.mmio_manager.lock().unwrap();
-            mmio_manager.write(addr, value as u64, 1)
+            self.mmio_manager.write(addr, value as u64, 1)
         } else if self.is_guest_memory_address(addr) {
             let guest_addr = self.guest_memory_offset(addr);
             self.guest_memory.write_u8(guest_addr, value)
@@ -135,8 +130,7 @@ impl MemoryManager {
     /// Write a word (16-bit) to memory
     pub fn write_u16(&mut self, addr: u64, value: u16) -> Result<()> {
         if self.is_mmio_address(addr) {
-            let mut mmio_manager = self.mmio_manager.lock().unwrap();
-            mmio_manager.write(addr, value as u64, 2)
+            self.mmio_manager.write(addr, value as u64, 2)
         } else if self.is_guest_memory_address(addr) {
             let guest_addr = self.guest_memory_offset(addr);
             self.guest_memory.write_u16(guest_addr, value)
@@ -151,8 +145,7 @@ impl MemoryManager {
     /// Write a double word (32-bit) to memory
     pub fn write_u32(&mut self, addr: u64, value: u32) -> Result<()> {
         if self.is_mmio_address(addr) {
-            let mut mmio_manager = self.mmio_manager.lock().unwrap();
-            mmio_manager.write(addr, value as u64, 4)
+            self.mmio_manager.write(addr, value as u64, 4)
         } else if self.is_guest_memory_address(addr) {
             let guest_addr = self.guest_memory_offset(addr);
             self.guest_memory.write_u32(guest_addr, value)
@@ -167,8 +160,7 @@ impl MemoryManager {
     /// Write a quad word (64-bit) to memory
     pub fn write_u64(&mut self, addr: u64, value: u64) -> Result<()> {
         if self.is_mmio_address(addr) {
-            let mut mmio_manager = self.mmio_manager.lock().unwrap();
-            mmio_manager.write(addr, value, 8)
+            self.mmio_manager.write(addr, value, 8)
         } else if self.is_guest_memory_address(addr) {
             let guest_addr = self.guest_memory_offset(addr);
             self.guest_memory.write_u64(guest_addr, value)
@@ -232,11 +224,6 @@ impl MemoryManager {
     /// Get a mutable reference to the guest memory
     pub fn get_guest_memory_mut(&mut self) -> &mut GuestMemory {
         &mut self.guest_memory
-    }
-
-    /// Get a reference to the MMIO manager
-    pub fn get_mmio_manager(&self) -> &Arc<Mutex<MmioManager>> {
-        &self.mmio_manager
     }
 
     /// Virtual to physical address translation
