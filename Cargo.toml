@@ -52,24 +52,46 @@ rayon = "1.7"
 [dev-dependencies]
 criterion = "0.5"
 
-[[example]]
-name = "basic_vm"
-path = "examples/basic_vm.rs"
-
-[[example]]
-name = "network_vm"
-path = "examples/network_vm.rs"
-
-[[example]]
-name = "simple_vm"
-path = "examples/simple_vm.rs"
-
-[[example]]
-name = "standalone_memory"
-path = "examples/standalone_memory.rs"
-
 [profile.release]
 opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[features]
+default = ["x64_mode", "default_opcodes"]
+x16_real_mode = []
+x16_protected_mode = []
+x32_mode = []
+x64_mode = []
+virtual8086_mode = []
+
+
+default_opcodes = [
+    "control_flow_opcodes",
+    "core_opcodes",
+    "data_movement_opcodes",
+    "fpu_opcodes",
+    "integer_opcodes",
+    "memory_opcodes",
+    "nop_opcodes", 
+    "string_opcodes",
+    "system_opcodes",
+]
+
+atomic_opcodes = []
+control_flow_opcodes = []
+core_opcodes = []
+crypto_opcodes = []
+data_movement_opcodes = []
+fpu_opcodes = []
+integer_opcodes = []
+io_port_opcodes = []
+legacy_opcodes = []
+memory_opcodes = []
+nop_opcodes = []
+simd_opcodes = []
+string_opcodes = []
+system_opcodes = []
+threednow_opcodes = []
+virtualization_opcodes = []

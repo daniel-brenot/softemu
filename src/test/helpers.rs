@@ -1,21 +1,9 @@
 use iced_x86::{Decoder, DecoderOptions, Instruction};
 
-use crate::cpu::{CpuState, InstructionDecoder};
+use crate::cpu::CpuState;
 use crate::memory::{GuestMemory, MemoryManager, MmioManager};
 use crate::Result;
 use std::sync::{Arc, Mutex};
-
-pub fn decode_instruction(bytes: &[u8]) -> Instruction {
-    let mut decoder = Decoder::new(64, bytes, DecoderOptions::NONE);
-    decoder.decode()
-}
-
-pub fn execute_instruction(bytes: &[u8], state: &mut CpuState) -> Result<()> {
-    let instruction = decode_instruction(bytes);
-    let decoder = InstructionDecoder::new();
-    decoder.execute_instruction(&instruction, state)?;
-    Ok(())
-}
 
 /// Create a test CPU state with a simple memory setup
 pub fn create_test_cpu_state() -> Result<CpuState> {

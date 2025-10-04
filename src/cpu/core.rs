@@ -1,4 +1,4 @@
-use crate::cpu::{CpuState, InstructionDecoder};
+use crate::cpu::CpuState;
 use crate::Result;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -6,7 +6,6 @@ use std::sync::Mutex;
 /// Synchronous CPU core implementation
 pub struct CpuCore {
     state: Arc<Mutex<CpuState>>,
-    decoder: InstructionDecoder<'static>,
     core_id: u32,
 }
 
@@ -15,7 +14,6 @@ impl CpuCore {
     pub fn new(state: Arc<Mutex<CpuState>>, core_id: u32) -> Self {
         Self {
             state,
-            decoder: InstructionDecoder::new(),
             core_id,
         }
     }
@@ -56,35 +54,6 @@ impl CpuCore {
         // Handle pending interrupts
         if state.interrupt_pending {
             self.handle_interrupt(&mut state)?;
-        }
-
-        // Fetch instruction
-        let instruction_bytes = self.fetch_instruction(&state)?;
-        
-        // Decode instruction
-        let mut instruction = self.decoder.decode_instruction(&instruction_bytes);
-        
-        // If 64-bit decoding fails, try 32-bit decoding as fallback
-        if instruction.mnemonic() == iced_x86::Mnemonic::INVALID {
-            log::debug!("64-bit decode failed, trying 32-bit decode for instruction at RIP=0x{:x}", state.registers.rip);
-            let mut decoder_32 = iced_x86::Decoder::new(32, &instruction_bytes, iced_x86::DecoderOptions::NONE);
-            instruction = decoder_32.decode();
-            
-            if instruction.mnemonic() != iced_x86::Mnemonic::INVALID {
-                log::debug!("Successfully decoded as 32-bit instruction: {:?}", instruction.mnemonic());
-            } else {
-                log::error!("Invalid instruction at RIP=0x{:x}, bytes: {:02x?}", 
-                           state.registers.rip, 
-                           &instruction_bytes[..instruction.len()]);
-            }
-        }
-        
-        // Execute instruction
-        self.decoder.execute_instruction(&instruction, &mut state)?;
-        
-        // Update instruction pointer (unless instruction modified it)
-        if !self.instruction_modifies_rip(&instruction) {
-            state.registers.rip += instruction.len() as u64;
         }
 
         Ok(state.running)
@@ -128,23 +97,13 @@ impl CpuCore {
         Ok(bytes)
     }
 
-    /// Check if instruction modifies RIP
-    fn instruction_modifies_rip(&self, instruction: &iced_x86::Instruction) -> bool {
-        match instruction.mnemonic() {
-            iced_x86::Mnemonic::Call | 
-            iced_x86::Mnemonic::Ret | 
-            iced_x86::Mnemonic::Jmp => true,
-            _ => false,
-        }
-    }
-
     /// Get the core ID
     pub fn core_id(&self) -> u32 {
         self.core_id
     }
 
     /// Get a reference to the CPU state
-    pub fn getstate(&self) -> Arc<Mutex<CpuState>> {
+    pub fn get_state(&self) -> Arc<Mutex<CpuState>> {
         self.state.clone()
     }
 }
