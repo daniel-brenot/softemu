@@ -3,6 +3,7 @@ pub mod mmio;
 pub mod manager;
 pub mod paging;
 pub mod page_fault;
+pub mod page_allocator;
 
 pub use guest_memory::GuestMemory;
 pub use mmio::{MmioDevice, MmioManager};
@@ -13,4 +14,8 @@ pub use paging::{
 };
 pub use page_fault::{
     PageFaultHandler, PageFaultManager, SimplePageFaultHandler, PageFaultStats,
+};
+pub use page_allocator::{
+    PageAllocator, PageSize, MemoryBacking, MemoryRegion, PageInfo, 
+    AllocationStats, MemoryUsage, SharedPageAllocator,
 };

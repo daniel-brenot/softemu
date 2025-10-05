@@ -1,4 +1,8 @@
-use crate::memory::{GuestMemory, MmioManager, PageTableManager, PageTableEntryFlags, PageFaultManager, PageFaultErrorCode};
+use crate::cpu::CpuState;
+use crate::memory::{
+    GuestMemory, MmioManager, PageTableManager, PageTableEntryFlags, PageFaultManager, PageFaultErrorCode,
+    PageAllocator, SharedPageAllocator
+};
 use crate::Result;
 use std::sync::{Arc, Mutex};
 
@@ -10,21 +14,32 @@ pub struct MemoryManager {
     mmio_manager: MmioManager,
     mmio_space_size: u64,
     page_table_manager: PageTableManager,
-    paging_enabled: bool,
     page_fault_manager: PageFaultManager,
+    /// Shared page allocator for the entire memory system
+    page_allocator: SharedPageAllocator,
 }
 
 impl MemoryManager {
     /// Create a new memory manager
     pub fn new(guest_memory: GuestMemory, mmio_manager: MmioManager, mmio_space_size: u64) -> Self {
         use crate::memory::SimplePageFaultHandler;
+        
+        // Create a shared page allocator for the entire memory system
+        let page_allocator = Arc::new(Mutex::new(PageAllocator::new(0x1000000, 0x100000000))); // 16MB to 4GB
+        
+        // Create page table manager with the shared allocator
+        let page_table_manager = PageTableManager::with_allocator(page_allocator.clone());
+        
+        // Create page fault handler with the shared allocator
+        let page_fault_handler = SimplePageFaultHandler::with_allocator(page_allocator.clone());
+        
         Self {
             guest_memory,
             mmio_manager,
             mmio_space_size,
-            page_table_manager: PageTableManager::new(),
-            paging_enabled: false,
-            page_fault_manager: PageFaultManager::new(Box::new(SimplePageFaultHandler::new())),
+            page_table_manager,
+            page_fault_manager: PageFaultManager::new(Box::new(page_fault_handler)),
+            page_allocator,
         }
     }
 
@@ -60,12 +75,12 @@ impl MemoryManager {
     }
 
     /// Read a byte from memory (routes to MMIO or guest memory)
-    pub fn read_u8(&mut self, addr: u64) -> Result<u8> {
+    pub fn read_u8(&self, addr: u64) -> Result<u8> {
         self.read_u8_with_access(addr, false, false)
     }
 
     /// Read a byte from memory with access type information
-    pub fn read_u8_with_access(&mut self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u8> {
+    pub fn read_u8_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u8> {
         if self.is_mmio_address(addr) {
             Ok(self.mmio_manager.read(addr, 1)? as u8)
         } else if self.is_guest_memory_address(addr) {
@@ -89,12 +104,12 @@ impl MemoryManager {
     }
 
     /// Read a word (16-bit) from memory
-    pub fn read_u16(&mut self, addr: u64) -> Result<u16> {
+    pub fn read_u16(&self, addr: u64) -> Result<u16> {
         self.read_u16_with_access(addr, false, false)
     }
 
     /// Read a word (16-bit) from memory with access type information
-    pub fn read_u16_with_access(&mut self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u16> {
+    pub fn read_u16_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u16> {
         if self.is_mmio_address(addr) {
             Ok(self.mmio_manager.read(addr, 2)? as u16)
         } else if self.is_guest_memory_address(addr) {
@@ -118,12 +133,12 @@ impl MemoryManager {
     }
 
     /// Read a double word (32-bit) from memory
-    pub fn read_u32(&mut self, addr: u64) -> Result<u32> {
+    pub fn read_u32(&self, addr: u64) -> Result<u32> {
         self.read_u32_with_access(addr, false, false)
     }
 
     /// Read a double word (32-bit) from memory with access type information
-    pub fn read_u32_with_access(&mut self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u32> {
+    pub fn read_u32_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u32> {
         if self.is_mmio_address(addr) {
             Ok(self.mmio_manager.read(addr, 4)? as u32)
         } else if self.is_guest_memory_address(addr) {
@@ -147,12 +162,12 @@ impl MemoryManager {
     }
 
     /// Read a quad word (64-bit) from memory
-    pub fn read_u64(&mut self, addr: u64) -> Result<u64> {
+    pub fn read_u64(&self, addr: u64) -> Result<u64> {
         self.read_u64_with_access(addr, false, false)
     }
 
     /// Read a quad word (64-bit) from memory with access type information
-    pub fn read_u64_with_access(&mut self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u64> {
+    pub fn read_u64_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u64> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.read(addr, 8)
         } else if self.is_guest_memory_address(addr) {
@@ -176,12 +191,12 @@ impl MemoryManager {
     }
 
     /// Write a byte to memory
-    pub fn write_u8(&mut self, addr: u64, value: u8) -> Result<()> {
+    pub fn write_u8(&self, addr: u64, value: u8) -> Result<()> {
         self.write_u8_with_access(addr, value, false, false)
     }
 
     /// Write a byte to memory with access type information
-    pub fn write_u8_with_access(&mut self, addr: u64, value: u8, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
+    pub fn write_u8_with_access(&self, addr: u64, value: u8, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.write(addr, value as u64, 1)
         } else if self.is_guest_memory_address(addr) {
@@ -205,12 +220,12 @@ impl MemoryManager {
     }
 
     /// Write a word (16-bit) to memory
-    pub fn write_u16(&mut self, addr: u64, value: u16) -> Result<()> {
+    pub fn write_u16(&self, addr: u64, value: u16) -> Result<()> {
         self.write_u16_with_access(addr, value, false, false)
     }
 
     /// Write a word (16-bit) to memory with access type information
-    pub fn write_u16_with_access(&mut self, addr: u64, value: u16, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
+    pub fn write_u16_with_access(&self, addr: u64, value: u16, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.write(addr, value as u64, 2)
         } else if self.is_guest_memory_address(addr) {
@@ -234,12 +249,12 @@ impl MemoryManager {
     }
 
     /// Write a double word (32-bit) to memory
-    pub fn write_u32(&mut self, addr: u64, value: u32) -> Result<()> {
+    pub fn write_u32(&self, addr: u64, value: u32) -> Result<()> {
         self.write_u32_with_access(addr, value, false, false)
     }
 
     /// Write a double word (32-bit) to memory with access type information
-    pub fn write_u32_with_access(&mut self, addr: u64, value: u32, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
+    pub fn write_u32_with_access(&self, addr: u64, value: u32, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.write(addr, value as u64, 4)
         } else if self.is_guest_memory_address(addr) {
@@ -263,12 +278,12 @@ impl MemoryManager {
     }
 
     /// Write a quad word (64-bit) to memory
-    pub fn write_u64(&mut self, addr: u64, value: u64) -> Result<()> {
+    pub fn write_u64(&self, addr: u64, value: u64) -> Result<()> {
         self.write_u64_with_access(addr, value, false, false)
     }
 
     /// Write a quad word (64-bit) to memory with access type information
-    pub fn write_u64_with_access(&mut self, addr: u64, value: u64, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
+    pub fn write_u64_with_access(&self, addr: u64, value: u64, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.write(addr, value, 8)
         } else if self.is_guest_memory_address(addr) {
@@ -292,7 +307,7 @@ impl MemoryManager {
     }
 
     /// Read a slice of bytes from memory
-    pub fn read_slice(&mut self, addr: u64, len: usize) -> Result<Vec<u8>> {
+    pub fn read_slice(&self, addr: u64, len: usize) -> Result<Vec<u8>> {
         if self.is_mmio_address(addr) {
             // For MMIO, we need to read byte by byte since devices might not support bulk reads
             let mut result = Vec::with_capacity(len);
@@ -312,7 +327,7 @@ impl MemoryManager {
     }
 
     /// Write a slice of bytes to memory
-    pub fn write_slice(&mut self, addr: u64, data: &[u8]) -> Result<()> {
+    pub fn write_slice(&self, addr: u64, data: &[u8]) -> Result<()> {
         if self.is_mmio_address(addr) {
             // For MMIO, we need to write byte by byte since devices might not support bulk writes
             for (i, &byte) in data.iter().enumerate() {
@@ -334,19 +349,9 @@ impl MemoryManager {
     pub fn is_address_valid(&self, addr: u64, _write: bool) -> bool {
         addr < self.total_address_space_size()
     }
-
-    /// Get a reference to the guest memory (for direct access when needed)
-    pub fn get_guest_memory(&self) -> &GuestMemory {
-        &self.guest_memory
-    }
-
-    /// Get a mutable reference to the guest memory
-    pub fn get_guest_memory_mut(&mut self) -> &mut GuestMemory {
-        &mut self.guest_memory
-    }
-
+    
     /// Virtual to physical address translation
-    pub fn translate_address(&mut self, virt_addr: u64) -> Result<u64> {
+    pub fn translate_address(&self, virt_addr: u64, state: &mut CpuState) -> Result<u64> {
         if self.paging_enabled {
             // Use page table translation
             self.page_table_manager.translate_address(virt_addr, false, false, false)
@@ -358,11 +363,12 @@ impl MemoryManager {
 
     /// Virtual to physical address translation with access type information
     pub fn translate_address_with_access(
-        &mut self,
+        &self,
         virt_addr: u64,
         is_write: bool,
         is_user: bool,
         is_instruction_fetch: bool,
+        state: &mut CpuState
     ) -> Result<u64> {
         if self.paging_enabled {
             self.page_table_manager.translate_address(virt_addr, is_write, is_user, is_instruction_fetch)
@@ -371,23 +377,8 @@ impl MemoryManager {
             Ok(virt_addr)
         }
     }
-
-    /// Enable or disable paging
-    pub fn set_paging_enabled(&mut self, enabled: bool) {
-        self.paging_enabled = enabled;
-        if !enabled {
-            // Invalidate TLB when disabling paging
-            self.page_table_manager.invalidate_tlb();
-        }
-    }
-
-    /// Check if paging is enabled
-    pub fn is_paging_enabled(&self) -> bool {
-        self.paging_enabled
-    }
-
     /// Set the CR3 register (page table root)
-    pub fn set_cr3(&mut self, cr3: u64) {
+    pub fn set_cr3(&self, cr3: u64) {
         self.page_table_manager.set_cr3(cr3);
     }
 
@@ -398,7 +389,7 @@ impl MemoryManager {
 
     /// Create a page table entry
     pub fn create_page_table_entry(
-        &mut self,
+        &self,
         virtual_addr: u64,
         physical_addr: u64,
         flags: PageTableEntryFlags,
@@ -422,13 +413,13 @@ impl MemoryManager {
     }
 
     /// Get a mutable reference to the page table manager
-    pub fn get_page_table_manager_mut(&mut self) -> &mut PageTableManager {
-        &mut self.page_table_manager
+    pub fn get_page_table_manager_mut(&self) -> &mut PageTableManager {
+        &self.page_table_manager
     }
 
     /// Handle a page fault
     pub fn handle_page_fault(
-        &mut self,
+        &self,
         virtual_addr: u64,
         error_code: PageFaultErrorCode,
         cr2: u64,
@@ -442,7 +433,30 @@ impl MemoryManager {
     }
 
     /// Get a mutable reference to the page fault manager
-    pub fn get_page_fault_manager_mut(&mut self) -> &mut PageFaultManager {
-        &mut self.page_fault_manager
+    pub fn get_page_fault_manager_mut(&self) -> &mut PageFaultManager {
+        &self.page_fault_manager
+    }
+
+    /// Get a reference to the page allocator
+    pub fn get_page_allocator(&self) -> &SharedPageAllocator {
+        &self.page_allocator
+    }
+
+    /// Get memory usage statistics
+    pub fn get_memory_usage(&self) -> crate::memory::MemoryUsage {
+        let allocator = self.page_allocator.lock().unwrap();
+        allocator.get_memory_usage()
+    }
+
+    /// Get allocation statistics
+    pub fn get_allocation_stats(&self) -> crate::memory::AllocationStats {
+        let allocator = self.page_allocator.lock().unwrap();
+        allocator.get_stats().clone()
+    }
+
+    /// Reset allocation statistics
+    pub fn reset_allocation_stats(&self) {
+        let mut allocator = self.page_allocator.lock().unwrap();
+        allocator.reset_stats();
     }
 }

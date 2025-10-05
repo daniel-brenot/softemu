@@ -9,7 +9,7 @@ pub trait MmioDevice: Send + Sync {
     fn read(&self, offset: u64, size: u8) -> Result<u64>;
     
     /// Write to MMIO device
-    fn write(&mut self, offset: u64, value: u64, size: u8) -> Result<()>;
+    fn write(&self, offset: u64, value: u64, size: u8) -> Result<()>;
     
     /// Get device name
     fn name(&self) -> &str;
@@ -42,7 +42,7 @@ impl MmioManager {
     }
 
     /// Register an MMIO device
-    pub fn register_device(&mut self, start_addr: u64, device: Box<dyn MmioDevice>) -> Result<()> {
+    pub fn register_device(&self, start_addr: u64, device: Box<dyn MmioDevice>) -> Result<()> {
         let size = device.size();
         let name = device.name().to_string();
         let end_addr = start_addr + size - 1;
@@ -75,7 +75,7 @@ impl MmioManager {
     }
 
     /// Handle MMIO write
-    pub fn write(&mut self, addr: u64, value: u64, size: u8) -> Result<()> {
+    pub fn write(&self, addr: u64, value: u64, size: u8) -> Result<()> {
         if let Some((device_addr, device)) = self.find_device_mut(addr) {
             let offset = addr - device_addr;
             device.write(offset, value, size)
@@ -100,8 +100,8 @@ impl MmioManager {
     }
 
     /// Find device for an address (mutable)
-    fn find_device_mut(&mut self, addr: u64) -> Option<(u64, &mut dyn MmioDevice)> {
-        for (start_addr, device) in &mut self.devices {
+    fn find_device_mut(&self, addr: u64) -> Option<(u64, &mut dyn MmioDevice)> {
+        for (start_addr, device) in &self.devices {
             if addr >= *start_addr && addr < *start_addr + device.size() {
                 return Some((*start_addr, device.as_mut()));
             }
@@ -142,7 +142,7 @@ impl MmioDevice for UartDevice {
         }
     }
 
-    fn write(&mut self, offset: u64, value: u64, size: u8) -> Result<()> {
+    fn write(&self, offset: u64, value: u64, size: u8) -> Result<()> {
         match offset {
             0 => {
                 // Data register - output character
@@ -194,7 +194,7 @@ impl TimerDevice {
         }
     }
 
-    pub fn tick(&mut self) {
+    pub fn tick(&self) {
         if self.control & 0x1 != 0 { // Timer enabled
             if self.counter > 0 {
                 self.counter -= 1;
@@ -216,7 +216,7 @@ impl MmioDevice for TimerDevice {
         }
     }
 
-    fn write(&mut self, offset: u64, value: u64, size: u8) -> Result<()> {
+    fn write(&self, offset: u64, value: u64, size: u8) -> Result<()> {
         match offset {
             0 => {
                 // Counter register

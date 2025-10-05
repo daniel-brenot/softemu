@@ -1,6 +1,10 @@
 use crate::Result;
-use crate::memory::{PageFaultErrorCode, PageTableEntryFlags, PAGE_SIZE_4K};
+use crate::memory::{
+    PageFaultErrorCode, PAGE_SIZE_4K, 
+    PageAllocator, PageSize, MemoryBacking, SharedPageAllocator
+};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 /// Page fault handler trait
 pub trait PageFaultHandler: Send + Sync {
@@ -16,38 +20,56 @@ pub trait PageFaultHandler: Send + Sync {
 /// Simple page fault handler that allocates pages on demand
 #[derive(Debug)]
 pub struct SimplePageFaultHandler {
-    /// Physical memory allocator (simplified)
-    next_physical_addr: u64,
-    /// Track allocated pages
-    allocated_pages: HashMap<u64, bool>, // virtual_addr -> is_allocated
+    /// Physical memory allocator
+    page_allocator: SharedPageAllocator,
+    /// Track allocated virtual pages
+    allocated_virtual_pages: HashMap<u64, u64>, // virtual_addr -> physical_addr
 }
 
 impl SimplePageFaultHandler {
     /// Create a new simple page fault handler
     pub fn new() -> Self {
         Self {
-            next_physical_addr: 0x1000000, // Start at 16MB
-            allocated_pages: HashMap::new(),
+            page_allocator: Arc::new(Mutex::new(PageAllocator::new(0x1000000, 0x100000000))), // 16MB to 4GB
+            allocated_virtual_pages: HashMap::new(),
+        }
+    }
+
+    /// Create a new page fault handler with a custom page allocator
+    pub fn with_allocator(page_allocator: SharedPageAllocator) -> Self {
+        Self {
+            page_allocator,
+            allocated_virtual_pages: HashMap::new(),
         }
     }
 
     /// Allocate a new physical page
     fn allocate_physical_page(&mut self) -> Result<u64> {
-        let addr = self.next_physical_addr;
-        self.next_physical_addr += PAGE_SIZE_4K;
-        Ok(addr)
+        let mut allocator = self.page_allocator.lock().unwrap();
+        allocator.allocate_page(PageSize::Size4K, MemoryBacking::GuestMemory)
     }
 
-    /// Check if a page is already allocated
+    /// Check if a virtual page is already allocated
     pub fn is_page_allocated(&self, virtual_addr: u64) -> bool {
         let page_addr = virtual_addr & !(PAGE_SIZE_4K - 1);
-        self.allocated_pages.get(&page_addr).copied().unwrap_or(false)
+        self.allocated_virtual_pages.contains_key(&page_addr)
     }
 
-    /// Mark a page as allocated
-    pub fn mark_page_allocated(&mut self, virtual_addr: u64) {
+    /// Get the physical address for a virtual page
+    pub fn get_physical_address(&self, virtual_addr: u64) -> Option<u64> {
         let page_addr = virtual_addr & !(PAGE_SIZE_4K - 1);
-        self.allocated_pages.insert(page_addr, true);
+        self.allocated_virtual_pages.get(&page_addr).copied()
+    }
+
+    /// Mark a virtual page as allocated with its physical address
+    pub fn mark_page_allocated(&mut self, virtual_addr: u64, physical_addr: u64) {
+        let page_addr = virtual_addr & !(PAGE_SIZE_4K - 1);
+        self.allocated_virtual_pages.insert(page_addr, physical_addr);
+    }
+
+    /// Get a reference to the page allocator
+    pub fn get_page_allocator(&self) -> &SharedPageAllocator {
+        &self.page_allocator
     }
 }
 
@@ -97,11 +119,15 @@ impl PageFaultHandler for SimplePageFaultHandler {
             }
         }
 
-        // For now, we'll just allocate a new page
-        // In a real implementation, this would be more sophisticated
+        // Allocate a new page if not already allocated
         if !self.is_page_allocated(virtual_addr) {
-            self.mark_page_allocated(virtual_addr);
-            log::info!("Allocated new page for virtual address 0x{:x}", virtual_addr);
+            let physical_addr = self.allocate_physical_page()?;
+            self.mark_page_allocated(virtual_addr, physical_addr);
+            log::info!(
+                "Allocated new page for virtual address 0x{:x} -> physical address 0x{:x}",
+                virtual_addr,
+                physical_addr
+            );
         }
 
         Ok(())

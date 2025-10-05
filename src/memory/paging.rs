@@ -1,7 +1,8 @@
 use crate::Result;
 use bitflags::bitflags;
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Mutex};
+use crate::memory::{PageAllocator, PageSize, MemoryBacking, SharedPageAllocator};
 
 // Page size constants for x86_64
 pub const PAGE_SIZE_4K: u64 = 4096;
@@ -278,33 +279,32 @@ impl TranslationLookasideBuffer {
 /// Page table manager for x86_64
 #[derive(Debug)]
 pub struct PageTableManager {
-    /// Current page table root (CR3 value)
-    pub cr3: u64,
-    /// Page tables indexed by physical address
-    page_tables: HashMap<u64, Arc<RwLock<PageTable>>>,
     /// TLB for address translation caching
     tlb: Arc<RwLock<TranslationLookasideBuffer>>,
     /// Current Address Space Identifier
     current_asid: u16,
+    /// Page allocator for page tables
+    page_allocator: SharedPageAllocator,
 }
 
 impl PageTableManager {
     /// Create a new page table manager
     pub fn new() -> Self {
         Self {
-            cr3: 0,
             page_tables: HashMap::new(),
             tlb: Arc::new(RwLock::new(TranslationLookasideBuffer::new(1024))),
             current_asid: 0,
+            page_allocator: Arc::new(Mutex::new(PageAllocator::new(0x100000, 0x10000000))), // 1MB to 256MB for page tables
         }
     }
 
-    /// Set the CR3 register (page table root)
-    pub fn set_cr3(&mut self, cr3: u64) {
-        self.cr3 = cr3;
-        // Invalidate TLB when changing page tables
-        if let Ok(mut tlb) = self.tlb.write() {
-            tlb.invalidate_all();
+    /// Create a new page table manager with a custom page allocator
+    pub fn with_allocator(page_allocator: SharedPageAllocator) -> Self {
+        Self {
+            page_tables: HashMap::new(),
+            tlb: Arc::new(RwLock::new(TranslationLookasideBuffer::new(1024))),
+            current_asid: 0,
+            page_allocator,
         }
     }
 
@@ -588,16 +588,15 @@ impl PageTableManager {
         Ok(())
     }
 
-    /// Allocate a new page table (simplified - in real implementation this would use a page allocator)
+    /// Allocate a new page table using the page allocator
     fn allocate_page_table(&self) -> Result<u64> {
-        // This is a simplified implementation
-        // In a real system, this would use a proper page allocator
-        static mut NEXT_PAGE_TABLE_ADDR: u64 = 0x100000; // Start at 1MB
-        unsafe {
-            let addr = NEXT_PAGE_TABLE_ADDR;
-            NEXT_PAGE_TABLE_ADDR += PAGE_SIZE_4K;
-            Ok(addr)
-        }
+        let mut allocator = self.page_allocator.lock().unwrap();
+        allocator.allocate_page(PageSize::Size4K, MemoryBacking::GuestMemory)
+    }
+
+    /// Get a reference to the page allocator
+    pub fn get_page_allocator(&self) -> &SharedPageAllocator {
+        &self.page_allocator
     }
 
     /// Invalidate TLB entry
