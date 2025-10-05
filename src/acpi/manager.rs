@@ -10,7 +10,6 @@ use super::{
 pub struct AcpiManager {
     table_manager: AcpiTableManager,
     power_manager: PowerManager,
-    memory: Option<GuestMemory>,
     initialized: bool,
 }
 
@@ -19,20 +18,18 @@ impl AcpiManager {
         Self {
             table_manager: AcpiTableManager::new(),
             power_manager: PowerManager::new(),
-            memory: None,
             initialized: false,
         }
     }
 
     /// Initialize ACPI with guest memory
-    pub fn initialize(&mut self, memory: GuestMemory) -> Result<()> {
+    pub fn initialize(&mut self, memory: &GuestMemory) -> Result<()> {
         if self.initialized {
             return Ok(());
         }
 
-        self.memory = Some(memory);
         self.create_acpi_tables()?;
-        self.install_tables_in_memory()?;
+        self.install_tables_in_memory(memory)?;
         self.power_manager.initialize()?;
         
         self.initialized = true;
@@ -144,8 +141,7 @@ impl AcpiManager {
     }
 
     /// Install ACPI tables in guest memory
-    fn install_tables_in_memory(&mut self) -> Result<()> {
-        let memory = self.memory.as_mut().unwrap();
+    fn install_tables_in_memory(&self, memory: &GuestMemory) -> Result<()> {
         
         // Install RSDP at the standard location
         if let Some(rsdp_data) = self.table_manager.get_table("RSDP") {

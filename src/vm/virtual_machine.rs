@@ -57,7 +57,7 @@ impl VirtualMachine {
         
         // Create ACPI manager
         let mut acpi_manager = AcpiManager::new();
-        acpi_manager.initialize(memory_manager.get_guest_memory().clone())?;
+        acpi_manager.initialize(&mut *memory_manager.get_guest_memory())?;
 
         acpi_manager.create_default_devices()?;
         

@@ -1,7 +1,11 @@
 use crate::Result;
 use std::{cell::UnsafeCell, sync::{Arc, RwLock}};
 
-/// Guest memory management - simplified implementation
+/// Guest memory management
+/// Has interior mutability for the raw memory so that it can 
+/// be modified without requiring mutable references and locking.
+/// 
+/// Undefined behaviour is fine as we are letting the vm handle the behaviour
 #[derive(Debug)]
 pub struct GuestMemory {
     raw_memory: UnsafeCell<Vec<u8>>,
@@ -87,7 +91,7 @@ impl GuestMemory {
     }
 
     /// Write a slice of bytes to guest memory
-    pub fn write_slice(&mut self, addr: u64, data: &[u8]) -> Result<()> {
+    pub fn write_slice(&self, addr: u64, data: &[u8]) -> Result<()> {
         let mut memory = self.memory.write().unwrap();
         if addr + data.len() as u64 > self.size {
             return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
@@ -107,13 +111,13 @@ impl GuestMemory {
     }
 
     /// Load data from a file into guest memory
-    pub fn load_from_file(&mut self, addr: u64, file_path: &std::path::Path) -> Result<()> {
+    pub fn load_from_file(&self, addr: u64, file_path: &std::path::Path) -> Result<()> {
         let data = std::fs::read(file_path)?;
         self.write_slice(addr, &data)
     }
 
     /// Create a memory mapping for a device
-    pub fn create_device_mapping(&mut self, start_addr: u64, size: u64) -> Result<()> {
+    pub fn create_device_mapping(&self, start_addr: u64, size: u64) -> Result<()> {
         // In a real implementation, this would create a memory mapping
         // for MMIO devices. For now, we'll just validate the range.
         if start_addr + size > self.size {
