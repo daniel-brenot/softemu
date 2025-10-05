@@ -29,75 +29,150 @@ impl GuestMemory {
 
     /// Read a byte from guest memory
     pub fn read_u8(&self, addr: u64) -> Result<u8> {
-        let memory = self.memory.read().unwrap();
-        if addr >= self.size {
-            return Err(crate::EmulatorError::Memory(format!(
-                "Memory read_u8 out of bounds: addr=0x{:x}, size=0x{:x}", 
-                addr, self.size
-            )));
+        unsafe {
+            let memory = &*self.raw_memory.get();
+            if addr >= self.size {
+                return Err(crate::EmulatorError::Memory(format!(
+                    "Memory read_u8 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                    addr, self.size
+                )));
+            }
+            Ok(memory[addr as usize])
         }
-        Ok(memory[addr as usize])
     }
 
     /// Read a 16-bit value from guest memory
     pub fn read_u16(&self, addr: u64) -> Result<u16> {
-        let memory = self.memory.read().unwrap();
-        if addr + 1 >= self.size {
-            return Err(crate::EmulatorError::Memory(format!(
-                "Memory read_u16 out of bounds: addr=0x{:x}, size=0x{:x}", 
-                addr, self.size
-            )));
+        unsafe {
+            let memory = &*self.raw_memory.get();
+            if addr + 1 >= self.size {
+                return Err(crate::EmulatorError::Memory(format!(
+                    "Memory read_u16 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                    addr, self.size
+                )));
+            }
+            let bytes = &memory[addr as usize..addr as usize + 2];
+            Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
         }
-        let bytes = &memory[addr as usize..addr as usize + 2];
-        Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
     }
 
     /// Read a 32-bit value from guest memory
     pub fn read_u32(&self, addr: u64) -> Result<u32> {
-        let memory = self.memory.read().unwrap();
-        if addr + 3 >= self.size {
-            return Err(crate::EmulatorError::Memory(format!(
-                "Memory read_u32 out of bounds: addr=0x{:x}, size=0x{:x}", 
-                addr, self.size
-            )));
+        unsafe {
+            let memory = &*self.raw_memory.get();
+            if addr + 3 >= self.size {
+                return Err(crate::EmulatorError::Memory(format!(
+                    "Memory read_u32 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                    addr, self.size
+                )));
+            }
+            let bytes = &memory[addr as usize..addr as usize + 4];
+            Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
         }
-        let bytes = &memory[addr as usize..addr as usize + 4];
-        Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
     }
 
     /// Read a 64-bit value from guest memory
     pub fn read_u64(&self, addr: u64) -> Result<u64> {
-        let memory = self.memory.read().unwrap();
-        if addr + 7 >= self.size {
-            return Err(crate::EmulatorError::Memory(format!(
-                "Memory read_u64 out of bounds: addr=0x{:x}, size=0x{:x}", 
-                addr, self.size
-            )));
+        unsafe {
+            let memory = &*self.raw_memory.get();
+            if addr + 7 >= self.size {
+                return Err(crate::EmulatorError::Memory(format!(
+                    "Memory read_u64 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                    addr, self.size
+                )));
+            }
+            let bytes = &memory[addr as usize..addr as usize + 8];
+            Ok(u64::from_le_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3],
+                bytes[4], bytes[5], bytes[6], bytes[7]
+            ]))
         }
-        let bytes = &memory[addr as usize..addr as usize + 8];
-        Ok(u64::from_le_bytes([
-            bytes[0], bytes[1], bytes[2], bytes[3],
-            bytes[4], bytes[5], bytes[6], bytes[7]
-        ]))
     }
 
     /// Read a slice of bytes from guest memory
     pub fn read_slice(&self, addr: u64, len: usize) -> Result<Vec<u8>> {
-        let memory = self.memory.read().unwrap();
-        if addr + len as u64 > self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        unsafe {
+            let memory = &*self.raw_memory.get();
+            if addr + len as u64 > self.size {
+                return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            }
+            Ok(memory[addr as usize..addr as usize + len].to_vec())
         }
-        Ok(memory[addr as usize..addr as usize + len].to_vec())
+    }
+
+    /// Write a byte to guest memory
+    pub fn write_u8(&self, addr: u64, value: u8) -> Result<()> {
+        unsafe {
+            let memory = &mut *self.raw_memory.get();
+            if addr >= self.size {
+                return Err(crate::EmulatorError::Memory(format!(
+                    "Memory write_u8 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                    addr, self.size
+                )));
+            }
+            memory[addr as usize] = value;
+            Ok(())
+        }
+    }
+
+    /// Write a 16-bit value to guest memory
+    pub fn write_u16(&self, addr: u64, value: u16) -> Result<()> {
+        unsafe {
+            let memory = &mut *self.raw_memory.get();
+            if addr + 1 >= self.size {
+                return Err(crate::EmulatorError::Memory(format!(
+                    "Memory write_u16 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                    addr, self.size
+                )));
+            }
+            let bytes = value.to_le_bytes();
+            memory[addr as usize..addr as usize + 2].copy_from_slice(&bytes);
+            Ok(())
+        }
+    }
+
+    /// Write a 32-bit value to guest memory
+    pub fn write_u32(&self, addr: u64, value: u32) -> Result<()> {
+        unsafe {
+            let memory = &mut *self.raw_memory.get();
+            if addr + 3 >= self.size {
+                return Err(crate::EmulatorError::Memory(format!(
+                    "Memory write_u32 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                    addr, self.size
+                )));
+            }
+            let bytes = value.to_le_bytes();
+            memory[addr as usize..addr as usize + 4].copy_from_slice(&bytes);
+            Ok(())
+        }
+    }
+
+    /// Write a 64-bit value to guest memory
+    pub fn write_u64(&self, addr: u64, value: u64) -> Result<()> {
+        unsafe {
+            let memory = &mut *self.raw_memory.get();
+            if addr + 7 >= self.size {
+                return Err(crate::EmulatorError::Memory(format!(
+                    "Memory write_u64 out of bounds: addr=0x{:x}, size=0x{:x}", 
+                    addr, self.size
+                )));
+            }
+            let bytes = value.to_le_bytes();
+            memory[addr as usize..addr as usize + 8].copy_from_slice(&bytes);
+            Ok(())
+        }
     }
 
     /// Write a slice of bytes to guest memory
     pub fn write_slice(&self, addr: u64, data: &[u8]) -> Result<()> {
-        let mut memory = self.memory.write().unwrap();
-        if addr + data.len() as u64 > self.size {
-            return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+        unsafe {
+            let memory = &mut *self.raw_memory.get();
+            if addr + data.len() as u64 > self.size {
+                return Err(crate::EmulatorError::Memory("Address out of bounds".to_string()));
+            }
+            memory[addr as usize..addr as usize + data.len()].copy_from_slice(data);
+            Ok(())
         }
-        memory[addr as usize..addr as usize + data.len()].copy_from_slice(data);
-        Ok(())
     }
 
     /// Check if an address is valid
@@ -105,10 +180,6 @@ impl GuestMemory {
         addr < self.size
     }
 
-    /// Get a reference to the underlying memory for device access
-    pub fn get_memory_ref(&self) -> Arc<RwLock<Vec<u8>>> {
-        self.memory.clone()
-    }
 
     /// Load data from a file into guest memory
     pub fn load_from_file(&self, addr: u64, file_path: &std::path::Path) -> Result<()> {
