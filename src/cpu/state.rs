@@ -1,4 +1,5 @@
-use crate::cpu::registers::CpuRegisters;
+use crate::{cpu::registers::CpuRegisters, memory::TlbEntry};
+use uluru::LRUCache;
 
 /// CPU execution state
 #[derive(Debug)]
@@ -8,9 +9,12 @@ pub struct CpuState {
     pub halted: bool,
     pub interrupt_pending: bool,
     pub interrupt_vector: u8,
-    /// 0 = kernel, 3 = user
-    pub privilege_level: u8, 
-    pub paging_enabled: bool,
+    /// TLB for data access
+    pub data_tlb: LRUCache<TlbEntry, 64>,
+    /// TLB for instruction access
+    pub instruction_tlb: LRUCache<TlbEntry, 128>,
+    /// TLB for shared access
+    pub shared_tlb: LRUCache<TlbEntry, 2048>,
 }
 
 impl CpuState {
@@ -21,9 +25,9 @@ impl CpuState {
             halted: false,
             interrupt_pending: false,
             interrupt_vector: 0,
-            // Start in kernel mode
-            privilege_level: 0,
-            paging_enabled: true,
+            data_tlb: LRUCache::new(),
+            instruction_tlb: LRUCache::new(),
+            shared_tlb: LRUCache::new(),
         }
     }
 
@@ -47,15 +51,16 @@ impl CpuState {
         self.interrupt_vector = 0;
     }
 
+    /// Set the privilege level on the lowest 2 bits of the cs register
     pub fn set_privilege_level(&mut self, level: u8) {
-        self.privilege_level = level;
+        self.registers.cs = (self.registers.cs & 0xFFFFFFFC) | (level as u16);
     }
 
     pub fn is_kernel_mode(&self) -> bool {
-        self.privilege_level == 0
+        self.registers.cs & 0x3 == 0
     }
 
     pub fn is_user_mode(&self) -> bool {
-        self.privilege_level == 3
+        self.registers.cs & 0x3 == 3
     }
 }
