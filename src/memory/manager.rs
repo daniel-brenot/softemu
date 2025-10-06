@@ -1,10 +1,6 @@
-use crate::cpu::CpuState;
-use crate::memory::{
-    GuestMemory, MmioManager, PageTableManager, PageTableEntryFlags, PageFaultManager, PageFaultErrorCode,
-    PageAllocator, SharedPageAllocator
-};
+use crate::memory::MmioManager;
+use crate::{cpu::CpuState, memory::GuestMemory};
 use crate::Result;
-use std::sync::{Arc, Mutex};
 
 /// Memory manager that handles routing between guest memory and MMIO devices
 /// with proper address space separation and offset subtraction
@@ -13,33 +9,15 @@ pub struct MemoryManager {
     guest_memory: GuestMemory,
     mmio_manager: MmioManager,
     mmio_space_size: u64,
-    page_table_manager: PageTableManager,
-    page_fault_manager: PageFaultManager,
-    /// Shared page allocator for the entire memory system
-    page_allocator: SharedPageAllocator,
 }
 
 impl MemoryManager {
     /// Create a new memory manager
     pub fn new(guest_memory: GuestMemory, mmio_manager: MmioManager, mmio_space_size: u64) -> Self {
-        use crate::memory::SimplePageFaultHandler;
-        
-        // Create a shared page allocator for the entire memory system
-        let page_allocator = Arc::new(Mutex::new(PageAllocator::new(0x1000000, 0x100000000))); // 16MB to 4GB
-        
-        // Create page table manager with the shared allocator
-        let page_table_manager = PageTableManager::with_allocator(page_allocator.clone());
-        
-        // Create page fault handler with the shared allocator
-        let page_fault_handler = SimplePageFaultHandler::with_allocator(page_allocator.clone());
-        
         Self {
             guest_memory,
             mmio_manager,
-            mmio_space_size,
-            page_table_manager,
-            page_fault_manager: PageFaultManager::new(Box::new(page_fault_handler)),
-            page_allocator,
+            mmio_space_size
         }
     }
 
@@ -352,7 +330,7 @@ impl MemoryManager {
     
     /// Virtual to physical address translation
     pub fn translate_address(&self, virt_addr: u64, state: &mut CpuState) -> Result<u64> {
-        if self.paging_enabled {
+        if state.registers.cr0 & 0x80000000 != 0 {
             // Use page table translation
             self.page_table_manager.translate_address(virt_addr, false, false, false)
         } else {
@@ -377,45 +355,6 @@ impl MemoryManager {
             Ok(virt_addr)
         }
     }
-    /// Set the CR3 register (page table root)
-    pub fn set_cr3(&self, cr3: u64) {
-        self.page_table_manager.set_cr3(cr3);
-    }
-
-    /// Get the CR3 register value
-    pub fn get_cr3(&self) -> u64 {
-        self.page_table_manager.cr3
-    }
-
-    /// Create a page table entry
-    pub fn create_page_table_entry(
-        &self,
-        virtual_addr: u64,
-        physical_addr: u64,
-        flags: PageTableEntryFlags,
-    ) -> Result<()> {
-        self.page_table_manager.create_page_table_entry(virtual_addr, physical_addr, flags)
-    }
-
-    /// Invalidate TLB entry
-    pub fn invalidate_tlb_entry(&self, virtual_addr: u64) {
-        self.page_table_manager.invalidate_tlb_entry(virtual_addr);
-    }
-
-    /// Invalidate all TLB entries
-    pub fn invalidate_tlb(&self) {
-        self.page_table_manager.invalidate_tlb();
-    }
-
-    /// Get a reference to the page table manager
-    pub fn get_page_table_manager(&self) -> &PageTableManager {
-        &self.page_table_manager
-    }
-
-    /// Get a mutable reference to the page table manager
-    pub fn get_page_table_manager_mut(&self) -> &mut PageTableManager {
-        &self.page_table_manager
-    }
 
     /// Handle a page fault
     pub fn handle_page_fault(
@@ -427,36 +366,4 @@ impl MemoryManager {
         self.page_fault_manager.handle_page_fault(virtual_addr, error_code, cr2)
     }
 
-    /// Get a reference to the page fault manager
-    pub fn get_page_fault_manager(&self) -> &PageFaultManager {
-        &self.page_fault_manager
-    }
-
-    /// Get a mutable reference to the page fault manager
-    pub fn get_page_fault_manager_mut(&self) -> &mut PageFaultManager {
-        &self.page_fault_manager
-    }
-
-    /// Get a reference to the page allocator
-    pub fn get_page_allocator(&self) -> &SharedPageAllocator {
-        &self.page_allocator
-    }
-
-    /// Get memory usage statistics
-    pub fn get_memory_usage(&self) -> crate::memory::MemoryUsage {
-        let allocator = self.page_allocator.lock().unwrap();
-        allocator.get_memory_usage()
-    }
-
-    /// Get allocation statistics
-    pub fn get_allocation_stats(&self) -> crate::memory::AllocationStats {
-        let allocator = self.page_allocator.lock().unwrap();
-        allocator.get_stats().clone()
-    }
-
-    /// Reset allocation statistics
-    pub fn reset_allocation_stats(&self) {
-        let mut allocator = self.page_allocator.lock().unwrap();
-        allocator.reset_stats();
-    }
 }

@@ -1,6 +1,6 @@
 
+use crate::cpu::CpuState;
 use crate::memory::{GuestMemory, MemoryManager, MmioManager};
-use crate::cpu::CpuCore;
 use crate::devices::{SerialConsole, TimerDevice, InterruptController};
 use crate::network::NetworkManager;
 use crate::acpi::AcpiManager;
@@ -12,14 +12,12 @@ use std::time::{Duration, Instant};
 
 /// Synchronous virtual machine implementation
 pub struct VirtualMachine {
-    pub cpu_cores: Vec<CpuCore>,
+    pub cpu_cores: Vec<CpuState>,
     // pub network_manager: NetworkManager,
     pub memory_manager: Arc<MemoryManager>,
     pub interrupt_controller: InterruptController,
     pub timer_manager: TimerDevice,
     pub acpi_manager: AcpiManager,
-    pub running: bool,
-    pub kernel_loaded: bool,
 }
 
 impl VirtualMachine {
@@ -75,8 +73,6 @@ impl VirtualMachine {
             interrupt_controller,
             timer_manager,
             acpi_manager,
-            running: false,
-            kernel_loaded: false,
         })
     }
 
@@ -99,7 +95,6 @@ impl VirtualMachine {
         // Set up interrupt handlers
         self.setup_interrupt_handlers()?;
         
-        self.kernel_loaded = true;
         log::info!("Kernel loaded successfully");
         Ok(())
     }
@@ -160,12 +155,8 @@ impl VirtualMachine {
 
     /// Run the virtual machine synchronously
     pub fn run(&mut self) -> Result<()> {
-        if !self.kernel_loaded {
-            return Err(crate::EmulatorError::Cpu("Kernel not loaded".to_string()));
-        }
         
-        self.running = true;
-        log::info!("Starting synchronous virtual machine execution");
+        log::info!("Starting virtual machine execution");
         
         // Set up interrupt handlers
         self.setup_interrupt_handlers()?;
@@ -214,11 +205,6 @@ impl VirtualMachine {
         
         log::info!("Virtual machine execution completed");
         Ok(())
-    }
-
-    /// Check if the VM is running
-    pub fn is_running(&self) -> bool {
-        self.running
     }
 
     /// Get the number of CPU cores

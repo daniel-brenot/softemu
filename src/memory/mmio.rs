@@ -1,7 +1,5 @@
 use crate::Result;
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 /// MMIO device trait
 pub trait MmioDevice: Send + Sync {

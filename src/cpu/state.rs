@@ -1,12 +1,13 @@
-use crate::{cpu::registers::CpuRegisters, memory::TlbEntry};
+use crate::{cpu::registers::CpuRegisters, memory::{MemoryManager, TlbEntry}};
 use uluru::LRUCache;
 
 /// CPU execution state
 #[derive(Debug)]
 pub struct CpuState {
+    /// Core ID
+    pub core_id: u32,
+    /// CPU registers
     pub registers: CpuRegisters,
-    pub interrupt_pending: bool,
-    pub interrupt_vector: u8,
     /// TLB for data access
     pub data_tlb: LRUCache<TlbEntry, 64>,
     /// TLB for instruction access
@@ -16,24 +17,38 @@ pub struct CpuState {
 }
 
 impl CpuState {
-    pub fn new() -> Self {
+    pub fn new(core_id: u32) -> Self {
         Self {
+            core_id,
             registers: CpuRegisters::new(),
-            interrupt_pending: false,
-            interrupt_vector: 0,
             data_tlb: LRUCache::new(),
             instruction_tlb: LRUCache::new(),
             shared_tlb: LRUCache::new(),
         }
     }
 
-    pub fn trigger_interrupt(&mut self, vector: u8) {
-        self.interrupt_pending = true;
-        self.interrupt_vector = vector;
+    /// Handle an interrupt
+    fn handle_interrupt(&mut self, memory: &MemoryManager) {
+        // Save current state to stack before jumping to interrupt handler
+        memory.write_u64(self.registers.rsp, self.registers.rip);
+        self.registers.rsp -= 8;
+        
+        memory.write_u64(self.registers.rsp, self.registers.cs as u64);
+        self.registers.rsp -= 8;
+        
+        memory.write_u64(self.registers.rsp, self.registers.rflags);
+        self.registers.rsp -= 8;
+        
+        // Set interrupt flag
+        self.registers.rflags |= 0x200;
+        
+        // Jump to interrupt handler
+        // TODO: Implement interrupt handler
+        self.registers.rip = 0x1000;
     }
 
-    pub fn clear_interrupt(&mut self) {
-        self.interrupt_pending = false;
-        self.interrupt_vector = 0;
+    /// Get the core ID
+    pub fn core_id(&self) -> u32 {
+        self.core_id
     }
 }

@@ -11,6 +11,7 @@ pub struct CpuRegisters {
     pub rsi: u64,
     pub rdi: u64,
     pub rbp: u64,
+    /// Stack pointer
     pub rsp: u64,
     pub r8: u64,
     pub r9: u64,
@@ -102,7 +103,9 @@ impl CpuRegisters {
             es: 0x10,
             fs: 0x10,
             gs: 0x10,
-            ss: 0x10,
+            ss: 0x18,
+            rip: 0x100000,
+            rsp: 0x1F000000,
             rflags: RFlags::INTERRUPT.bits(),
             ..Default::default()
         }

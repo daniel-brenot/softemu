@@ -1,7 +1,6 @@
 use crate::Result;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 /// Interrupt controller for managing interrupts
 pub struct InterruptController {
