@@ -22,11 +22,17 @@ impl CpuCore {
         self.state.halted = false;
         
         // Set up initial state
-        self.state.registers.rip = 0x100000; // Start at kernel entry point
-        self.state.registers.rsp = 0x1F000000; // Set up stack pointer (496MB - well within 512MB limit)
-        self.state.registers.cs = 0x08; // Code segment
-        self.state.registers.ds = 0x10; // Data segment
-        self.state.registers.ss = 0x18; // Stack segment
+
+        // Start at kernel entry point
+        self.state.registers.rip = 0x100000;
+        // Set up stack pointer (496MB - well within 512MB limit)
+        self.state.registers.rsp = 0x1F000000;
+        // Code segment
+        self.state.registers.cs = 0x08;
+        // Data segment
+        self.state.registers.ds = 0x10;
+        // Stack segment
+        self.state.registers.ss = 0x18;
         
         log::info!("CPU core {} started", self.core_id);
         Ok(())
