@@ -1,5 +1,25 @@
 use bitflags::bitflags;
 
+/// Interrupt Descriptor Table Register
+/// Contains the base address and limit of the IDT
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Idtr {
+    /// Base address of the IDT (64-bit)
+    pub base: u64,
+    /// Limit of the IDT (16-bit)
+    pub limit: u16,
+}
+
+/// Global Descriptor Table Register
+/// Contains the base address and limit of the GDT
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Gdtr {
+    /// Base address of the GDT (64-bit)
+    pub base: u64,
+    /// Limit of the GDT (16-bit)
+    pub limit: u16,
+}
+
 /// x86_64 CPU registers
 #[derive(Debug, Clone, Default)]
 pub struct CpuRegisters {
@@ -68,6 +88,11 @@ pub struct CpuRegisters {
     pub k5: u64,
     pub k6: u64,
     pub k7: u64,
+
+    /// Interrupt Descriptor Table Register
+    pub idtr: Idtr,
+    /// Global Descriptor Table Register
+    pub gdtr: Gdtr,
 }
 
 bitflags! {

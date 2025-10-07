@@ -1,0 +1,28 @@
+
+#[repr(u8)]
+pub enum Fault {
+    DivideError = 0,
+    Debug = 1,
+    NonMaskableInterrupt = 2,
+    Breakpoint = 3,
+    Overflow = 4,
+    BoundRangeExceeded = 5,
+    InvalidOpcode = 6,
+    DeviceNotAvailable = 7,
+    DoubleFault = 8,
+    CoprocessorSegmentOverrun = 9,
+    InvalidTSS = 10,
+    SegmentNotPresent = 11,
+    StackSegmentFault = 12,
+    GeneralProtection = 13,
+    PageFault = 14,
+    X87FPUFloatingPointError = 16,
+    AlignmentCheck = 17,
+    MachineCheck = 18,
+    SIMDFloatingPointException = 19,
+    VirtualizationException = 20,
+    ControlProtectionException = 21,
+    HypervisorInjectionException = 28,
+    VMMCommunicationException = 29,
+    SecurityException = 30,
+}

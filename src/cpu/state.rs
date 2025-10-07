@@ -1,5 +1,13 @@
-use crate::{cpu::registers::CpuRegisters, memory::{MemoryManager, TlbEntry}};
+use crate::{cpu::{fault::Fault, registers::CpuRegisters}, memory::MemoryManager};
 use uluru::LRUCache;
+
+/// Cached mappiinf of virtual to physical addresses
+#[derive(Debug)]
+pub struct TlbEntry {
+    pub virtual_addr: u64,
+    pub physical_addr: u64,
+    pub flags: u64,
+}
 
 /// CPU execution state
 #[derive(Debug)]
@@ -28,7 +36,10 @@ impl CpuState {
     }
 
     /// Handle an interrupt
-    fn handle_interrupt(&mut self, memory: &MemoryManager) {
+    fn handle_interrupt(&mut self, memory: &MemoryManager, fault: u8) {
+        if fault * 8 > self.registers.idtr.limit as u8 {
+            self.handle_interrupt(memory, Fault::GeneralProtection as u8);
+        }
         // Save current state to stack before jumping to interrupt handler
         memory.write_u64(self.registers.rsp, self.registers.rip);
         self.registers.rsp -= 8;
@@ -43,8 +54,42 @@ impl CpuState {
         self.registers.rflags |= 0x200;
         
         // Jump to interrupt handler
-        // TODO: Implement interrupt handler
-        self.registers.rip = 0x1000;
+        let fault_vector_address = self.registers.idtr.base + (fault as u64 * 8);
+
+        let fault_vector = memory.read_u64(fault_vector_address);
+        let fault_vector_selector = memory.read_u16(fault_vector_address + 8);
+        let fault_vector_offset = memory.read_u16(fault_vector_address + 10);
+
+        let fault_vector_address = fault_vector_selector * 16 + fault_vector_offset;
+
+        let fault_vector_data = memory.read_u64(fault_vector_address);
+
+        let fault_vector_data_offset = memory.read_u16(fault_vector_address + 8);
+    }
+
+    fn handle_real_mode_interrupt(&mut self, memory: &MemoryManager, fault: u8) {
+        // TODO: Implement real mode interrupt handler
+        unimplemented!();
+    }
+
+    pub fn is_virtual8086_mode(&self) -> bool {
+        self.registers.rflags & 0x100 != 0
+    }
+
+    pub fn is_x16_protected_mode(&self) -> bool {
+        self.registers.cs == 0x08
+    }
+
+    pub fn is_x16_real_mode(&self) -> bool {
+        self.registers.cs == 0x00
+    }
+
+    pub fn is_x32_mode(&self) -> bool {
+        self.registers.cs == 0x10
+    }
+
+    pub fn is_x64_mode(&self) -> bool {
+        self.registers.msr_efer & 0x80000000 != 0
     }
 
     /// Get the core ID
