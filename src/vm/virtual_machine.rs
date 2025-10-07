@@ -1,6 +1,6 @@
 
 use crate::cpu::CpuState;
-use crate::cpu::Fault;
+use crate::cpu::fault::Fault;
 use crate::memory::{GuestMemory, MemoryManager, MmioManager};
 use crate::devices::{SerialConsole, TimerDevice, InterruptController};
 use crate::network::NetworkManager;

@@ -1,5 +1,5 @@
 use crate::cpu::CpuState;
-use crate::cpu::Fault;
+use crate::cpu::fault::Fault;
 
 pub fn execute_d3now_pfacc_mm_mmm64(state: &mut CpuState) {
     unimplemented!();

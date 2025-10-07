@@ -1,5 +1,5 @@
 use crate::cpu::CpuState;
-use crate::cpu::Fault;
+use crate::cpu::fault::Fault;
 
 pub fn execute_nopd(state: &mut CpuState) -> Result<(), Fault> {
     unimplemented!();

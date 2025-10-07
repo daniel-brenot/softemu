@@ -1,7 +1,7 @@
 use iced_x86::{Decoder, DecoderOptions, Instruction};
 
 use crate::cpu::CpuState;
-use crate::cpu::Fault;
+use crate::cpu::fault::Fault;
 use crate::memory::{GuestMemory, MemoryManager, MmioManager};
 use crate::Result;
 use std::sync::{Arc, Mutex};

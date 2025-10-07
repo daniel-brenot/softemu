@@ -1,5 +1,5 @@
 use crate::cpu::CpuState;
-use crate::cpu::Fault;
+use crate::cpu::fault::Fault;
 
 pub fn execute_bndcn_bnd_rm64(state: &mut CpuState) -> Result<(), Fault> {
     unimplemented!();
