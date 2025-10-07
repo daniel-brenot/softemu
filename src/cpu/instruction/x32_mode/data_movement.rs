@@ -1,4 +1,5 @@
 use crate::cpu::CpuState;
+use crate::cpu::Fault;
 
 pub fn execute_evex_vmovapd_xmmm128_k1z_xmm(state: &mut CpuState) {
     unimplemented!();

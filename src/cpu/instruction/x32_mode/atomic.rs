@@ -1,4 +1,5 @@
 use crate::cpu::CpuState;
+use crate::cpu::Fault;
 
 pub fn execute_add_al_imm8(state: &mut CpuState) {
     unimplemented!();

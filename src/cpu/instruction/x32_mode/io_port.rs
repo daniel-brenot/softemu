@@ -1,4 +1,5 @@
 use crate::cpu::CpuState;
+use crate::cpu::Fault;
 
 pub fn execute_insb_m8_dx(state: &mut CpuState) {
     unimplemented!();

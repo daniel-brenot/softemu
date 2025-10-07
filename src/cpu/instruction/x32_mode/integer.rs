@@ -1,4 +1,5 @@
 use crate::cpu::CpuState;
+use crate::cpu::Fault;
 
 pub fn execute_adcx_r32_rm32(state: &mut CpuState) {
     unimplemented!();

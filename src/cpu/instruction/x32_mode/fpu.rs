@@ -1,4 +1,5 @@
 use crate::cpu::CpuState;
+use crate::cpu::Fault;
 
 pub fn execute_addpd_xmm_xmmm128(state: &mut CpuState) {
     unimplemented!();

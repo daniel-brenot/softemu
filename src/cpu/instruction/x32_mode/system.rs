@@ -1,4 +1,5 @@
 use crate::cpu::CpuState;
+use crate::cpu::Fault;
 
 pub fn execute_arpl_r32m16_r32(state: &mut CpuState) {
     unimplemented!();
