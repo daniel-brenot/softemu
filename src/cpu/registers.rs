@@ -123,15 +123,17 @@ impl CpuRegisters {
     pub fn new() -> Self {
         Self {
             // Initialize with default values
-            cs: 0x08, // Kernel code segment
-            ds: 0x10, // Kernel data segment
+            cs: 0xF000,
+            ds: 0xFFF0,
             es: 0x10,
             fs: 0x10,
             gs: 0x10,
             ss: 0x18,
             rip: 0x100000,
             rsp: 0x1F000000,
-            rflags: RFlags::INTERRUPT.bits(),
+            rflags: 0x01,
+            idtr: Idtr { base: 0, limit: 0x03FF },
+            gdtr: Gdtr { base: 0, limit: 0xFFFF },
             ..Default::default()
         }
     }

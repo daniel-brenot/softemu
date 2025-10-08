@@ -5,7 +5,6 @@ use crate::memory::{GuestMemory, MemoryManager, MmioManager};
 use crate::devices::{SerialConsole, TimerDevice, InterruptController};
 use crate::network::NetworkManager;
 use crate::acpi::AcpiManager;
-use crate::Result;
 use std::path::Path;
 use std::sync::Arc;
 use std::thread;
@@ -216,27 +215,5 @@ impl VirtualMachine {
     /// Get memory size
     pub fn memory_size(&self) -> u64 {
         self.memory_manager.total_address_space_size()
-    }
-
-    /// Read from memory with MMIO routing
-    pub fn read_memory(&self, addr: u64, size: u8) -> Result<u64> {
-        match size {
-            1 => Ok(self.memory_manager.read_u8(addr)? as u64),
-            2 => Ok(self.memory_manager.read_u16(addr)? as u64),
-            4 => Ok(self.memory_manager.read_u32(addr)? as u64),
-            8 => Ok(self.memory_manager.read_u64(addr)?),
-            _ => Err(crate::EmulatorError::Memory(format!("Unsupported read size: {}", size))),
-        }
-    }
-
-    /// Write to memory with MMIO routing
-    pub fn write_memory(&mut self, addr: u64, value: u64, size: u8) -> Result<()> {
-        match size {
-            1 => self.memory_manager.write_u8(addr, value as u8),
-            2 => self.memory_manager.write_u16(addr, value as u16),
-            4 => self.memory_manager.write_u32(addr, value as u32),
-            8 => self.memory_manager.write_u64(addr, value),
-            _ => Err(crate::EmulatorError::Memory(format!("Unsupported write size: {}", size))),
-        }
     }
 }

@@ -36,35 +36,44 @@ impl CpuState {
     }
 
     /// Handle an interrupt
-    fn handle_interrupt(&mut self, memory: &MemoryManager, fault: u8) {
+    pub fn handle_interrupt(&mut self, memory: &MemoryManager, fault: u8) -> Result<(), Fault> {
         if fault * 8 > self.registers.idtr.limit as u8 {
             self.handle_interrupt(memory, Fault::GeneralProtection as u8);
         }
         // Save current state to stack before jumping to interrupt handler
-        memory.write_u64(self.registers.rsp, self.registers.rip);
+        memory.write_u64(self.registers.rsp, self.registers.rip)?;
         self.registers.rsp -= 8;
         
-        memory.write_u64(self.registers.rsp, self.registers.cs as u64);
+        memory.write_u64(self.registers.rsp, self.registers.cs as u64)?;
         self.registers.rsp -= 8;
         
-        memory.write_u64(self.registers.rsp, self.registers.rflags);
+        memory.write_u64(self.registers.rsp, self.registers.rflags)?;
         self.registers.rsp -= 8;
         
         // Set interrupt flag
         self.registers.rflags |= 0x200;
         
-        // Jump to interrupt handler
-        let fault_vector_address = self.registers.idtr.base + (fault as u64 * 8);
+        // Use the fault number to point to the entry in the IDT
+        let fault_vector_address = self.registers.idtr.base + (fault as u64 * 16);
 
-        let fault_vector = memory.read_u64(fault_vector_address);
-        let fault_vector_selector = memory.read_u16(fault_vector_address + 8);
-        let fault_vector_offset = memory.read_u16(fault_vector_address + 10);
+        // Get each of the values from the IDT entry
+        let offset_low = memory.read_u16(fault_vector_address)?;
+        let selector = memory.read_u16(fault_vector_address + 2)?;
+        let ist = memory.read_u8(fault_vector_address + 4)?;
+        let type_attr = memory.read_u8(fault_vector_address + 5)?;
+        let offset_mid = memory.read_u16(fault_vector_address + 6)?;
+        let offset_high = memory.read_u32(fault_vector_address + 8)?;
+        // Zero is reserved but not used
+        // let zero = memory.read_u32(fault_vector_address + 12)?;
 
-        let fault_vector_address = fault_vector_selector * 16 + fault_vector_offset;
+        // Calculate the fault vector address
+        let fault_vector_address = (offset_high as u64) << 32 | (offset_mid as u64) << 16 | offset_low as u64;
 
-        let fault_vector_data = memory.read_u64(fault_vector_address);
+        // Set the interrupt gate
+        
 
-        let fault_vector_data_offset = memory.read_u16(fault_vector_address + 8);
+
+        Ok(())
     }
 
     fn handle_real_mode_interrupt(&mut self, memory: &MemoryManager, fault: u8) {

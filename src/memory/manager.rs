@@ -1,6 +1,6 @@
+use crate::cpu::fault::Fault;
 use crate::memory::MmioManager;
 use crate::{cpu::CpuState, memory::GuestMemory};
-use crate::Result;
 
 /// Memory manager that handles routing between guest memory and MMIO devices
 /// with proper address space separation and offset subtraction
@@ -53,12 +53,12 @@ impl MemoryManager {
     }
 
     /// Read a byte from memory (routes to MMIO or guest memory)
-    pub fn read_u8(&self, addr: u64) -> Result<u8> {
+    pub fn read_u8(&self, addr: u64) -> Result<u8, Fault> {
         self.read_u8_with_access(addr, false, false)
     }
 
     /// Read a byte from memory with access type information
-    pub fn read_u8_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u8> {
+    pub fn read_u8_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u8, Fault> {
         if self.is_mmio_address(addr) {
             Ok(self.mmio_manager.read(addr, 1)? as u8)
         } else if self.is_guest_memory_address(addr) {
@@ -82,12 +82,12 @@ impl MemoryManager {
     }
 
     /// Read a word (16-bit) from memory
-    pub fn read_u16(&self, addr: u64) -> Result<u16> {
+    pub fn read_u16(&self, addr: u64) -> Result<u16, Fault> {
         self.read_u16_with_access(addr, false, false)
     }
 
     /// Read a word (16-bit) from memory with access type information
-    pub fn read_u16_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u16> {
+    pub fn read_u16_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u16, Fault> {
         if self.is_mmio_address(addr) {
             Ok(self.mmio_manager.read(addr, 2)? as u16)
         } else if self.is_guest_memory_address(addr) {
@@ -111,12 +111,12 @@ impl MemoryManager {
     }
 
     /// Read a double word (32-bit) from memory
-    pub fn read_u32(&self, addr: u64) -> Result<u32> {
+    pub fn read_u32(&self, addr: u64) -> Result<u32, Fault> {
         self.read_u32_with_access(addr, false, false)
     }
 
     /// Read a double word (32-bit) from memory with access type information
-    pub fn read_u32_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u32> {
+    pub fn read_u32_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u32, Fault> {
         if self.is_mmio_address(addr) {
             Ok(self.mmio_manager.read(addr, 4)? as u32)
         } else if self.is_guest_memory_address(addr) {
@@ -140,12 +140,12 @@ impl MemoryManager {
     }
 
     /// Read a quad word (64-bit) from memory
-    pub fn read_u64(&self, addr: u64) -> Result<u64> {
+    pub fn read_u64(&self, addr: u64) -> Result<u64, Fault> {
         self.read_u64_with_access(addr, false, false)
     }
 
     /// Read a quad word (64-bit) from memory with access type information
-    pub fn read_u64_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u64> {
+    pub fn read_u64_with_access(&self, addr: u64, is_user: bool, is_instruction_fetch: bool) -> Result<u64, Fault> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.read(addr, 8)
         } else if self.is_guest_memory_address(addr) {
@@ -169,12 +169,12 @@ impl MemoryManager {
     }
 
     /// Write a byte to memory
-    pub fn write_u8(&self, addr: u64, value: u8) -> Result<()> {
+    pub fn write_u8(&self, addr: u64, value: u8) -> Result<(), Fault> {
         self.write_u8_with_access(addr, value, false, false)
     }
 
     /// Write a byte to memory with access type information
-    pub fn write_u8_with_access(&self, addr: u64, value: u8, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
+    pub fn write_u8_with_access(&self, addr: u64, value: u8, is_user: bool, is_instruction_fetch: bool) -> Result<(), Fault> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.write(addr, value as u64, 1)
         } else if self.is_guest_memory_address(addr) {
@@ -198,12 +198,12 @@ impl MemoryManager {
     }
 
     /// Write a word (16-bit) to memory
-    pub fn write_u16(&self, addr: u64, value: u16) -> Result<()> {
+    pub fn write_u16(&self, addr: u64, value: u16) -> Result<(), Fault> {
         self.write_u16_with_access(addr, value, false, false)
     }
 
     /// Write a word (16-bit) to memory with access type information
-    pub fn write_u16_with_access(&self, addr: u64, value: u16, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
+    pub fn write_u16_with_access(&self, addr: u64, value: u16, is_user: bool, is_instruction_fetch: bool) -> Result<(), Fault> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.write(addr, value as u64, 2)
         } else if self.is_guest_memory_address(addr) {
@@ -227,12 +227,12 @@ impl MemoryManager {
     }
 
     /// Write a double word (32-bit) to memory
-    pub fn write_u32(&self, addr: u64, value: u32) -> Result<()> {
+    pub fn write_u32(&self, addr: u64, value: u32) -> Result<(), Fault> {
         self.write_u32_with_access(addr, value, false, false)
     }
 
     /// Write a double word (32-bit) to memory with access type information
-    pub fn write_u32_with_access(&self, addr: u64, value: u32, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
+    pub fn write_u32_with_access(&self, addr: u64, value: u32, is_user: bool, is_instruction_fetch: bool) -> Result<(), Fault> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.write(addr, value as u64, 4)
         } else if self.is_guest_memory_address(addr) {
@@ -256,12 +256,12 @@ impl MemoryManager {
     }
 
     /// Write a quad word (64-bit) to memory
-    pub fn write_u64(&self, addr: u64, value: u64) -> Result<()> {
+    pub fn write_u64(&self, addr: u64, value: u64) -> Result<(), Fault> {
         self.write_u64_with_access(addr, value, false, false)
     }
 
     /// Write a quad word (64-bit) to memory with access type information
-    pub fn write_u64_with_access(&self, addr: u64, value: u64, is_user: bool, is_instruction_fetch: bool) -> Result<()> {
+    pub fn write_u64_with_access(&self, addr: u64, value: u64, is_user: bool, is_instruction_fetch: bool) -> Result<(), Fault> {
         if self.is_mmio_address(addr) {
             self.mmio_manager.write(addr, value, 8)
         } else if self.is_guest_memory_address(addr) {
@@ -285,7 +285,7 @@ impl MemoryManager {
     }
 
     /// Read a slice of bytes from memory
-    pub fn read_slice(&self, addr: u64, len: usize) -> Result<Vec<u8>> {
+    pub fn read_slice(&self, addr: u64, len: usize) -> Result<Vec<u8>, Fault> {
         if self.is_mmio_address(addr) {
             // For MMIO, we need to read byte by byte since devices might not support bulk reads
             let mut result = Vec::with_capacity(len);
@@ -305,7 +305,7 @@ impl MemoryManager {
     }
 
     /// Write a slice of bytes to memory
-    pub fn write_slice(&self, addr: u64, data: &[u8]) -> Result<()> {
+    pub fn write_slice(&self, addr: u64, data: &[u8]) -> Result<(), Fault> {
         if self.is_mmio_address(addr) {
             // For MMIO, we need to write byte by byte since devices might not support bulk writes
             for (i, &byte) in data.iter().enumerate() {
@@ -329,7 +329,7 @@ impl MemoryManager {
     }
     
     /// Virtual to physical address translation
-    pub fn translate_address(&self, virt_addr: u64, state: &mut CpuState) -> Result<u64> {
+    pub fn translate_address(&self, virt_addr: u64, state: &mut CpuState) -> Result<u64, Fault> {
         if state.registers.cr0 & 0x80000000 != 0 {
             // Use page table translation
             self.page_table_manager.translate_address(virt_addr, false, false, false)
