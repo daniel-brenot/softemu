@@ -1,6 +1,59 @@
 use crate::{cpu::{fault::Fault, registers::CpuRegisters}, memory::MemoryManager};
 use uluru::LRUCache;
 
+/// Gate types for interrupt descriptor table entries
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GateType {
+    /// Task gate
+    TaskGate = 0x5,
+    /// Interrupt gate (16-bit)
+    InterruptGate16 = 0x6,
+    /// Trap gate (16-bit)
+    TrapGate16 = 0x7,
+    /// Interrupt gate (32-bit)
+    InterruptGate32 = 0xE,
+    /// Trap gate (32-bit)
+    TrapGate32 = 0xF,
+    // If value is none of the above, it is invalid
+    Invalid = 0xFF,
+}
+
+/// Decoded type_attr field from interrupt descriptor table entry
+#[derive(Debug, Clone, Copy)]
+pub struct TypeAttr {
+    /// Present bit (bit 7)
+    pub present: bool,
+    /// Descriptor Privilege Level (bits 5-6)
+    pub dpl: u8,
+    /// Gate type (bits 0-3)
+    pub gate_type: GateType,
+}
+
+impl TypeAttr {
+    /// Decode the 8-bit type_attr field
+    pub fn decode(type_attr: u8) -> Self {
+        let present = (type_attr & 0x80) != 0;
+        let dpl = (type_attr & 0x60) >> 5;
+        let gate_type_raw = type_attr & 0x0F;
+        
+        let gate_type = match gate_type_raw {
+            0x5 => GateType::TaskGate,
+            0x6 => GateType::InterruptGate16,
+            0x7 => GateType::TrapGate16,
+            0xE => GateType::InterruptGate32,
+            0xF => GateType::TrapGate32,
+            _ => GateType::Invalid
+        };
+        
+        Self {
+            present,
+            dpl,
+            gate_type,
+        }
+    }
+}
+
 /// Cached mappiinf of virtual to physical addresses
 #[derive(Debug)]
 pub struct TlbEntry {
@@ -60,11 +113,14 @@ impl CpuState {
         let offset_low = memory.read_u16(fault_vector_address)?;
         let selector = memory.read_u16(fault_vector_address + 2)?;
         let ist = memory.read_u8(fault_vector_address + 4)?;
-        let type_attr = memory.read_u8(fault_vector_address + 5)?;
+        let type_attr_raw = memory.read_u8(fault_vector_address + 5)?;
         let offset_mid = memory.read_u16(fault_vector_address + 6)?;
         let offset_high = memory.read_u32(fault_vector_address + 8)?;
         // Zero is reserved but not used
         // let zero = memory.read_u32(fault_vector_address + 12)?;
+
+        // Decode the type_attr field
+        let type_attr = TypeAttr::decode(type_attr_raw);
 
         // Calculate the fault vector address
         let fault_vector_address = (offset_high as u64) << 32 | (offset_mid as u64) << 16 | offset_low as u64;
